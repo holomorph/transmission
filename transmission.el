@@ -137,6 +137,18 @@ Details regarding the Transmission RPC can be found here:
            ('torrent-duplicate (user-error "Already added %s" name)))))
       (_ (user-error status)))))
 
+(defun transmission-toggle ()
+  "Toggle torrent between started and stopped."
+  (interactive)
+  (let* ((id (get-char-property (point) 'id))
+         (request `("torrent-get" (:ids ,id :fields ("status"))))
+         (response (apply 'transmission-request request))
+         (torrents (cdr (cadr (assq 'arguments response))))
+         (status (cdr-safe (assq 'status (elt torrents 0)))))
+    (pcase status
+      (0 (transmission-request "torrent-start" `(:ids ,id)))
+      ((or 4 6) (transmission-request "torrent-stop" `(:ids ,id))))))
+
 (defun transmission-draw ()
   (let* ((request '("torrent-get" (:fields ("id" "name"))))
          (response (apply 'transmission-request request))
@@ -148,7 +160,10 @@ Details regarding the Transmission RPC can be found here:
       (let* ((elem (elt torrents index))
              (id (cdr (assq 'id elem)))
              (name (cdr (assq 'name elem))))
-        (insert (format "%2d  %s\n" id name)))
+        (insert (format "%2d  %s" id name))
+        (let ((overlay (make-overlay (line-beginning-position) (line-end-position))))
+          (overlay-put overlay 'id id))
+        (insert "\n"))
       (setq index (1+ index)))
     (goto-char old-point)))
 
@@ -164,6 +179,7 @@ Details regarding the Transmission RPC can be found here:
     (suppress-keymap map)
     (define-key map "a" 'transmission-add)
     (define-key map "g" 'transmission-refresh)
+    (define-key map "s" 'transmission-toggle)
     (define-key map "q" 'quit-window)
     map)
   "Keymap used in `transmission-mode' buffers.")
