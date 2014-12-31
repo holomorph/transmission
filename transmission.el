@@ -92,6 +92,10 @@ and signal the error."
           (cl-return (json-read)))
         (accept-process-output)))))
 
+(defun transmission-send (process content)
+  (transmission-http-post process content)
+  (transmission-wait process))
+
 (defun transmission-ensure-process ()
   (let* ((name "transmission")
          (process (get-process name)))
@@ -106,13 +110,13 @@ and signal the error."
 Details regarding the Transmission RPC can be found here:
 <https://trac.transmissionbt.com/browser/trunk/extras/rpc-spec.txt>"
   (let ((process (transmission-ensure-process))
-        (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
-    (transmission-http-post process content)
-    (condition-case nil
-        (transmission-wait process)
-      (transmission-conflict
-       (transmission-http-post process content)
-       (transmission-wait process)))))
+         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
+    (unwind-protect
+        (condition-case nil
+            (transmission-send process content)
+          (transmission-conflict
+           (transmission-send process content)))
+      (delete-process process))))
 
 (defun transmission-add (torrent)
   "Add a torrent by filename, URL, or magnet link."
