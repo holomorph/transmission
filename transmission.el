@@ -102,7 +102,7 @@ and signal the error."
     (if (and process (process-live-p process))
         process
       ;; XXX: hardcoding
-      (open-network-stream name (format "*%s*" name) "localhost" 9091))))
+      (open-network-stream name (format "*%s" name) "localhost" 9091))))
 
 (defun transmission-request (method &optional arguments tag)
   "Send a request to Transmission.
@@ -110,13 +110,15 @@ and signal the error."
 Details regarding the Transmission RPC can be found here:
 <https://trac.transmissionbt.com/browser/trunk/extras/rpc-spec.txt>"
   (let ((process (transmission-ensure-process))
-         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
+        (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
     (unwind-protect
         (condition-case nil
             (transmission-send process content)
           (transmission-conflict
            (transmission-send process content)))
-      (delete-process process))))
+      (when (and process (process-live-p process))
+        (delete-process process)
+        (kill-buffer (process-buffer process))))))
 
 (defun transmission-next-torrent ()
   "Skip to the next torrent."
