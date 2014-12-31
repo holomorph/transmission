@@ -20,7 +20,99 @@
 
 ;;; Commentary:
 
+;; Based on the JSON RPC library written by Christopher Wellons,
+;; available online here: <https://github.com/skeeto/elisp-json-rpc>
+
 ;;; Code:
+
+(require 'cl-lib)
+(require 'json)
+
+(defconst transmission-session-header "X-Transmission-Session-Id"
+  "The \"X-Transmission-Session-Id\" header key.")
+
+(defvar transmission-session-id nil
+  "The \"X-Transmission-Session-Id\" header value.")
+
+(define-error 'transmission-conflict
+  "Wrong or missing header \"X-Transmission-Session-Id\"" 'error)
+
+(defun transmission--move-to-content ()
+  "Move the point to beginning of content after the headers."
+  (setf (point) (point-min))
+  (re-search-forward "\r?\n\r?\n" nil t))
+
+(defun transmission--content-finished-p ()
+  "Return non-nil if all of the content has arrived."
+  (setf (point) (point-min))
+  (when (search-forward "Content-Length: " nil t)
+    (let ((length (read (current-buffer))))
+      (and (transmission--move-to-content)
+           (<= length (- (position-bytes (point-max))
+                         (position-bytes (point))))))))
+
+(defun transmission--status ()
+  "Check the HTTP status code.  A 409 response from a
+Transmission session includes the \"X-Transmission-Session-Id\"
+header.  If a 409 is received, update `transmission-session-id'
+and signal the error."
+  (save-excursion
+    (goto-char (point-min))
+    (skip-chars-forward "HTTP/")
+    (skip-chars-forward "[0-9].")
+    (let* ((buffer (current-buffer))
+           (status (read buffer)))
+      (pcase status
+        (409 (when (search-forward (format "%s: " transmission-session-header))
+               (setq transmission-session-id (read buffer))
+               (signal 'transmission-conflict status)))))))
+
+(defun transmission-http-post (process content)
+  (with-current-buffer (process-buffer process)
+    (erase-buffer))
+  (let ((path "/transmission/rpc") ; XXX: hardcoding
+        (headers `((,transmission-session-header . ,transmission-session-id)
+                   ("Content-length" . ,(string-bytes content)))))
+    (with-temp-buffer
+      (insert (format "POST %s HTTP/1.1\r\n" path))
+      (dolist (elt headers)
+        (insert (format "%s: %s\r\n" (car elt) (cdr elt))))
+      (insert "\r\n")
+      (insert content)
+      (process-send-string process (buffer-string)))))
+
+(defun transmission-wait (process)
+  (with-current-buffer (process-buffer process)
+    (cl-block nil
+      (while t
+        (when (or (transmission--content-finished-p)
+                  (not (process-live-p process)))
+          (transmission--status)
+          (transmission--move-to-content)
+          (cl-return (json-read)))
+        (accept-process-output)))))
+
+(defun transmission-ensure-process ()
+  (let* ((name "transmission")
+         (process (get-process name)))
+    (if (and process (process-live-p process))
+        process
+      ;; XXX: hardcoding
+      (open-network-stream name (format "*%s*" name) "localhost" 9091))))
+
+(defun transmission-request (method &optional arguments tag)
+  "Send a request to Transmission.
+
+Details regarding the Transmission RPC can be found here:
+<https://trac.transmissionbt.com/browser/trunk/extras/rpc-spec.txt>"
+  (let ((process (transmission-ensure-process))
+        (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
+    (transmission-http-post process content)
+    (condition-case nil
+        (transmission-wait process)
+      (transmission-conflict
+       (transmission-http-post process content)
+       (transmission-wait process)))))
 
 (defvar transmission-mode-map
   (let ((map (make-sparse-keymap)))
