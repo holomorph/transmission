@@ -28,6 +28,18 @@
 (require 'cl-lib)
 (require 'json)
 
+(defgroup transmission nil
+  "Interface to a Transmission session."
+  :group 'external)
+
+(defcustom transmission-file-size-units nil
+  "The flavor of units used to display file sizes using
+`file-size-human-readable'."
+  :type '(choice (const :tag "Default" nil)
+                 (symbol :tag "SI" si)
+                 (symbol :tag "IEC" iec))
+  :group 'transmission)
+
 (defconst transmission-session-header "X-Transmission-Session-Id"
   "The \"X-Transmission-Session-Id\" header key.")
 
@@ -190,7 +202,10 @@ Details regarding the Transmission RPC can be found here:
   (put-text-property start end 'id id))
 
 (defun transmission-draw ()
-  (let* ((request '("torrent-get" (:fields ("id" "name"))))
+  (let* ((request '("torrent-get" (:fields ("id" "name" "status" "eta"
+                                            "rateDownload" "rateUpload"
+                                            "percentDone" "sizeWhenDone"
+                                            "uploadRatio"))))
          (response (apply 'transmission-request request))
          (torrents (cdr (cadr (assq 'arguments response))))
          (old-point (point))
@@ -199,8 +214,22 @@ Details regarding the Transmission RPC can be found here:
     (while (< index (length torrents))
       (let* ((elem (elt torrents index))
              (id (cdr (assq 'id elem)))
+             (up (cdr (assq 'rateUpload elem)))
+             (down (cdr (assq 'rateDownload elem)))
+             (ratio (cdr (assq 'uploadRatio elem)))
+             (percent (* 100 (cdr (assq 'percentDone elem))))
+             (have (cdr (assq 'sizeWhenDone elem)))
              (name (cdr (assq 'name elem)))
              list)
+        (push (format (if (eq 'iec transmission-file-size-units) "%8s" "%6s")
+                      (file-size-human-readable have transmission-file-size-units))
+              list)
+        (push (format "%3d%%" percent) list)
+        (push (format "%4d" (/ down (if (eq 'iec transmission-file-size-units) 1024 1000)))
+              list)
+        (push (format "%3d" (/ up (if (eq 'iec transmission-file-size-units) 1024 1000)))
+              list)
+        (push (format "%4.1f" (if (> ratio 0) ratio 0)) list)
         (push name list)
         (let ((start (point))
               (entry (mapconcat 'identity (reverse list) " ")))
