@@ -160,17 +160,16 @@ Details regarding the Transmission RPC can be found here:
      (list (read-file-name prompt))))
   ;; perhaps test if (torrent?) file then encode it into :metainfo
   (let* ((response (transmission-request "torrent-add" `(:filename ,torrent)))
-         (status (cdr (assq 'result response)))
+         (result (cdr (assq 'result response)))
          (arguments (cadr (assq 'arguments response))))
-    (pcase status
+    (pcase result
       ("success"
        (let ((object (car-safe arguments))
-             (name (cdr-safe (assq 'name arguments)))
-             (id (cdr-safe (assq 'id arguments))))
+             (name (cdr-safe (assq 'name arguments))))
          (pcase object
-           ('torrent-added (message "Added #%s: %s" id name))
+           ('torrent-added (message "Added %s" name))
            ('torrent-duplicate (user-error "Already added %s" name)))))
-      (_ (user-error status)))))
+      (_ (user-error result)))))
 
 (defun transmission-toggle ()
   "Toggle torrent between started and stopped."
@@ -202,10 +201,9 @@ Details regarding the Transmission RPC can be found here:
              (id (cdr (assq 'id elem)))
              (name (cdr (assq 'name elem)))
              list)
-        (push (format "%2d " id) list)
         (push name list)
         (let ((start (point))
-              (entry (mapconcat 'identity (reverse list) "")))
+              (entry (mapconcat 'identity (reverse list) " ")))
           (insert entry)
           (transmission-add-properties start (+ start (length entry)) id)))
       (insert "\n")
