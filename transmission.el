@@ -137,10 +137,33 @@ Details regarding the Transmission RPC can be found here:
            ('torrent-duplicate (user-error "Already added %s" name)))))
       (_ (user-error status)))))
 
+(defun transmission-draw ()
+  (let* ((request '("torrent-get" (:fields ("id" "name"))))
+         (response (apply 'transmission-request request))
+         (torrents (cdr (cadr (assq 'arguments response))))
+         (old-point (point))
+         (index 0))
+    (erase-buffer)
+    (while (< index (length torrents))
+      (let* ((elem (elt torrents index))
+             (id (cdr (assq 'id elem)))
+             (name (cdr (assq 'name elem))))
+        (insert (format "%2d  %s\n" id name)))
+      (setq index (1+ index)))
+    (goto-char old-point)))
+
+(defun transmission-refresh ()
+  (interactive)
+  (setq buffer-read-only nil)
+  (transmission-draw)
+  (set-buffer-modified-p nil)
+  (setq buffer-read-only t))
+
 (defvar transmission-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map)
     (define-key map "a" 'transmission-add)
+    (define-key map "g" 'transmission-refresh)
     (define-key map "q" 'quit-window)
     map)
   "Keymap used in `transmission-mode' buffers.")
@@ -164,7 +187,8 @@ Key bindings:
          (buffer (or (get-buffer name)
                      (generate-new-buffer name))))
     (switch-to-buffer-other-window buffer)
-    (transmission-mode)))
+    (transmission-mode)
+    (transmission-refresh)))
 
 (provide 'transmission)
 
