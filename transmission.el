@@ -177,6 +177,7 @@ Details regarding the Transmission RPC can be found here:
 (defvar transmission-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map)
+    (define-key map "?" 'describe-mode)
     (define-key map "a" 'transmission-add)
     (define-key map "g" 'transmission-refresh)
     (define-key map "s" 'transmission-toggle)
