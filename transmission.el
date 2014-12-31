@@ -114,9 +114,29 @@ Details regarding the Transmission RPC can be found here:
        (transmission-http-post process content)
        (transmission-wait process)))))
 
+(defun transmission-add (torrent)
+  "Add a torrent by filename, URL, or magnet link."
+  (interactive
+   (let* ((prompt "Add torrent: "))
+     (list (read-file-name prompt))))
+  ;; perhaps test if (torrent?) file then encode it into :metainfo
+  (let* ((response (transmission-request "torrent-add" `(:filename ,torrent)))
+         (status (cdr (assq 'result response)))
+         (arguments (cadr (assq 'arguments response))))
+    (pcase status
+      ("success"
+       (let ((object (car-safe arguments))
+             (name (cdr-safe (assq 'name arguments)))
+             (id (cdr-safe (assq 'id arguments))))
+         (pcase object
+           ('torrent-added (message "Added #%s: %s" id name))
+           ('torrent-duplicate (user-error "Already added %s" name)))))
+      (_ (user-error status)))))
+
 (defvar transmission-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map)
+    (define-key map "a" 'transmission-add)
     (define-key map "q" 'quit-window)
     map)
   "Keymap used in `transmission-mode' buffers.")
