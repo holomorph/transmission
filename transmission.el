@@ -118,6 +118,39 @@ Details regarding the Transmission RPC can be found here:
            (transmission-send process content)))
       (delete-process process))))
 
+(defun transmission-next-torrent ()
+  "Skip to the next torrent."
+  (interactive)
+  (let* ((skip (text-property-any (point) (point-max) 'torrent nil)))
+    (if (or (eobp)
+            (not (setq skip (text-property-not-all skip (point-max)
+                                                   'torrent nil))))
+        (message "No next torrent")
+      (goto-char skip))))
+
+(defun transmission-previous-torrent ()
+  "Skip to the previous torrent."
+  (interactive)
+  (let ((start (point))
+	(found nil))
+    ;; Skip past the current link.
+    (while (and (not (bobp))
+		(get-text-property (point) 'torrent))
+      (forward-char -1))
+    ;; Find the previous link.
+    (while (and (not (bobp))
+		(not (setq found (get-text-property (point) 'torrent))))
+      (forward-char -1))
+    (if (not found)
+	(progn
+	  (message "No previous torrent")
+	  (goto-char start))
+      ;; Put point at the start of the link.
+      (while (and (not (bobp))
+		  (get-text-property (point) 'torrent))
+	(forward-char -1))
+      (and (not (bobp)) (forward-char 1)))))
+
 (defun transmission-add (torrent)
   "Add a torrent by filename, URL, or magnet link."
   (interactive
@@ -149,6 +182,12 @@ Details regarding the Transmission RPC can be found here:
       (0 (transmission-request "torrent-start" `(:ids ,id)))
       ((or 4 6) (transmission-request "torrent-stop" `(:ids ,id))))))
 
+(defun transmission-add-properties (start end id)
+  (add-text-properties start end 'torrent)
+  (add-text-properties start end 'id)
+  (put-text-property start end 'torrent t)
+  (put-text-property start end 'id id))
+
 (defun transmission-draw ()
   (let* ((request '("torrent-get" (:fields ("id" "name"))))
          (response (apply 'transmission-request request))
@@ -159,10 +198,11 @@ Details regarding the Transmission RPC can be found here:
     (while (< index (length torrents))
       (let* ((elem (elt torrents index))
              (id (cdr (assq 'id elem)))
-             (name (cdr (assq 'name elem))))
+             (name (cdr (assq 'name elem)))
+             (start (point)) end)
         (insert (format "%2d  %s" id name))
-        (let ((overlay (make-overlay (line-beginning-position) (line-end-position))))
-          (overlay-put overlay 'id id))
+        (setq end (point))
+        (transmission-add-properties start end id)
         (insert "\n"))
       (setq index (1+ index)))
     (goto-char old-point)))
@@ -177,6 +217,9 @@ Details regarding the Transmission RPC can be found here:
 (defvar transmission-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map)
+    (define-key map "\t" 'transmission-next-torrent)
+    (define-key map [backtab] 'transmission-previous-torrent)
+    (define-key map "\e\t" 'transmission-previous-torrent)
     (define-key map "?" 'describe-mode)
     (define-key map "a" 'transmission-add)
     (define-key map "g" 'transmission-refresh)
