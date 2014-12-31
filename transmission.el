@@ -134,23 +134,23 @@ Details regarding the Transmission RPC can be found here:
   "Skip to the previous torrent."
   (interactive)
   (let ((start (point))
-	(found nil))
+        (found nil))
     ;; Skip past the current link.
     (while (and (not (bobp))
-		(get-text-property (point) 'torrent))
+                (get-text-property (point) 'torrent))
       (forward-char -1))
     ;; Find the previous link.
     (while (and (not (bobp))
-		(not (setq found (get-text-property (point) 'torrent))))
+                (not (setq found (get-text-property (point) 'torrent))))
       (forward-char -1))
     (if (not found)
-	(progn
-	  (message "No previous torrent")
-	  (goto-char start))
+        (progn
+          (message "No previous torrent")
+          (goto-char start))
       ;; Put point at the start of the link.
       (while (and (not (bobp))
-		  (get-text-property (point) 'torrent))
-	(forward-char -1))
+                  (get-text-property (point) 'torrent))
+        (forward-char -1))
       (and (not (bobp)) (forward-char 1)))))
 
 (defun transmission-add (torrent)
