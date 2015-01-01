@@ -174,6 +174,24 @@ from a \"torrent-get\" request."
 
 ;; Other
 
+(defun transmission-eta (seconds)
+  "Return a string showing SECONDS in human-readable form;
+otherwise \"Done\" if SECONDS is non-positive."
+  (if (<= seconds 0) "Done"
+    (let* ((minute (float 60))
+           (hour (float 3600))
+           (day (float 86400))
+           (month (* 29.53 day))
+           (year (* 365.25 day)))
+      (apply 'format "%3.0f%s"
+             (pcase seconds
+               ((pred (> minute)) (list seconds "s"))
+               ((pred (> hour)) (list (/ seconds minute) "m"))
+               ((pred (> day)) (list (/ seconds hour) "h"))
+               ((pred (> month)) (list (/ seconds day) "d"))
+               ((pred (> year)) (list (/ seconds month) "M"))
+               (_ (list (/ seconds year) "y")))))))
+
 (defun transmission-prompt-speed-limit (upload)
   "Make a prompt to set transfer speed limit.  If UPLOAD is
 non-nil, make a prompt for upload rate, otherwise for download
@@ -292,6 +310,7 @@ rate."
     (erase-buffer)
     (while (< index (length torrents))
       (let ((id (transmission-torrents-value torrents index 'id))
+            (eta (transmission-torrents-value torrents index 'eta))
             (status (transmission-torrents-value torrents index 'status))
             (up (transmission-torrents-value torrents index 'rateUpload))
             (down (transmission-torrents-value torrents index 'rateDownload))
@@ -300,6 +319,7 @@ rate."
             (have (transmission-torrents-value torrents index 'sizeWhenDone))
             (name (transmission-torrents-value torrents index 'name))
             list)
+        (push (format "%-4s" (transmission-eta eta)) list)
         (push (format (if (eq 'iec transmission-file-size-units) "%8s" "%6s")
                       (file-size-human-readable have transmission-file-size-units))
               list)
