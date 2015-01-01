@@ -40,6 +40,12 @@
                  (symbol :tag "IEC" iec))
   :group 'transmission)
 
+(defconst transmission-torrent-get-fields
+  '("id" "name" "status" "eta"
+    "rateDownload" "rateUpload"
+    "percentDone" "sizeWhenDone"
+    "uploadRatio"))
+
 (defconst transmission-session-header "X-Transmission-Session-Id"
   "The \"X-Transmission-Session-Id\" header key.")
 
@@ -48,6 +54,9 @@
 
 (define-error 'transmission-conflict
   "Wrong or missing header \"X-Transmission-Session-Id\"" 'error)
+
+
+;; JSON RPC
 
 (defun transmission--move-to-content ()
   "Move the point to beginning of content after the headers."
@@ -132,6 +141,29 @@ Details regarding the Transmission RPC can be found here:
         (delete-process process)
         (kill-buffer (process-buffer process))))))
 
+
+;; Response parsing
+
+(defun transmission-value (response field)
+  "Return the value associated with FIELD in the \"arguments\"
+array of RESPONSE."
+  (let* ((arguments (assq 'arguments response))
+         (element (assq field arguments)))
+    (cdr element)))
+
+(defun transmission-torrents (response)
+  "Return the \"torrents\" vector associated with the response
+from a \"torrent-get\" request."
+  (cdr (cadr (assq 'arguments response))))
+
+(defun transmission-torrents-value (torrents index field)
+  "Return value in FIELD of elt INDEX in TORRENTS, the
+\"torrents\" vector returned by `transmission-torrents'."
+  (cdr (assq field (elt torrents index))))
+
+
+;; Interactive
+
 (defun transmission-next-torrent ()
   "Skip to the next torrent."
   (interactive)
@@ -189,8 +221,8 @@ Details regarding the Transmission RPC can be found here:
   (let* ((id (get-char-property (point) 'id))
          (request `("torrent-get" (:ids ,id :fields ("status"))))
          (response (apply 'transmission-request request))
-         (torrents (cdr (cadr (assq 'arguments response))))
-         (status (cdr-safe (assq 'status (elt torrents 0)))))
+         (torrents (transmission-torrents response))
+         (status (transmission-torrents-value torrents 0 'status)))
     (pcase status
       (0 (transmission-request "torrent-start" `(:ids ,id)))
       ((or 4 6) (transmission-request "torrent-stop" `(:ids ,id))))))
@@ -202,29 +234,25 @@ Details regarding the Transmission RPC can be found here:
   (put-text-property start end 'id id))
 
 (defun transmission-draw ()
-  (let* ((request '("torrent-get" (:fields ("id" "name" "status" "eta"
-                                            "rateDownload" "rateUpload"
-                                            "percentDone" "sizeWhenDone"
-                                            "uploadRatio"))))
+  (let* ((request `("torrent-get" (:fields ,transmission-torrent-get-fields)))
          (response (apply 'transmission-request request))
-         (torrents (cdr (cadr (assq 'arguments response))))
+         (torrents (transmission-torrents response))
          (old-point (point))
          (index 0))
     (erase-buffer)
     (while (< index (length torrents))
-      (let* ((elem (elt torrents index))
-             (id (cdr (assq 'id elem)))
-             (up (cdr (assq 'rateUpload elem)))
-             (down (cdr (assq 'rateDownload elem)))
-             (ratio (cdr (assq 'uploadRatio elem)))
-             (percent (* 100 (cdr (assq 'percentDone elem))))
-             (have (cdr (assq 'sizeWhenDone elem)))
-             (name (cdr (assq 'name elem)))
-             list)
+      (let ((id (transmission-torrents-value torrents index 'id))
+            (up (transmission-torrents-value torrents index 'rateUpload))
+            (down (transmission-torrents-value torrents index 'rateDownload))
+            (ratio (transmission-torrents-value torrents index 'uploadRatio))
+            (fraction (transmission-torrents-value torrents index 'percentDone))
+            (have (transmission-torrents-value torrents index 'sizeWhenDone))
+            (name (transmission-torrents-value torrents index 'name))
+            list)
         (push (format (if (eq 'iec transmission-file-size-units) "%8s" "%6s")
                       (file-size-human-readable have transmission-file-size-units))
               list)
-        (push (format "%3d%%" percent) list)
+        (push (format "%3d%%" (* 100 fraction)) list)
         (push (format "%4d" (/ down (if (eq 'iec transmission-file-size-units) 1024 1000)))
               list)
         (push (format "%3d" (/ up (if (eq 'iec transmission-file-size-units) 1024 1000)))
