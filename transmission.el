@@ -1,6 +1,6 @@
-;;; transmission.el --- Interface to Transmission session
+;;; transmission.el --- Interface to Transmission session -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014  Mark Oteiza <mvoteiza@udel.edu>
+;; Copyright (C) 2014-2015  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Keywords: comm, tools
