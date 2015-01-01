@@ -247,14 +247,16 @@ rate."
 (defun transmission-toggle ()
   "Toggle torrent between started and stopped."
   (interactive)
-  (let* ((id (get-char-property (point) 'id))
-         (request `("torrent-get" (:ids ,id :fields ("status"))))
-         (response (apply 'transmission-request request))
-         (torrents (transmission-torrents response))
-         (status (transmission-torrents-value torrents 0 'status)))
-    (pcase status
-      (0 (transmission-request "torrent-start" `(:ids ,id)))
-      ((or 4 6) (transmission-request "torrent-stop" `(:ids ,id))))))
+  (let ((id (get-char-property (point) 'id)))
+    (if id
+        (let* ((request `("torrent-get" (:ids ,id :fields ("status"))))
+               (response (apply 'transmission-request request))
+               (torrents (transmission-torrents response))
+               (status (transmission-torrents-value torrents 0 'status)))
+          (pcase status
+            (0 (transmission-request "torrent-start" `(:ids ,id)))
+            ((or 4 6) (transmission-request "torrent-stop" `(:ids ,id)))))
+      (user-error "No torrent selected"))))
 
 (defun transmission-add-properties (start end id)
   (add-text-properties start end 'torrent)
