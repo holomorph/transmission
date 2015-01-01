@@ -40,6 +40,16 @@
                  (symbol :tag "IEC" iec))
   :group 'transmission)
 
+(defconst transmission-status-alist
+  '((0 . "stopped")
+    (1 . "checkwait")
+    (2 . "check")
+    (3 . "downwait")
+    (4 . "downloading")
+    (5 . "seedwait")
+    (6 . "seeding"))
+  "Alist of possible Transmission torrent statuses.")
+
 (defconst transmission-torrent-get-fields
   '("id" "name" "status" "eta"
     "rateDownload" "rateUpload"
@@ -264,6 +274,15 @@ rate."
   (put-text-property start end 'torrent t)
   (put-text-property start end 'id id))
 
+(defun transmission-status (status up down)
+  (let ((state (cdr (assq status transmission-status-alist)))
+        (idle (propertize "idle" 'face 'shadow)))
+    (pcase status
+      (0 (propertize state 'face 'warning))
+      (4 (if (> down 0) (propertize state 'face 'highlight) idle))
+      (6 (if (> up 0) (propertize state 'face 'success) idle))
+      (_ state))))
+
 (defun transmission-draw ()
   (let* ((request `("torrent-get" (:fields ,transmission-torrent-get-fields)))
          (response (apply 'transmission-request request))
@@ -273,6 +292,7 @@ rate."
     (erase-buffer)
     (while (< index (length torrents))
       (let ((id (transmission-torrents-value torrents index 'id))
+            (status (transmission-torrents-value torrents index 'status))
             (up (transmission-torrents-value torrents index 'rateUpload))
             (down (transmission-torrents-value torrents index 'rateDownload))
             (ratio (transmission-torrents-value torrents index 'uploadRatio))
@@ -289,6 +309,7 @@ rate."
         (push (format "%3d" (/ up (if (eq 'iec transmission-file-size-units) 1024 1000)))
               list)
         (push (format "%4.1f" (if (> ratio 0) ratio 0)) list)
+        (push (format "%-11s" (transmission-status status up down)) list)
         (push name list)
         (let* ((entry (mapconcat 'identity (reverse list) " "))
                (start (point))
