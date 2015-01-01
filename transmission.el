@@ -162,6 +162,21 @@ from a \"torrent-get\" request."
   (cdr (assq field (elt torrents index))))
 
 
+;; Other
+
+(defun transmission-prompt-speed-limit (upload)
+  "Make a prompt to set transfer speed limit.  If UPLOAD is
+non-nil, make a prompt for upload rate, otherwise for download
+rate."
+  (let* ((response (transmission-request "session-get"))
+         (limit (transmission-value response (if upload 'speed-limit-up 'speed-limit-down)))
+         (enabled (eq t (transmission-value response (if upload 'speed-limit-up-enabled 'speed-limit-down-enabled)))))
+    (list (read-number (concat "Set global " (if upload "upload" "download") " limit ("
+                               (if enabled (format "%d KB/s" limit)
+                                 "disabled")
+                               "): ")))))
+
+
 ;; Interactive
 
 (defun transmission-next-torrent ()
@@ -214,6 +229,20 @@ from a \"torrent-get\" request."
            ('torrent-added (message "Added %s" name))
            ('torrent-duplicate (user-error "Already added %s" name)))))
       (_ (user-error result)))))
+
+(defun transmission-set-download (limit)
+  "Set global download speed limit in KB/s."
+  (interactive (transmission-prompt-speed-limit nil))
+  (let ((arguments (if (<= limit 0) '(:speed-limit-down-enabled :json-false)
+                     `(:speed-limit-down-enabled t :speed-limit-down ,limit))))
+    (transmission-request "session-set" arguments)))
+
+(defun transmission-set-upload (limit)
+  "Set global upload speed limit in KB/s."
+  (interactive (transmission-prompt-speed-limit t))
+  (let ((arguments (if (<= limit 0) '(:speed-limit-up-enabled :json-false)
+                     `(:speed-limit-up-enabled t :speed-limit-up ,limit))))
+    (transmission-request "session-set" arguments)))
 
 (defun transmission-toggle ()
   "Toggle torrent between started and stopped."
@@ -283,8 +312,10 @@ from a \"torrent-get\" request."
     (define-key map "\e\t" 'transmission-previous-torrent)
     (define-key map "?" 'describe-mode)
     (define-key map "a" 'transmission-add)
+    (define-key map "d" 'transmission-set-download)
     (define-key map "g" 'transmission-refresh)
     (define-key map "s" 'transmission-toggle)
+    (define-key map "u" 'transmission-set-upload)
     (define-key map "q" 'quit-window)
     map)
   "Keymap used in `transmission-mode' buffers.")
