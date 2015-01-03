@@ -247,10 +247,10 @@ rate."
           (message "No previous torrent")
           (goto-char start))
       ;; Put point at the start of the link.
-      (progn (while (and (not (bobp))
-                         (eq id (get-text-property (point) 'id)))
-               (forward-char -1))
-             (and (not (bobp)) (forward-char 1))))))
+      (while (and (not (bobp))
+                  (eq id (get-text-property (point) 'id)))
+        (forward-char -1))
+      (and (not (bobp)) (forward-char 1)))))
 
 (defun transmission-add (torrent)
   "Add a torrent by filename, URL, or magnet link."
