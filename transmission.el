@@ -32,6 +32,22 @@
   "Interface to a Transmission session."
   :group 'external)
 
+(defcustom transmission-host "localhost"
+  "Host name or IP address of the Transmission session."
+  :type 'string
+  :group 'transmission)
+
+(defcustom transmission-service 9091
+  "Port or name of the service for the Transmission session."
+  :type '(choice (string :tag "Service")
+                 (integer :tag "Port"))
+  :group 'transmission)
+
+(defcustom transmission-path "/transmission/rpc"
+  "Path to the Transmission session RPC interface."
+  :type 'string
+  :group 'transmission)
+
 (defcustom transmission-file-size-units nil
   "The flavor of units used to display file sizes using
 `file-size-human-readable'."
@@ -101,7 +117,7 @@ and signal the error."
 (defun transmission-http-post (process content)
   (with-current-buffer (process-buffer process)
     (erase-buffer))
-  (let ((path "/transmission/rpc") ; XXX: hardcoding
+  (let ((path transmission-path)
         (headers `((,transmission-session-header . ,transmission-session-id)
                    ("Content-length" . ,(string-bytes content)))))
     (with-temp-buffer
@@ -132,8 +148,9 @@ and signal the error."
          (process (get-process name)))
     (if (and process (process-live-p process))
         process
-      ;; XXX: hardcoding
-      (open-network-stream name (format "*%s" name) "localhost" 9091))))
+      (open-network-stream name (format "*%s" name)
+                           transmission-host
+                           transmission-service))))
 
 (defun transmission-request (method &optional arguments tag)
   "Send a request to Transmission.
