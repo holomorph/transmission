@@ -454,7 +454,7 @@ Key bindings:
 (defun transmission ()
   "Open a Transmission buffer."
   (interactive)
-  (let* ((name "*Transmission*")
+  (let* ((name "*transmission*")
          (buffer (or (get-buffer name)
                      (generate-new-buffer name))))
     (switch-to-buffer-other-window buffer)
