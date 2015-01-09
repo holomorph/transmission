@@ -268,7 +268,6 @@ rate."
     (while (and (not (bobp))
                 (or (not (numberp (get-text-property (point) 'id)))
                     (not (setq found (= id (get-text-property (point) 'id))))))
-      ;; (not (setq found (numberp (get-text-property (point) 'id)))))
       (forward-char -1)
       (setq id (get-text-property (point) 'id)))
     (if (not found)
@@ -286,7 +285,6 @@ rate."
   (interactive
    (let* ((prompt "Add torrent: "))
      (list (read-file-name prompt))))
-  ;; perhaps test if (torrent?) file then encode it into :metainfo
   (let* ((response (transmission-request "torrent-add" `(:filename ,torrent)))
          (result (cdr (assq 'result response)))
          (arguments (cadr (assq 'arguments response))))
