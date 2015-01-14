@@ -340,6 +340,9 @@ rate."
       (6 (if (> up 0) (propertize state 'face 'success) idle))
       (_ state))))
 
+
+;; Drawing
+
 (defun transmission-draw-torrents ()
   (let* ((request `("torrent-get" (:fields ,transmission-torrent-get-fields)))
          (response (apply 'transmission-request request))
@@ -394,7 +397,7 @@ rate."
                 list)
             (push (format "%3d" index) list)
             (push (format (if (eq 'iec transmission-file-size-units) "%8s" "%6s")
-                      (file-size-human-readable len transmission-file-size-units))
+                          (file-size-human-readable len transmission-file-size-units))
                   list)
             (push (format "%3d%%" (* 100 (/ have len))) list)
             (push (format "%6s" (pcase priority
