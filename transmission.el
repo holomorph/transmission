@@ -72,6 +72,8 @@
     "percentDone" "sizeWhenDone"
     "uploadRatio"))
 
+(defconst transmission-files-fields '("name" "files" "fileStats"))
+
 (defconst transmission-session-header "X-Transmission-Session-Id"
   "The \"X-Transmission-Session-Id\" header key.")
 
@@ -338,11 +340,10 @@ rate."
       (6 (if (> up 0) (propertize state 'face 'success) idle))
       (_ state))))
 
-(defun transmission-draw ()
+(defun transmission-draw-torrents ()
   (let* ((request `("torrent-get" (:fields ,transmission-torrent-get-fields)))
          (response (apply 'transmission-request request))
          (torrents (transmission-torrents response))
-         (old-point (point))
          (index 0))
     (erase-buffer)
     (while (< index (length torrents))
@@ -373,14 +374,11 @@ rate."
                (end (+ start (length entry))))
           (insert entry)
           (transmission-add-properties start end 'id id)))
-      (setq index (1+ index)))
-    (goto-char old-point))
-  (transmission-add-properties (point-min) (point-max) 'transmission 'torrent))
+      (setq index (1+ index)))))
 
-(defun transmission-draw-files ()
-  (let ((id (get-char-property (point) 'id)))
-    (if id
-      (let* ((request `("torrent-get" (:ids ,id :fields ("name" "files" "fileStats"))))
+(defun transmission-draw-files (id)
+  (if id
+      (let* ((request `("torrent-get" (:ids ,id :fields ,transmission-files-fields)))
              (response (apply 'transmission-request request))
              (torrents (transmission-torrents response))
              (files (transmission-torrents-value torrents 0 'files))
@@ -413,27 +411,66 @@ rate."
               (insert entry)
               (add-text-properties start end 'index)
               (put-text-property start end 'index index)))
-          (setq index (1+ index))))
-      (user-error "No torrent selected"))))
-
-(defun transmission-view ()
-  (interactive)
+          (setq index (1+ index)))
+        (add-text-properties (point-min) (point-max) 'id)
+        (put-text-property (point-min) (point-max) 'id id))))
+  
+(defun transmission-draw (function)
+  "FUNCTION erases the buffer and draws a new one."
   (setq buffer-read-only nil)
-  (transmission-draw-files)
+  (funcall function)
+  (transmission-add-properties (point-min) (point-max) 'transmission-refresh function)
   (set-buffer-modified-p nil)
   (setq buffer-read-only t))
 
 (defun transmission-refresh ()
   (interactive)
-  (setq buffer-read-only nil)
-  (transmission-draw)
-  (set-buffer-modified-p nil)
-  (setq buffer-read-only t))
+  (let* ((position (text-property-not-all (point-min) (point-max)
+                                          'transmission-refresh nil))
+         (function (get-text-property position 'transmission-refresh)))
+    (if function (transmission-draw function))))
+
+
+;; Major mode definitions
+
+(defvar transmission-files-mode-map
+  (let ((map (make-sparse-keymap)))
+    (suppress-keymap map)
+    (define-key map "g" 'transmission-refresh)
+    (define-key map "p" 'previous-line)
+    (define-key map "n" 'next-line)
+    (define-key map "?" 'describe-mode)
+    (define-key map "q" 'quit-window)
+    map)
+  "Keymap used in `transmission-files-mode' buffers.")
+
+(define-derived-mode transmission-files-mode nil "Transmission-Files"
+  "Major mode for interacting with torrent files in Transmission.
+The hook `transmission-files-mode-hook' is run at mode
+initialization.
+
+Key bindings:
+\\{transmission-files-mode-map}"
+  (setq buffer-read-only t)
+  (run-mode-hooks 'transmission-files-mode-hook))
+
+(defun transmission-files ()
+  "Open a Transmission files buffer for torrent id ID."
+  (interactive)
+  (let* ((id (get-char-property (point) 'id))
+         (name "*transmission-files*")
+         (buffer (or (get-buffer name)
+                     (generate-new-buffer name))))
+    (if id
+        (progn (switch-to-buffer buffer)
+               (transmission-files-mode)
+               (transmission-draw (lambda () (transmission-draw-files id))))
+      (user-error "No torrent selected"))))
 
 (defvar transmission-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map)
-    (define-key map (kbd "RET") 'transmission-view)
+    (define-key map (kbd "RET") 'transmission-files)
     (define-key map "\t" 'transmission-next)
     (define-key map [backtab] 'transmission-previous)
     (define-key map "\e\t" 'transmission-previous)
@@ -470,7 +507,7 @@ Key bindings:
                      (generate-new-buffer name))))
     (switch-to-buffer-other-window buffer)
     (transmission-mode)
-    (transmission-refresh)))
+    (transmission-draw 'transmission-draw-torrents)))
 
 (provide 'transmission)
 
