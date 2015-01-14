@@ -1,4 +1,4 @@
-;;; transmission.el --- Interface to Transmission session -*- lexical-binding: t -*-
+;;; transmission.el --- Interface to a Transmission session -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2014-2015  Mark Oteiza <mvoteiza@udel.edu>
 
@@ -56,15 +56,15 @@
                  (symbol :tag "IEC" iec))
   :group 'transmission)
 
-(defconst transmission-status-alist
-  '((0 . "stopped")
-    (1 . "checkwait")
-    (2 . "check")
-    (3 . "downwait")
-    (4 . "downloading")
-    (5 . "seedwait")
-    (6 . "seeding"))
-  "Alist of possible Transmission torrent statuses.")
+(defconst transmission-status-plist
+  '(0 "stopped"
+    1 "checkwait"
+    2 "check"
+    3 "downwait"
+    4 "downloading"
+    5 "seedwait"
+    6 "seeding")
+  "Plist of possible Transmission torrent statuses.")
 
 (defconst transmission-torrent-get-fields
   '("id" "name" "status" "eta"
@@ -330,7 +330,7 @@ rate."
   (put-text-property start end property value))
 
 (defun transmission-status (status up down)
-  (let ((state (cdr (assq status transmission-status-alist)))
+  (let ((state (plist-get transmission-status-plist status))
         (idle (propertize "idle" 'face 'shadow)))
     (pcase status
       (0 (propertize state 'face 'warning))
@@ -380,22 +380,32 @@ rate."
 (defun transmission-draw-files ()
   (let ((id (get-char-property (point) 'id)))
     (if id
-      (let* ((request `("torrent-get" (:ids ,id :fields ("name" "files"))))
+      (let* ((request `("torrent-get" (:ids ,id :fields ("name" "files" "fileStats"))))
              (response (apply 'transmission-request request))
              (torrents (transmission-torrents response))
              (files (transmission-torrents-value torrents 0 'files))
+             (stats (transmission-torrents-value torrents 0 'fileStats))
              (index 0))
         (erase-buffer)
         (while (< index (length files))
           (let ((name (transmission-torrents-value files index 'name))
                 (len (transmission-torrents-value files index 'length))
                 (have (transmission-torrents-value files index 'bytesCompleted))
+                (priority (transmission-torrents-value stats index 'priority))
+                (wanted (transmission-torrents-value stats index 'wanted))
                 list)
             (push (format "%3d" index) list)
             (push (format (if (eq 'iec transmission-file-size-units) "%8s" "%6s")
                       (file-size-human-readable len transmission-file-size-units))
                   list)
             (push (format "%3d%%" (* 100 (/ have len))) list)
+            (push (format "%6s" (pcase priority
+                                  (-1 "low")
+                                  (0 "normal")
+                                  (1 "high"))) list)
+            (push (format "%6s" (pcase wanted
+                                  (:json-false "no")
+                                  (t "yes"))) list)
             (push (concat name "\n") list)
             (let* ((entry (mapconcat 'identity (reverse list) " "))
                    (start (point))
@@ -447,6 +457,7 @@ initialization.
 
 Key bindings:
 \\{transmission-mode-map}"
+  :group 'transmission
   (setq buffer-read-only t)
   (run-mode-hooks 'transmission-mode-hook))
 
