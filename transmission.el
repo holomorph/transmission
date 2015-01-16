@@ -193,6 +193,22 @@ from a \"torrent-get\" request."
 
 ;; Other
 
+(defun transmission-prop-values-in-region (prop)
+  "Return a list of values taken by text property PROP in region
+or at point, otherwise nil."
+  (if (use-region-p)
+    (let ((beg (region-beginning))
+          (end (region-end))
+          (list '()))
+      (save-excursion
+        (goto-char beg)
+        (while (> end (point))
+          (push (get-text-property (point) prop) list)
+          (let ((pos (text-property-not-all (point) end prop (car-safe list))))
+            (goto-char (if pos pos end)))))
+      list)
+    (list (get-text-property (point) prop))))
+
 (defun transmission-eta (seconds)
   "Return a string showing SECONDS in human-readable form;
 otherwise \"Done\" if SECONDS is non-positive."
