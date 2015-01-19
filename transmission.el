@@ -501,7 +501,7 @@ Key bindings:
     (define-key map "g" 'transmission-refresh)
     (define-key map "s" 'transmission-toggle)
     (define-key map "u" 'transmission-set-upload)
-    (define-key map "q" 'quit-window)
+    (define-key map "q" 'delete-window)
     map)
   "Keymap used in `transmission-mode' buffers.")
 
