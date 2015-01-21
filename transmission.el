@@ -343,6 +343,13 @@ rate."
             ((or 4 6) (transmission-request "torrent-stop" `(:ids ,id)))))
       (user-error "No torrent selected"))))
 
+(defun transmission-quit ()
+  "Quit."
+  (interactive)
+  (if (window-parent)
+      (delete-window)
+    (quit-window)))
+
 (defun transmission-add-properties (start end property value)
   (add-text-properties start end property)
   (put-text-property start end property value))
@@ -501,7 +508,7 @@ Key bindings:
     (define-key map "g" 'transmission-refresh)
     (define-key map "s" 'transmission-toggle)
     (define-key map "u" 'transmission-set-upload)
-    (define-key map "q" 'delete-window)
+    (define-key map "q" 'transmission-quit)
     map)
   "Keymap used in `transmission-mode' buffers.")
 
