@@ -239,6 +239,19 @@ rate."
                                  "disabled")
                                "): ")))))
 
+(defun transmission-files-do (action)
+  "Do stuff to files in `transmission-files-mode' buffers."
+  (unless (memq action (list :files-wanted :files-unwanted
+                             :priority-high :priority-low
+                             :priority-normal))
+    (error "Invalid field %s" action))
+  (let ((id (get-char-property (point) 'id))
+        (indices (transmission-prop-values-in-region 'index)))
+    (if (not (and id indices))
+        (user-error "No files selected or at point")
+      (let ((arguments `(:ids ,id ,action ,indices)))
+        (transmission-request "torrent-set" arguments)))))
+
 
 ;; Interactive
 
@@ -349,6 +362,14 @@ rate."
   (if (window-parent)
       (delete-window)
     (quit-window)))
+
+(defun transmission-files-unwant ()
+  (interactive)
+  (transmission-files-do :files-unwanted))
+
+(defun transmission-files-want ()
+  (interactive)
+  (transmission-files-do :files-wanted))
 
 (defun transmission-add-properties (start end property value)
   (add-text-properties start end property)
@@ -466,6 +487,8 @@ rate."
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
     (define-key map "?" 'describe-mode)
+    (define-key map "u" 'transmission-files-unwant)
+    (define-key map "w" 'transmission-files-want)
     (define-key map "q" 'quit-window)
     map)
   "Keymap used in `transmission-files-mode' buffers.")
