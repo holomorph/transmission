@@ -261,18 +261,6 @@ rate."
 
 ;; Interactive
 
-(defun transmission-next ()
-  (interactive)
-  (pcase (get-text-property (point) 'transmission)
-    ('torrent (transmission-next-torrent))
-    (_ (forward-line))))
-
-(defun transmission-previous ()
-  (interactive)
-  (pcase (get-text-property (point) 'transmission)
-    ('torrent (transmission-previous-torrent))
-    (_ (forward-line -1))))
-
 (defun transmission-next-torrent ()
   "Skip to the next torrent."
   (interactive)
@@ -516,11 +504,11 @@ Key bindings:
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map)
     (define-key map (kbd "RET") 'transmission-files)
-    (define-key map "\t" 'transmission-next)
-    (define-key map [backtab] 'transmission-previous)
-    (define-key map "\e\t" 'transmission-previous)
-    (define-key map "p" 'transmission-previous)
-    (define-key map "n" 'transmission-next)
+    (define-key map "\t" 'transmission-next-torrent)
+    (define-key map [backtab] 'transmission-previous-torrent)
+    (define-key map "\e\t" 'transmission-previous-torrent)
+    (define-key map "p" 'previous-line)
+    (define-key map "n" 'next-line)
     (define-key map "?" 'describe-mode)
     (define-key map "a" 'transmission-add)
     (define-key map "d" 'transmission-set-download)
