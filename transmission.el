@@ -258,6 +258,21 @@ rate."
       (let ((arguments `(:ids ,id ,action ,indices)))
         (transmission-request "torrent-set" arguments)))))
 
+(defun transmission-files-sort (torrents)
+  "Return the .files and .fileStats vectors in TORRENTS, spliced
+together with indices for each file, and sorted by file name."
+  (let* ((files (cl-map 'vector 'append
+                        (transmission-torrents-value torrents 0 'files)
+                        (transmission-torrents-value torrents 0 'fileStats)))
+         (len (length files))
+         (indices (cl-map 'vector (lambda (a b) (list (cons a b)))
+                          (make-vector len 'index)
+                          (number-sequence 0 len))))
+    (sort (cl-map 'vector 'append files indices)
+          (lambda (a b)
+            (string-lessp (cdr (assq 'name a))
+                          (cdr (assq 'name b)))))))
+
 
 ;; Interactive
 
@@ -411,27 +426,25 @@ rate."
   (let* ((request `("torrent-get" (:ids ,id :fields ,transmission-files-fields)))
          (response (apply 'transmission-request request))
          (torrents (transmission-torrents response))
-         (files (cl-mapcar 'append
-                           (transmission-torrents-value torrents 0 'files)
-                           (transmission-torrents-value torrents 0 'fileStats)))
+         (files (transmission-files-sort torrents))
          (index 0))
     (erase-buffer)
     (while (< index (length files))
       (let (list)
         (let-alist (elt files index)
+          (push (format "%3d%%" (* 100 (/ .bytesCompleted .length))) list)
+          (push (format "%6s" (pcase .priority (-1 "low") (0 "normal") (1 "high"))) list)
+          (push (format "%3s" (pcase .wanted (:json-false "no") (t "yes"))) list)
           (push (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
                         (file-size-human-readable .length transmission-file-size-units))
                 list)
-          (push (format "%3d%%" (* 100 (/ .bytesCompleted .length))) list)
-          (push (format "%6s" (pcase .priority (-1 "low") (0 "normal") (1 "high"))) list)
-          (push (format "%6s" (pcase .wanted (:json-false "no") (t "yes"))) list)
           (push (concat .name "\n") list)
           (let* ((entry (mapconcat 'identity (reverse list) " "))
                  (start (point))
                  (end (+ start (length entry))))
             (insert entry)
             (add-text-properties start end 'index)
-            (put-text-property start end 'index index))))
+            (put-text-property start end 'index .index))))
       (setq index (1+ index)))
     (add-text-properties (point-min) (point-max) 'id)
     (put-text-property (point-min) (point-max) 'id id)))
