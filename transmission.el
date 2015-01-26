@@ -322,20 +322,15 @@ together with indices for each file, and sorted by file name."
 
 (defun transmission-add (torrent)
   "Add a torrent by filename, URL, or magnet link."
-  (interactive
-   (let* ((prompt "Add torrent: "))
-     (list (read-file-name prompt))))
-  (let* ((response (transmission-request "torrent-add" `(:filename ,torrent)))
-         (result (cdr (assq 'result response)))
-         (arguments (cadr (assq 'arguments response))))
-    (pcase result
+  (interactive (list (read-file-name "Add torrent: ")))
+  (let-alist (transmission-request "torrent-add" `(:filename ,torrent))
+    (pcase .result
       ("success"
-       (let ((object (car-safe arguments))
-             (name (cdr-safe (assq 'name arguments))))
-         (pcase object
-           ('torrent-added (message "Added %s" name))
-           ('torrent-duplicate (user-error "Already added %s" name)))))
-      (_ (user-error result)))))
+       (or (and .arguments.torrent-added.name
+                (message "Added %s" .arguments.torrent-added.name))
+           (and .arguments.torrent-duplicate.name
+                (user-error "Already added %s" .arguments.torrent-duplicate.name))))
+      (_ (user-error .result)))))
 
 (defun transmission-set-download (limit)
   "Set global download speed limit in KB/s."
