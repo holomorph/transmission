@@ -173,13 +173,6 @@ Details regarding the Transmission RPC can be found here:
 
 ;; Response parsing
 
-(defun transmission-value (response field)
-  "Return the value associated with FIELD in the \"arguments\"
-array of RESPONSE."
-  (let* ((arguments (assq 'arguments response))
-         (element (assq field arguments)))
-    (cdr element)))
-
 (defun transmission-torrents (response)
   "Return the \"torrents\" vector associated with the response
 from a \"torrent-get\" request."
@@ -237,13 +230,14 @@ otherwise \"Done\" if SECONDS is non-positive."
   "Make a prompt to set transfer speed limit.  If UPLOAD is
 non-nil, make a prompt for upload rate, otherwise for download
 rate."
-  (let* ((response (transmission-request "session-get"))
-         (limit (transmission-value response (if upload 'speed-limit-up 'speed-limit-down)))
-         (enabled (eq t (transmission-value response (if upload 'speed-limit-up-enabled 'speed-limit-down-enabled)))))
-    (list (read-number (concat "Set global " (if upload "upload" "download") " limit ("
-                               (if enabled (format "%d KB/s" limit)
-                                 "disabled")
-                               "): ")))))
+  (let-alist (transmission-request "session-get")
+    (let ((limit (if upload .arguments.speed-limit-up
+                   .arguments.speed-limit-down))
+          (enabled (eq t (if upload .arguments.speed-limit-up-enabled
+                           .arguments.speed-limit-down-enabled))))
+      (list (read-number (concat "Set global " (if upload "up" "down") "load limit ("
+                                 (if enabled (format "%d KB/s" limit) "disabled")
+                                 "): "))))))
 
 (defun transmission-files-do (action)
   "Do stuff to files in `transmission-files-mode' buffers."
