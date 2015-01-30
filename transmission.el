@@ -176,10 +176,12 @@ Details regarding the Transmission RPC can be found here:
 
 ;; Response parsing
 
-(defun transmission-torrents (response)
+(defun transmission-torrents (arguments)
   "Return the \"torrents\" vector associated with the response
-from a \"torrent-get\" request."
-  (cdr (cadr (assq 'arguments response))))
+from a \"torrent-get\" request with arguments ARGUMENTS."
+  (let* ((request `("torrent-get" ,arguments))
+         (response (apply 'transmission-request request)))
+    (cdr (cadr (assq 'arguments response)))))
 
 (defun transmission-torrents-value (torrents index field)
   "Return value in FIELD of elt INDEX in TORRENTS, the
@@ -348,9 +350,7 @@ together with indices for each file, and sorted by file name."
   (interactive)
   (let ((id (get-char-property (point) 'id)))
     (if id
-        (let* ((request `("torrent-get" (:ids ,id :fields ("status"))))
-               (response (apply 'transmission-request request))
-               (torrents (transmission-torrents response))
+        (let* ((torrents (transmission-torrents `(:ids ,id :fields ("status"))))
                (status (transmission-torrents-value torrents 0 'status)))
           (pcase status
             (0 (transmission-request "torrent-start" `(:ids ,id)))
@@ -389,9 +389,7 @@ together with indices for each file, and sorted by file name."
 ;; Drawing
 
 (defun transmission-draw-torrents ()
-  (let* ((request `("torrent-get" (:fields ,transmission-torrent-get-fields)))
-         (response (apply 'transmission-request request))
-         (torrents (transmission-torrents response))
+  (let* ((torrents (transmission-torrents `(:fields ,transmission-torrent-get-fields)))
          (index 0))
     (erase-buffer)
     (while (< index (length torrents))
@@ -415,9 +413,7 @@ together with indices for each file, and sorted by file name."
       (setq index (1+ index)))))
 
 (defun transmission-draw-files (id)
-  (let* ((request `("torrent-get" (:ids ,id :fields ,transmission-files-fields)))
-         (response (apply 'transmission-request request))
-         (torrents (transmission-torrents response))
+  (let* ((torrents (transmission-torrents `(:ids ,id :fields ,transmission-files-fields)))
          (files (transmission-files-sort torrents))
          (index 0))
     (erase-buffer)
@@ -442,9 +438,7 @@ together with indices for each file, and sorted by file name."
     (put-text-property (point-min) (point-max) 'id id)))
 
 (defun transmission-draw-info (id)
-  (let* ((request `("torrent-get" (:ids ,id :fields ,transmission-info-fields)))
-         (response (apply 'transmission-request request))
-         (torrents (transmission-torrents response)))
+  (let ((torrents (transmission-torrents `(:ids ,id :fields ,transmission-info-fields))))
     (erase-buffer)
     (let (list)
       (let-alist (elt torrents 0)
