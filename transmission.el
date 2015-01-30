@@ -74,6 +74,8 @@
 
 (defconst transmission-files-fields '("name" "files" "fileStats"))
 
+(defconst transmission-info-fields '("hashString"))
+
 (defconst transmission-session-header "X-Transmission-Session-Id"
   "The \"X-Transmission-Session-Id\" header key.")
 
@@ -437,6 +439,19 @@ together with indices for each file, and sorted by file name."
       (setq index (1+ index)))
     (add-text-properties (point-min) (point-max) 'id)
     (put-text-property (point-min) (point-max) 'id id)))
+
+(defun transmission-draw-info (id)
+  (let* ((request `("torrent-get" (:ids ,id :fields ,transmission-info-fields)))
+         (response (apply 'transmission-request request))
+         (torrents (transmission-torrents response)))
+    (erase-buffer)
+    (let (list)
+      (let-alist (elt torrents 0)
+        (push (format "ID: %s\n" id) list)
+        (push (format "Hash: %s\n" .hashString) list))
+      (insert (mapconcat 'identity (reverse list) "")))
+    (add-text-properties (point-min) (point-max) 'id)
+    (put-text-property (point-min) (point-max) 'id id)))
   
 (defun transmission-draw (function)
   "FUNCTION erases the buffer and draws a new one."
@@ -456,10 +471,45 @@ together with indices for each file, and sorted by file name."
 
 ;; Major mode definitions
 
+(defvar transmission-info-mode-map
+  (let ((map (make-sparse-keymap)))
+    (suppress-keymap map)
+    (define-key map "g" 'transmission-refresh)
+    (define-key map "p" 'previous-line)
+    (define-key map "n" 'next-line)
+    (define-key map "?" 'describe-mode)
+    (define-key map "q" 'quit-window)
+    map)
+  "Keymap used in `transmission-info-mode' buffers.")
+
+(define-derived-mode transmission-info-mode nil "Transmission-Info"
+  "Major mode for viewing and manipulating torrent attributes in Transmission.
+The hook `transmission-info-mode-hook' is run at mode
+initialization.
+
+Key bindings:
+\\{transmission-files-mode-map}"
+  (setq buffer-read-only t)
+  (run-mode-hooks 'transmission-info-mode-hook))
+
+(defun transmission-info ()
+  "Open a Transmission files buffer for torrent id ID."
+  (interactive)
+  (let* ((id (get-char-property (point) 'id))
+         (name "*transmission-info*")
+         (buffer (or (get-buffer name)
+                     (generate-new-buffer name))))
+    (if id
+        (progn (switch-to-buffer buffer)
+               (transmission-info-mode)
+               (transmission-draw (lambda () (transmission-draw-info id))))
+      (user-error "No torrent selected"))))
+
 (defvar transmission-files-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map)
     (define-key map "g" 'transmission-refresh)
+    (define-key map "i" 'transmission-info)
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
     (define-key map "?" 'describe-mode)
@@ -504,6 +554,7 @@ Key bindings:
     (define-key map "?" 'describe-mode)
     (define-key map "a" 'transmission-add)
     (define-key map "d" 'transmission-set-download)
+    (define-key map "i" 'transmission-info)
     (define-key map "g" 'transmission-refresh)
     (define-key map "s" 'transmission-toggle)
     (define-key map "u" 'transmission-set-upload)
