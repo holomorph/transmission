@@ -3,6 +3,7 @@
 ;; Copyright (C) 2014-2015  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
+;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: comm, tools
 
 ;; This program is free software; you can redistribute it and/or
