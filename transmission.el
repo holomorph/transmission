@@ -59,8 +59,8 @@
 
 (defconst transmission-status-plist
   '(0 "stopped"
-    1 "checkwait"
-    2 "check"
+    1 "verifywait"
+    2 "verifying"
     3 "downwait"
     4 "downloading"
     5 "seedwait"
@@ -357,6 +357,12 @@ together with indices for each file, and sorted by file name."
             ((or 4 6) (transmission-request "torrent-stop" `(:ids ,id)))))
       (user-error "No torrent selected"))))
 
+(defun transmission-verify ()
+  "Verify torrent at point or in region."
+  (interactive)
+  (let ((ids (transmission-prop-values-in-region 'id)))
+    (transmission-request "torrent-verify" `(:ids ,ids))))
+
 (defun transmission-quit ()
   "Quit."
   (interactive)
@@ -381,6 +387,8 @@ together with indices for each file, and sorted by file name."
         (idle (propertize "idle" 'face 'shadow)))
     (pcase status
       (0 (propertize state 'face 'warning))
+      ((or 1 3 5) (propertize state 'face '(bold shadow)))
+      (2 (propertize state 'face 'font-lock-function-name-face))
       (4 (if (> down 0) (propertize state 'face 'highlight) idle))
       (6 (if (> up 0) (propertize state 'face 'success) idle))
       (_ state))))
@@ -553,6 +561,7 @@ Key bindings:
     (define-key map "g" 'transmission-refresh)
     (define-key map "s" 'transmission-toggle)
     (define-key map "u" 'transmission-set-upload)
+    (define-key map "v" 'transmission-verify)
     (define-key map "q" 'transmission-quit)
     map)
   "Keymap used in `transmission-mode' buffers.")
