@@ -207,10 +207,13 @@ or at point, otherwise nil."
       list)
     (list (get-text-property (point) prop))))
 
-(defun transmission-eta (seconds)
+(defun transmission-eta (seconds percent)
   "Return a string showing SECONDS in human-readable form;
-otherwise \"Done\" if SECONDS is non-positive."
-  (if (<= seconds 0) "Done"
+otherwise some other estimate indicated by SECONDS and PERCENT."
+  (if (<= seconds 0)
+      (pcase percent
+        (1 "Done")
+        (_ " Inf"))
     (let* ((minute (float 60))
            (hour (float 3600))
            (day (float 86400))
