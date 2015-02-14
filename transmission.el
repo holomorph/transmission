@@ -428,7 +428,7 @@ together with indices for each file, and sorted by file name."
     (while (< index (length files))
       (let (list)
         (let-alist (elt files index)
-          (push (format "%3d%%" (* 100 (/ .bytesCompleted .length))) list)
+          (push (format "%3d%%" (/ (* 100 .bytesCompleted) .length)) list)
           (push (format "%6s" (pcase .priority (-1 "low") (0 "normal") (1 "high"))) list)
           (push (format "%3s" (pcase .wanted (:json-false "no") (t "yes"))) list)
           (push (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
