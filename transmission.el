@@ -527,6 +527,7 @@ initialization.
 
 Key bindings:
 \\{transmission-files-mode-map}"
+  :group 'transmission
   (setq-local font-lock-defaults '(transmission-info-font-lock-keywords))
   (setq-local revert-buffer-function #'transmission-refresh)
   (setq buffer-read-only t)
@@ -566,6 +567,7 @@ initialization.
 
 Key bindings:
 \\{transmission-files-mode-map}"
+  :group 'transmission
   (setq-local revert-buffer-function #'transmission-refresh)
   (setq buffer-read-only t)
   (run-mode-hooks 'transmission-files-mode-hook))
