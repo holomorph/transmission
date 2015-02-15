@@ -406,7 +406,7 @@ together with indices for each file, and sorted by file name."
     (while (< index (length torrents))
       (let (list)
         (let-alist (elt torrents index)
-          (push (format "%-4s" (transmission-eta .eta)) list)
+          (push (format "%-4s" (transmission-eta .eta .percentDone)) list)
           (push (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
                         (file-size-human-readable .sizeWhenDone transmission-file-size-units))
                 list)
