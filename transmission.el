@@ -187,7 +187,7 @@ Details regarding the Transmission RPC can be found here:
   "Return the \"torrents\" vector associated with the response
 from a \"torrent-get\" request with arguments ARGUMENTS."
   (let* ((request `("torrent-get" ,arguments))
-         (response (apply 'transmission-request request)))
+         (response (apply #'transmission-request request)))
     (cdr (cadr (assq 'arguments response)))))
 
 (defun transmission-torrents-value (torrents index field)
@@ -226,7 +226,7 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
            (day (float 86400))
            (month (* 29.53 day))
            (year (* 365.25 day)))
-      (apply 'format "%3.0f%s"
+      (apply #'format "%3.0f%s"
              (pcase seconds
                ((pred (> minute)) (list seconds "s"))
                ((pred (> hour)) (list (/ seconds minute) "m"))
