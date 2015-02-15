@@ -494,8 +494,7 @@ When called with a prefix, also unlink torrent data on disk."
   (set-buffer-modified-p nil)
   (setq buffer-read-only t))
 
-(defun transmission-refresh ()
-  (interactive)
+(defun transmission-refresh (&optional _arg _noconfirm)
   (let* ((position (text-property-not-all (point-min) (point-max)
                                           'transmission-refresh nil))
          (function (get-text-property position 'transmission-refresh)))
@@ -513,7 +512,7 @@ When called with a prefix, also unlink torrent data on disk."
 (defvar transmission-info-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map)
-    (define-key map "g" 'transmission-refresh)
+    (define-key map "g" 'revert-buffer)
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
     (define-key map "?" 'describe-mode)
@@ -529,6 +528,7 @@ initialization.
 Key bindings:
 \\{transmission-files-mode-map}"
   (setq-local font-lock-defaults '(transmission-info-font-lock-keywords))
+  (setq-local revert-buffer-function #'transmission-refresh)
   (setq buffer-read-only t)
   (run-mode-hooks 'transmission-info-mode-hook))
 
@@ -548,7 +548,7 @@ Key bindings:
 (defvar transmission-files-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map)
-    (define-key map "g" 'transmission-refresh)
+    (define-key map "g" 'revert-buffer)
     (define-key map "i" 'transmission-info)
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
@@ -566,6 +566,7 @@ initialization.
 
 Key bindings:
 \\{transmission-files-mode-map}"
+  (setq-local revert-buffer-function #'transmission-refresh)
   (setq buffer-read-only t)
   (run-mode-hooks 'transmission-files-mode-hook))
 
@@ -595,7 +596,7 @@ Key bindings:
     (define-key map "a" 'transmission-add)
     (define-key map "d" 'transmission-set-download)
     (define-key map "i" 'transmission-info)
-    (define-key map "g" 'transmission-refresh)
+    (define-key map "g" 'revert-buffer)
     (define-key map "r" 'transmission-remove)
     (define-key map "s" 'transmission-toggle)
     (define-key map "u" 'transmission-set-upload)
@@ -613,6 +614,7 @@ initialization.
 Key bindings:
 \\{transmission-mode-map}"
   :group 'transmission
+  (setq-local revert-buffer-function #'transmission-refresh)
   (setq buffer-read-only t)
   (run-mode-hooks 'transmission-mode-hook))
 
