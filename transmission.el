@@ -57,6 +57,11 @@
                  (symbol :tag "IEC" iec))
   :group 'transmission)
 
+(defcustom transmission-time-format "%a %b %e %T %Y"
+  "Format string used to display dates, according to `format-time-string'."
+  :type 'string
+  :group 'transmission)
+
 (defconst transmission-status-plist
   '(0 "stopped"
     1 "verifywait"
@@ -75,7 +80,9 @@
 
 (defconst transmission-files-fields '("name" "files" "fileStats"))
 
-(defconst transmission-info-fields '("hashString"))
+(defconst transmission-info-fields
+  '("name" "hashString" "magnetLink" "activityDate" "addedDate"
+    "dateCreated" "doneDate" "startDate" "peers"))
 
 (defconst transmission-session-header "X-Transmission-Session-Id"
   "The \"X-Transmission-Session-Id\" header key.")
@@ -275,6 +282,11 @@ together with indices for each file, and sorted by file name."
             (string-lessp (cdr (assq 'name a))
                           (cdr (assq 'name b)))))))
 
+(defun transmission-time (seconds)
+  (if (= 0 seconds)
+      (format "Never")
+    (format-time-string transmission-time-format (seconds-to-time seconds))))
+
 
 ;; Interactive
 
@@ -461,11 +473,16 @@ When called with a prefix, also unlink torrent data on disk."
 (defun transmission-draw-info (id)
   (let ((torrents (transmission-torrents `(:ids ,id :fields ,transmission-info-fields))))
     (erase-buffer)
-    (let (list)
-      (let-alist (elt torrents 0)
-        (push (format "ID: %s\n" id) list)
-        (push (format "Hash: %s\n" .hashString) list))
-      (insert (mapconcat 'identity (reverse list) "")))
+    (let-alist (elt torrents 0)
+      (let ((vec (vector (format "ID: %d" id)
+                         (concat "Name: " .name)
+                         (concat "Hash: " .hashString)
+                         (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link))
+                         (concat "Date created:    " (transmission-time .dateCreated))
+                         (concat "Date added:      " (transmission-time .addedDate))
+                         (concat "Date finished:   " (transmission-time .doneDate))
+                         (concat "Latest Activity: " (transmission-time .activityDate) "\n"))))
+        (insert (mapconcat 'identity vec "\n"))))
     (add-text-properties (point-min) (point-max) 'id)
     (put-text-property (point-min) (point-max) 'id id)))
   
@@ -487,6 +504,12 @@ When called with a prefix, also unlink torrent data on disk."
 
 ;; Major mode definitions
 
+(defvar transmission-info-font-lock-keywords
+  `(("^\\(.*?:\\)[[:blank:]]*\\(.*\\)$"
+     (1 'font-lock-type-face)
+     (2 'font-lock-keyword-face)))
+  "Default expressions to highlight in `transmission-info-mode' buffers.")
+
 (defvar transmission-info-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map)
@@ -505,6 +528,7 @@ initialization.
 
 Key bindings:
 \\{transmission-files-mode-map}"
+  (setq-local font-lock-defaults '(transmission-info-font-lock-keywords))
   (setq buffer-read-only t)
   (run-mode-hooks 'transmission-info-mode-hook))
 
