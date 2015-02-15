@@ -334,6 +334,16 @@ together with indices for each file, and sorted by file name."
                 (user-error "Already added %s" .arguments.torrent-duplicate.name))))
       (_ (user-error .result)))))
 
+(defun transmission-remove (&optional unlink)
+  "Prompt to remove torrent at point or torrents in region.
+When called with a prefix, also unlink torrent data on disk."
+  (interactive "P")
+  (let* ((ids (transmission-prop-values-in-region 'id))
+         (arguments `(:ids ,ids :delete-local-data ,(and unlink t))))
+    (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
+                               "torrent" (and (< 1 (length ids)) "s") "?"))
+      (transmission-request "torrent-remove" arguments))))
+
 (defun transmission-set-download (limit)
   "Set global download speed limit in KB/s."
   (interactive (transmission-prompt-speed-limit nil))
@@ -562,6 +572,7 @@ Key bindings:
     (define-key map "d" 'transmission-set-download)
     (define-key map "i" 'transmission-info)
     (define-key map "g" 'transmission-refresh)
+    (define-key map "r" 'transmission-remove)
     (define-key map "s" 'transmission-toggle)
     (define-key map "u" 'transmission-set-upload)
     (define-key map "v" 'transmission-verify)
