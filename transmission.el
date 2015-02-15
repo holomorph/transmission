@@ -334,6 +334,7 @@ together with indices for each file, and sorted by file name."
         (forward-char -1))
       (and (not (bobp)) (forward-char 1)))))
 
+;;;###autoload
 (defun transmission-add (torrent)
   "Add a torrent by filename, URL, or magnet link."
   (interactive (list (read-file-name "Add torrent: ")))
