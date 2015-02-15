@@ -503,6 +503,14 @@ When called with a prefix, also unlink torrent data on disk."
 
 ;; Major mode definitions
 
+(defvar transmission-map
+  (let ((map (make-sparse-keymap)))
+    (suppress-keymap map)
+    (define-key map "g" 'revert-buffer)
+    (define-key map "?" 'describe-mode)
+    map)
+  "Common keymap used in Transmission mode buffers.")
+
 (defvar transmission-info-font-lock-keywords
   `(("^\\(.*?:\\)[[:blank:]]*\\(.*\\)$"
      (1 'font-lock-type-face)
@@ -510,12 +518,9 @@ When called with a prefix, also unlink torrent data on disk."
   "Default expressions to highlight in `transmission-info-mode' buffers.")
 
 (defvar transmission-info-mode-map
-  (let ((map (make-sparse-keymap)))
-    (suppress-keymap map)
-    (define-key map "g" 'revert-buffer)
+  (let ((map (copy-keymap transmission-map)))
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
-    (define-key map "?" 'describe-mode)
     (define-key map "q" 'quit-window)
     map)
   "Keymap used in `transmission-info-mode' buffers.")
@@ -547,13 +552,10 @@ Key bindings:
       (user-error "No torrent selected"))))
 
 (defvar transmission-files-mode-map
-  (let ((map (make-sparse-keymap)))
-    (suppress-keymap map)
-    (define-key map "g" 'revert-buffer)
+  (let ((map (copy-keymap transmission-map)))
     (define-key map "i" 'transmission-info)
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
-    (define-key map "?" 'describe-mode)
     (define-key map "u" 'transmission-files-unwant)
     (define-key map "w" 'transmission-files-want)
     (define-key map "q" 'quit-window)
@@ -586,19 +588,16 @@ Key bindings:
       (user-error "No torrent selected"))))
 
 (defvar transmission-mode-map
-  (let ((map (make-sparse-keymap)))
-    (suppress-keymap map)
+  (let ((map (copy-keymap transmission-map)))
     (define-key map (kbd "RET") 'transmission-files)
     (define-key map "\t" 'transmission-next-torrent)
     (define-key map [backtab] 'transmission-previous-torrent)
     (define-key map "\e\t" 'transmission-previous-torrent)
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
-    (define-key map "?" 'describe-mode)
     (define-key map "a" 'transmission-add)
     (define-key map "d" 'transmission-set-download)
     (define-key map "i" 'transmission-info)
-    (define-key map "g" 'revert-buffer)
     (define-key map "r" 'transmission-remove)
     (define-key map "s" 'transmission-toggle)
     (define-key map "u" 'transmission-set-upload)
