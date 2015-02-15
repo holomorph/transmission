@@ -490,6 +490,7 @@ When called with a prefix, also unlink torrent data on disk."
   "FUNCTION erases the buffer and draws a new one."
   (setq buffer-read-only nil)
   (funcall function)
+  (goto-char (point-min))
   (transmission-add-properties (point-min) (point-max) 'transmission-refresh function)
   (set-buffer-modified-p nil)
   (setq buffer-read-only t))
