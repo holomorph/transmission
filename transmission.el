@@ -222,14 +222,12 @@ returned by `transmission-torrents'."
 ;; Timer management
 
 (defun transmission-timer-check ()
-  "Check to see if we switch into a buffer for autoupdating"
-  (interactive)
+  "Check if current buffer should run a refresh timer."
   (let ((buffer (get-buffer "*transmission*")))
     (when (and buffer (eq buffer (current-buffer)))
       (transmission-timer-run))))
 
 (defun transmission-timer-run ()
-  (interactive)
   (when transmission-timer-p
     (when transmission-timer (cancel-timer transmission-timer))
     (setq
