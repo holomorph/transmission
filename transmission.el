@@ -447,6 +447,13 @@ When called with a prefix, also unlink torrent data on disk."
 
 ;; Drawing
 
+(defun transmission-insert-entry (vec props)
+  (let* ((entry (mapconcat #'identity vec " "))
+         (start (point))
+         (end (+ start (length entry))))
+    (insert entry)
+    (add-text-properties start end props)))
+
 (defun transmission-draw-torrents ()
   (let* ((torrents (transmission-torrents `(:fields ,transmission-torrent-get-fields)))
          (index 0))
@@ -463,12 +470,8 @@ When called with a prefix, also unlink torrent data on disk."
                  (format "%3d" (transmission-rate .rateUpload))
                  (format "%4.1f" (if (> .uploadRatio 0) .uploadRatio 0))
                  (format "%-11s" (transmission-status .status .rateUpload .rateDownload))
-                 (concat .name "\n")))
-               (entry (mapconcat 'identity vec " "))
-               (start (point))
-               (end (+ start (length entry))))
-            (insert entry)
-            (transmission-add-properties start end 'id .id)))
+                 (concat .name "\n"))))
+          (transmission-insert-entry vec (list 'id .id))))
       (setq index (1+ index)))))
 
 (defun transmission-draw-files (id)
@@ -485,15 +488,8 @@ When called with a prefix, also unlink torrent data on disk."
                  (format "%3s" (pcase .wanted (:json-false "no") (t "yes")))
                  (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
                          (file-size-human-readable .length transmission-file-size-units))
-                 (concat .name "\n")))
-               (entry (mapconcat 'identity vec " "))
-               (start (point))
-               (end (+ start (length entry))))
-          (insert entry)
-          (add-text-properties start end 'name)
-          (put-text-property start end 'name .name)
-          (add-text-properties start end 'index)
-          (put-text-property start end 'index .index)))
+                 (concat .name "\n"))))
+          (transmission-insert-entry vec (list 'name .name 'index .index))))
       (setq index (1+ index)))
     (add-text-properties (point-min) (point-max) `(dir ,(transmission-torrent-value torrent 'downloadDir)))
     (add-text-properties (point-min) (point-max) `(id ,id))))
