@@ -429,10 +429,6 @@ When called with a prefix, also unlink torrent data on disk."
         (apply #'start-process prog nil args))
     (message "File does not exist.")))
 
-(defun transmission-add-properties (start end property value)
-  (add-text-properties start end property)
-  (put-text-property start end property value))
-
 (defun transmission-status (status up down)
   (let ((state (plist-get transmission-status-plist status))
         (idle (propertize "idle" 'face 'shadow)))
@@ -517,7 +513,7 @@ When called with a prefix, also unlink torrent data on disk."
   (setq buffer-read-only nil)
   (funcall function)
   (goto-char (point-min))
-  (transmission-add-properties (point-min) (point-max) 'transmission-refresh function)
+  (add-text-properties (point-min) (point-max) (list 'transmission-refresh function))
   (set-buffer-modified-p nil)
   (setq buffer-read-only t))
 
