@@ -405,6 +405,15 @@ When called with a prefix, also unlink torrent data on disk."
   (interactive)
   (transmission-files-do :files-wanted))
 
+(defun transmission-files-priority (priority)
+  (interactive
+   (let* ((collection '(high low normal))
+          (prompt (format "Set priority (%s): "
+                          (mapconcat #'symbol-name collection " "))))
+     (list (completing-read prompt collection nil t))))
+  (when (not (string= priority ""))
+    (transmission-files-do (intern (concat ":priority-" priority)))))
+
 (defun transmission-files-command (command arg)
   "Run a command COMMAND on the file at point."
   (interactive
@@ -579,6 +588,7 @@ Key bindings:
     (define-key map "n" 'next-line)
     (define-key map "u" 'transmission-files-unwant)
     (define-key map "w" 'transmission-files-want)
+    (define-key map "y" 'transmission-files-priority)
     (define-key map "q" 'quit-window)
     map)
   "Keymap used in `transmission-files-mode' buffers.")
