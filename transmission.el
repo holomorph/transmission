@@ -424,7 +424,9 @@ When called with a prefix, also unlink torrent data on disk."
       (read-shell-command (format "! on %s: " (file-name-nondirectory name)))
       file)))
   (if (file-exists-p arg)
-      (start-process command nil command arg)
+      (let* ((args (nconc (split-string command) (list arg)))
+             (prog (car args)))
+        (apply #'start-process prog nil args))
     (message "File does not exist.")))
 
 (defun transmission-add-properties (start end property value)
