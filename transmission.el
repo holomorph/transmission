@@ -50,16 +50,21 @@
   :group 'transmission)
 
 (defcustom transmission-file-size-units nil
-  "The flavor of units used to display file sizes using
-`file-size-human-readable'."
+  "The flavor of units used to display file sizes.
+
+See `file-size-human-readable'."
   :type '(choice (const :tag "Default" nil)
                  (symbol :tag "SI" si)
                  (symbol :tag "IEC" iec))
+  :link '(function-link file-size-human-readable)
   :group 'transmission)
 
 (defcustom transmission-time-format "%a %b %e %T %Y"
-  "Format string used to display dates, according to `format-time-string'."
+  "Format string used to display dates.
+
+See `format-time-string'."
   :type 'string
+  :link '(function-link format-time-string)
   :group 'transmission)
 
 (defconst transmission-status-plist
