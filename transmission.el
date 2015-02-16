@@ -83,7 +83,8 @@
 
 (defconst transmission-info-fields
   '("name" "hashString" "magnetLink" "activityDate" "addedDate"
-    "dateCreated" "doneDate" "startDate" "peers"))
+    "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
+    "pieceSize" "trackers" "trackerStats"))
 
 (defconst transmission-session-header "X-Transmission-Session-Id"
   "The \"X-Transmission-Session-Id\" header key.")
@@ -499,7 +500,11 @@ When called with a prefix, also unlink torrent data on disk."
               (format "ID: %d" id)
               (concat "Name: " .name)
               (concat "Hash: " .hashString)
-              (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link))
+              (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
+              (format "Pieces: %d" .pieceCount)
+              (format "Piece size: %s (%d bytes) each\n"
+                      (file-size-human-readable .pieceSize transmission-file-size-units)
+                      .pieceSize)
               (concat "Date created:    " (transmission-time .dateCreated))
               (concat "Date added:      " (transmission-time .addedDate))
               (concat "Date finished:   " (transmission-time .doneDate))
