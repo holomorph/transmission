@@ -78,7 +78,8 @@
     "percentDone" "sizeWhenDone"
     "uploadRatio"))
 
-(defconst transmission-files-fields '("name" "files" "fileStats"))
+(defconst transmission-files-fields
+  '("name" "files" "fileStats" "downloadDir"))
 
 (defconst transmission-info-fields
   '("name" "hashString" "magnetLink" "activityDate" "addedDate"
@@ -190,10 +191,10 @@ from a \"torrent-get\" request with arguments ARGUMENTS."
          (response (apply #'transmission-request request)))
     (cdr (cadr (assq 'arguments response)))))
 
-(defun transmission-torrents-value (torrents index field)
-  "Return value in FIELD of elt INDEX in TORRENTS, the
-\"torrents\" vector returned by `transmission-torrents'."
-  (cdr (assq field (elt torrents index))))
+(defun transmission-torrent-value (torrent field)
+  "Return value in FIELD of in TORRENT, the \"torrents\" vector
+returned by `transmission-torrents'."
+  (cdr (assq field (elt torrent 0))))
 
 
 ;; Other
@@ -267,12 +268,12 @@ rate."
       (let ((arguments `(:ids ,id ,action ,indices)))
         (transmission-request "torrent-set" arguments)))))
 
-(defun transmission-files-sort (torrents)
-  "Return the .files and .fileStats vectors in TORRENTS, spliced
+(defun transmission-files-sort (torrent)
+  "Return the .files and .fileStats vectors in TORRENT, spliced
 together with indices for each file, and sorted by file name."
   (let* ((files (cl-map 'vector 'append
-                        (transmission-torrents-value torrents 0 'files)
-                        (transmission-torrents-value torrents 0 'fileStats)))
+                        (transmission-torrent-value torrent 'files)
+                        (transmission-torrent-value torrent 'fileStats)))
          (len (length files))
          (indices (cl-map 'vector (lambda (a b) (list (cons a b)))
                           (make-vector len 'index)
@@ -376,8 +377,8 @@ When called with a prefix, also unlink torrent data on disk."
   (interactive)
   (let ((id (get-char-property (point) 'id)))
     (if id
-        (let* ((torrents (transmission-torrents `(:ids ,id :fields ("status"))))
-               (status (transmission-torrents-value torrents 0 'status)))
+        (let* ((torrent (transmission-torrents `(:ids ,id :fields ("status"))))
+               (status (transmission-torrent-value torrent 'status)))
           (pcase status
             (0 (transmission-request "torrent-start" `(:ids ,id)))
             ((or 4 6) (transmission-request "torrent-stop" `(:ids ,id)))))
@@ -447,8 +448,8 @@ When called with a prefix, also unlink torrent data on disk."
       (setq index (1+ index)))))
 
 (defun transmission-draw-files (id)
-  (let* ((torrents (transmission-torrents `(:ids ,id :fields ,transmission-files-fields)))
-         (files (transmission-files-sort torrents))
+  (let* ((torrent (transmission-torrents `(:ids ,id :fields ,transmission-files-fields)))
+         (files (transmission-files-sort torrent))
          (index 0))
     (erase-buffer)
     (while (< index (length files))
@@ -465,11 +466,13 @@ When called with a prefix, also unlink torrent data on disk."
                (start (point))
                (end (+ start (length entry))))
           (insert entry)
+          (add-text-properties start end 'name)
+          (put-text-property start end 'name .name)
           (add-text-properties start end 'index)
           (put-text-property start end 'index .index)))
       (setq index (1+ index)))
-    (add-text-properties (point-min) (point-max) 'id)
-    (put-text-property (point-min) (point-max) 'id id)))
+    (add-text-properties (point-min) (point-max) `(dir ,(transmission-torrent-value torrent 'downloadDir)))
+    (add-text-properties (point-min) (point-max) `(id ,id))))
 
 (defun transmission-draw-info (id)
   (let ((torrents (transmission-torrents `(:ids ,id :fields ,transmission-info-fields))))
