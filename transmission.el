@@ -59,6 +59,19 @@ See `file-size-human-readable'."
   :link '(function-link file-size-human-readable)
   :group 'transmission)
 
+(defcustom transmission-timer-p nil
+  "Transmission buffer refreshes automatically?"
+  :type 'boolean
+  :group 'transmission)
+
+(defcustom transmission-timer-interval 2
+  "Period in seconds of the refresh timer."
+  :type '(number :validate (lambda (w)
+                             (unless (> (widget-value w) 0)
+                               (widget-put w :error "Invalid timer interval: value must be positive")
+                               w)))
+  :group 'transmission)
+
 (defcustom transmission-time-format "%a %b %e %T %Y"
   "Format string used to display dates.
 
@@ -99,6 +112,9 @@ See `format-time-string'."
 
 (define-error 'transmission-conflict
   "Wrong or missing header \"X-Transmission-Session-Id\"" 'error)
+
+(defvar transmission-timer nil
+  "Timer for repeating `revert-buffer' in a visible Transmission buffer.")
 
 
 ;; JSON RPC
@@ -201,6 +217,30 @@ from a \"torrent-get\" request with arguments ARGUMENTS."
   "Return value in FIELD of in TORRENT, the \"torrents\" vector
 returned by `transmission-torrents'."
   (cdr (assq field (elt torrent 0))))
+
+
+;; Timer management
+
+(defun transmission-timer-check ()
+  "Check to see if we switch into a buffer for autoupdating"
+  (interactive)
+  (let ((buffer (get-buffer "*transmission*")))
+    (when (and buffer (eq buffer (current-buffer)))
+      (transmission-timer-run))))
+
+(defun transmission-timer-run ()
+  (interactive)
+  (when transmission-timer-p
+    (when transmission-timer (cancel-timer transmission-timer))
+    (setq
+     transmission-timer
+     (run-at-time t transmission-timer-interval #'transmission-timer-revert))))
+
+(defun transmission-timer-revert ()
+  (let ((buffer (get-buffer "*transmission*")))
+   (if (and buffer (eq buffer (current-buffer)))
+       (revert-buffer)
+     (cancel-timer transmission-timer))))
 
 
 ;; Other
@@ -538,7 +578,8 @@ When called with a prefix, also unlink torrent data on disk."
   (let* ((position (text-property-not-all (point-min) (point-max)
                                           'transmission-refresh nil))
          (function (get-text-property position 'transmission-refresh)))
-    (if function (transmission-draw function))))
+    (if function (transmission-draw function)))
+  (transmission-timer-run))
 
 
 ;; Major mode definitions
@@ -659,6 +700,7 @@ Key bindings:
   :group 'transmission
   (setq-local revert-buffer-function #'transmission-refresh)
   (setq buffer-read-only t)
+  (add-hook 'post-command-hook #'transmission-timer-check nil 'local)
   (run-mode-hooks 'transmission-mode-hook))
 
 ;;;###autoload
