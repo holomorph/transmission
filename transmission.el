@@ -405,6 +405,19 @@ When called with a prefix, also unlink torrent data on disk."
   (interactive)
   (transmission-files-do :files-wanted))
 
+(defun transmission-files-command (command arg)
+  "Run a command COMMAND on the file at point."
+  (interactive
+   (let* ((base (file-name-as-directory (get-text-property (point) 'dir)))
+          (name (get-text-property (point) 'name))
+          (file (and base name (concat base name))))
+     (list
+      (read-shell-command (format "! on %s: " (file-name-nondirectory name)))
+      file)))
+  (if (file-exists-p arg)
+      (start-process command nil command arg)
+    (message "File does not exist.")))
+
 (defun transmission-add-properties (start end property value)
   (add-text-properties start end property)
   (put-text-property start end property value))
@@ -560,6 +573,7 @@ Key bindings:
 
 (defvar transmission-files-mode-map
   (let ((map (copy-keymap transmission-map)))
+    (define-key map "!" 'transmission-files-command)
     (define-key map "i" 'transmission-info)
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
