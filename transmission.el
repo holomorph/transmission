@@ -3,8 +3,8 @@
 ;; Copyright (C) 2014-2015  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
-;; Version: 0.1
-;; Package-Requires: ((emacs "25"))
+;; Version: 0.2
+;; Package-Requires: ((emacs "24.4") (let-alist "1.0.3") (seq "1.0"))
 ;; Keywords: comm, tools
 
 ;; This program is free software; you can redistribute it and/or
@@ -29,6 +29,8 @@
 
 (require 'cl-lib)
 (require 'json)
+(require 'let-alist)
+(require 'seq)
 
 (defgroup transmission nil
   "Interface to a Transmission session."
@@ -324,10 +326,10 @@ together with indices for each file, and sorted by file name."
          (indices (cl-map 'vector (lambda (a b) (list (cons a b)))
                           (make-vector len 'index)
                           (number-sequence 0 len))))
-    (sort (cl-map 'vector 'append files indices)
-          (lambda (a b)
-            (string-lessp (cdr (assq 'name a))
-                          (cdr (assq 'name b)))))))
+    (seq-sort (lambda (a b)
+                (string-lessp (cdr (assq 'name a))
+                              (cdr (assq 'name b))))
+              (cl-map 'vector 'append files indices))))
 
 (defun transmission-time (seconds)
   (if (= 0 seconds)
@@ -382,9 +384,13 @@ together with indices for each file, and sorted by file name."
       (and (not (bobp)) (forward-char 1)))))
 
 ;;;###autoload
-(defun transmission-add (torrent)
-  "Add a torrent by filename, URL, or magnet link."
-  (interactive (list (read-file-name "Add torrent: ")))
+(defun transmission-add (torrent &optional _arg)
+  "Add a torrent by filename, URL, or magnet link.
+When called with a prefix, treat input as a string."
+  (interactive (list (if (consp current-prefix-arg)
+                         (read-string "Add link: ")
+                       (read-file-name "Add file: "))
+                     current-prefix-arg))
   (let-alist (transmission-request "torrent-add" `(:filename ,torrent))
     (pcase .result
       ("success"
