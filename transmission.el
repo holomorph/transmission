@@ -3,6 +3,7 @@
 ;; Copyright (C) 2014-2015  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
+;; Version: 0.1
 ;; Package-Requires: ((emacs "25"))
 ;; Keywords: comm, tools
 
@@ -31,6 +32,7 @@
 
 (defgroup transmission nil
   "Interface to a Transmission session."
+  :link '(url-link "https://trac.transmissionbt.com/")
   :group 'external)
 
 (defcustom transmission-host "localhost"
