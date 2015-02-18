@@ -1,0 +1,32 @@
+
+** Basic Transmission torrent client. "transmission.el" is an interface
+to a Transmission session for GNU Emacs.
+
+Entry points are the `transmission' and `transmission-add' commands.
+
+A variety of commands are available for manipulating torrents.  Some
+of them can be applied over multiple torrents simultaneously by
+selecting them within a region.
+
+*** Features a torrent list and two other contexts: one for the files
+contained in a torrent, the other for detailed information about the
+torrent.
+
+One can start/stop, verify, and remove torrents, set global rate
+limits, and set individual file priorities.
+
+*** Customization
+
+**** Session address
+The variables `transmission-host', `transmission-service', and
+`transmission-path' have the default of a local Transmission session.
+
+**** Appearance
+The variables `transmission-file-size-units' and
+`transmission-time-format' control the appearance of
+file-size/bitrates and dates, respectively.
+
+**** Timer
+The variables `transmission-timer-p' and `transmission-timer-interval'
+control whether the torrent list updates automatically, and at what
+period.
