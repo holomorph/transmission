@@ -259,7 +259,7 @@ or at point, otherwise nil."
         (while (> end (point))
           (push (get-text-property (point) prop) list)
           (let ((pos (text-property-not-all (point) end prop (car-safe list))))
-            (goto-char (if pos pos end)))))
+            (goto-char (or pos end)))))
       list)
     (list (get-text-property (point) prop))))
 
