@@ -459,7 +459,8 @@ When called with a prefix, also unlink torrent data on disk."
 
 (defun transmission-files-priority (priority)
   (interactive
-   (let* ((collection '(high low normal))
+   (let* ((completion-cycle-threshold t)
+          (collection '(high low normal))
           (prompt (format "Set priority (%s): "
                           (mapconcat #'symbol-name collection " "))))
      (list (completing-read prompt collection nil t))))
