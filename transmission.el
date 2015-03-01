@@ -623,8 +623,7 @@ Key bindings:
   :group 'transmission
   (setq-local font-lock-defaults '(transmission-info-font-lock-keywords))
   (setq-local revert-buffer-function #'transmission-refresh)
-  (setq buffer-read-only t)
-  (run-mode-hooks 'transmission-info-mode-hook))
+  (setq buffer-read-only t))
 
 (defun transmission-info ()
   "Open a Transmission files buffer for torrent id ID."
@@ -661,8 +660,7 @@ Key bindings:
 \\{transmission-files-mode-map}"
   :group 'transmission
   (setq-local revert-buffer-function #'transmission-refresh)
-  (setq buffer-read-only t)
-  (run-mode-hooks 'transmission-files-mode-hook))
+  (setq buffer-read-only t))
 
 (defun transmission-files ()
   "Open a Transmission files buffer for torrent id ID."
@@ -707,8 +705,7 @@ Key bindings:
   :group 'transmission
   (setq-local revert-buffer-function #'transmission-refresh)
   (setq buffer-read-only t)
-  (add-hook 'post-command-hook #'transmission-timer-check nil 'local)
-  (run-mode-hooks 'transmission-mode-hook))
+  (add-hook 'post-command-hook #'transmission-timer-check nil 'local))
 
 ;;;###autoload
 (defun transmission ()
