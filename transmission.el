@@ -319,7 +319,7 @@ rate."
 (defun transmission-files-sort (torrent)
   "Return the .files and .fileStats vectors in TORRENT, spliced
 together with indices for each file, and sorted by file name."
-  (let* ((files (cl-map 'vector 'append
+  (let* ((files (cl-map 'vector #'append
                         (transmission-torrent-value torrent 'files)
                         (transmission-torrent-value torrent 'fileStats)))
          (len (length files))
@@ -329,7 +329,7 @@ together with indices for each file, and sorted by file name."
     (seq-sort (lambda (a b)
                 (string-lessp (cdr (assq 'name a))
                               (cdr (assq 'name b))))
-              (cl-map 'vector 'append files indices))))
+              (cl-map 'vector #'append files indices))))
 
 (defun transmission-time (seconds)
   (if (= 0 seconds)
@@ -561,7 +561,7 @@ When called with a prefix, also unlink torrent data on disk."
               (concat "Date added:      " (transmission-time .addedDate))
               (concat "Date finished:   " (transmission-time .doneDate))
               (concat "Latest Activity: " (transmission-time .activityDate) "\n"))))
-        (insert (mapconcat 'identity vec "\n"))))
+        (insert (mapconcat #'identity vec "\n"))))
     (add-text-properties (point-min) (point-max) 'id)
     (put-text-property (point-min) (point-max) 'id id)))
   
