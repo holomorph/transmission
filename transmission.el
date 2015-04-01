@@ -157,8 +157,8 @@ and signal the error."
   (with-current-buffer (process-buffer process)
     (erase-buffer))
   (let ((path transmission-path)
-        (headers `((,transmission-session-header . ,transmission-session-id)
-                   ("Content-length" . ,(string-bytes content)))))
+        (headers (list (cons transmission-session-header transmission-session-id)
+                       (cons "Content-length" (string-bytes content)))))
     (with-temp-buffer
       (insert (format "POST %s HTTP/1.1\r\n" path))
       (dolist (elt headers)
