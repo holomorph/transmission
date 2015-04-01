@@ -169,14 +169,12 @@ and signal the error."
 
 (defun transmission-wait (process)
   (with-current-buffer (process-buffer process)
-    (cl-block nil
-      (while t
-        (when (or (transmission--content-finished-p)
-                  (not (process-live-p process)))
-          (transmission--status)
-          (transmission--move-to-content)
-          (cl-return (json-read)))
-        (accept-process-output)))))
+    (while (and (not (transmission--content-finished-p))
+                (process-live-p process))
+      (accept-process-output))
+    (transmission--status)
+    (transmission--move-to-content)
+    (json-read)))
 
 (defun transmission-send (process content)
   (transmission-http-post process content)
