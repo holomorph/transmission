@@ -619,6 +619,7 @@ initialization.
 Key bindings:
 \\{transmission-files-mode-map}"
   :group 'transmission
+  (buffer-disable-undo)
   (setq-local font-lock-defaults '(transmission-info-font-lock-keywords))
   (setq-local revert-buffer-function #'transmission-refresh)
   (setq buffer-read-only t))
@@ -657,6 +658,7 @@ initialization.
 Key bindings:
 \\{transmission-files-mode-map}"
   :group 'transmission
+  (buffer-disable-undo)
   (setq-local revert-buffer-function #'transmission-refresh)
   (setq buffer-read-only t))
 
@@ -701,6 +703,7 @@ initialization.
 Key bindings:
 \\{transmission-mode-map}"
   :group 'transmission
+  (buffer-disable-undo)
   (setq-local revert-buffer-function #'transmission-refresh)
   (setq buffer-read-only t)
   (add-hook 'post-command-hook #'transmission-timer-check nil 'local))
