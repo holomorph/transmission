@@ -35,3 +35,10 @@ file-size/bitrates and dates, respectively.
 The variables `transmission-timer-p' and `transmission-timer-interval'
 control whether the torrent list updates automatically, and at what
 period.
+
+
+Local variables:
+coding: utf-8
+mode: outline
+paragraph-separate: "[ 	]*$"
+end:
