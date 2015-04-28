@@ -171,7 +171,7 @@ and signal the error."
   (with-current-buffer (process-buffer process)
     (while (and (not (transmission--content-finished-p))
                 (process-live-p process))
-      (accept-process-output))
+      (accept-process-output process 1))
     (transmission--status)
     (transmission--move-to-content)
     (json-read)))
