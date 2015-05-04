@@ -389,14 +389,19 @@ When called with a prefix, treat input as a string."
                          (read-string "Add link: ")
                        (read-file-name "Add file: "))
                      current-prefix-arg))
-  (let-alist (transmission-request "torrent-add" `(:filename ,torrent))
-    (pcase .result
-      ("success"
-       (or (and .arguments.torrent-added.name
-                (message "Added %s" .arguments.torrent-added.name))
-           (and .arguments.torrent-duplicate.name
-                (user-error "Already added %s" .arguments.torrent-duplicate.name))))
-      (_ (user-error .result)))))
+  (let ((arguments (if (file-readable-p torrent)
+                       `(:metainfo ,(with-temp-buffer
+                                     (insert-file-contents torrent)
+                                     (base64-encode-string (buffer-string))))
+                     `(:filename ,torrent))))
+    (let-alist (transmission-request "torrent-add" arguments)
+      (pcase .result
+        ("success"
+         (or (and .arguments.torrent-added.name
+                  (message "Added %s" .arguments.torrent-added.name))
+             (and .arguments.torrent-duplicate.name
+                  (user-error "Already added %s" .arguments.torrent-duplicate.name))))
+        (_ (user-error .result))))))
 
 (defun transmission-remove (&optional unlink)
   "Prompt to remove torrent at point or torrents in region.
