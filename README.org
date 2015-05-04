@@ -1,0 +1,13 @@
+#+TITLE: transmission.el
+#+STARTUP: showall
+
+An interface to a Transmission session for GNU Emacs 25.
+
+# #+CAPTION: Transmission logo wallpaper (from repository trunk)
+# [[https://trac.transmissionbt.com/export/14470/trunk/extras/transmission-1920.jpg]]
+
+# * About
+# https://trac.transmissionbt.com/browser/trunk/extras/rpc-spec.txt
+# https://github.com/fagga/transmission-remote-cli
+# https://trac.transmissionbt.com/browser/trunk/daemon/remote.c
+
