@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.2
-;; Package-Requires: ((emacs "24.4") (let-alist "1.0.3") (seq "1.0"))
+;; Package-Requires: ((emacs "24.4") (let-alist "1.0.3") (seq "1.5"))
 ;; Keywords: comm, tools
 
 ;; This program is free software; you can redistribute it and/or
@@ -27,6 +27,7 @@
 
 ;;; Code:
 
+(require 'calc-bin)
 (require 'cl-lib)
 (require 'json)
 (require 'let-alist)
@@ -334,6 +335,13 @@ together with indices for each file, and sorted by file name."
       (format "Never")
     (format-time-string transmission-time-format (seconds-to-time seconds))))
 
+(defun transmission-map-bits-to-string (bits)
+  "Map list BITS to a human readable string."
+  (seq-mapcat (lambda (int)
+                (let ((calc-number-radix 2))
+                  (math-format-radix int)))
+              bits))
+
 
 ;; Interactive
 
@@ -499,6 +507,13 @@ When called with a prefix, also unlink torrent data on disk."
 
 ;; Drawing
 
+(defun transmission-format-pieces (pieces _count)
+  (let* ((bits (mapcar #'identity (base64-decode-string pieces)))
+         (s (transmission-map-bits-to-string bits)))
+   (concat (format "Pieces:\n\n")
+           (mapconcat #'identity (seq-partition s 72)
+                      "\n"))))
+
 (defun transmission-format-trackers (trackers)
   (let ((fmt (concat "Tracker %d: %s (Tier %d)\n"
                      "\t : %d peers, %d seeders, %d leechers, %d downloads")))
@@ -576,7 +591,8 @@ When called with a prefix, also unlink torrent data on disk."
               (concat "Date added:      " (transmission-time .addedDate))
               (concat "Date finished:   " (transmission-time .doneDate))
               (concat "Latest Activity: " (transmission-time .activityDate) "\n")
-              (concat (transmission-format-trackers .trackerStats) "\n"))))
+              (concat (transmission-format-trackers .trackerStats) "\n")
+              (concat (transmission-format-pieces .pieces .pieceCount) "\n"))))
         (insert (mapconcat #'identity vec "\n"))))
     (add-text-properties (point-min) (point-max) 'id)
     (put-text-property (point-min) (point-max) 'id id)))
