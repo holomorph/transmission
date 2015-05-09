@@ -595,12 +595,9 @@ When called with a prefix, also unlink torrent data on disk."
 ;; Major mode definitions
 
 (defvar transmission-map
-  (let ((map (make-sparse-keymap)))
-    (suppress-keymap map)
-    (define-key map "g" 'revert-buffer)
+  (let ((map (copy-keymap special-mode-map)))
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
-    (define-key map "?" 'describe-mode)
     map)
   "Common keymap used in Transmission mode buffers.")
 
@@ -610,13 +607,7 @@ When called with a prefix, also unlink torrent data on disk."
      (2 'font-lock-keyword-face)))
   "Default expressions to highlight in `transmission-info-mode' buffers.")
 
-(defvar transmission-info-mode-map
-  (let ((map (copy-keymap transmission-map)))
-    (define-key map "q" 'quit-window)
-    map)
-  "Keymap used in `transmission-info-mode' buffers.")
-
-(define-derived-mode transmission-info-mode nil "Transmission-Info"
+(define-derived-mode transmission-info-mode special-mode "Transmission-Info"
   "Major mode for viewing and manipulating torrent attributes in Transmission.
 The hook `transmission-info-mode-hook' is run at mode
 initialization.
@@ -626,8 +617,7 @@ Key bindings:
   :group 'transmission
   (buffer-disable-undo)
   (setq-local font-lock-defaults '(transmission-info-font-lock-keywords))
-  (setq-local revert-buffer-function #'transmission-refresh)
-  (setq buffer-read-only t))
+  (setq-local revert-buffer-function #'transmission-refresh))
 
 (defun transmission-info ()
   "Open a Transmission files buffer for torrent id ID."
@@ -649,11 +639,10 @@ Key bindings:
     (define-key map "u" 'transmission-files-unwant)
     (define-key map "w" 'transmission-files-want)
     (define-key map "y" 'transmission-files-priority)
-    (define-key map "q" 'quit-window)
     map)
   "Keymap used in `transmission-files-mode' buffers.")
 
-(define-derived-mode transmission-files-mode nil "Transmission-Files"
+(define-derived-mode transmission-files-mode special-mode "Transmission-Files"
   "Major mode for interacting with torrent files in Transmission.
 The hook `transmission-files-mode-hook' is run at mode
 initialization.
@@ -662,8 +651,7 @@ Key bindings:
 \\{transmission-files-mode-map}"
   :group 'transmission
   (buffer-disable-undo)
-  (setq-local revert-buffer-function #'transmission-refresh)
-  (setq buffer-read-only t))
+  (setq-local revert-buffer-function #'transmission-refresh))
 
 (defun transmission-files ()
   "Open a Transmission files buffer for torrent id ID."
@@ -695,7 +683,7 @@ Key bindings:
     map)
   "Keymap used in `transmission-mode' buffers.")
 
-(define-derived-mode transmission-mode nil "Transmission"
+(define-derived-mode transmission-mode special-mode "Transmission"
   "Major mode for interfacing with a Transmission daemon. See
 https://trac.transmissionbt.com/ for more information about
 transmission.  The hook `transmission-mode-hook' is run at mode
@@ -706,7 +694,6 @@ Key bindings:
   :group 'transmission
   (buffer-disable-undo)
   (setq-local revert-buffer-function #'transmission-refresh)
-  (setq buffer-read-only t)
   (add-hook 'post-command-hook #'transmission-timer-check nil 'local))
 
 ;;;###autoload
