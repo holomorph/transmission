@@ -499,6 +499,18 @@ When called with a prefix, also unlink torrent data on disk."
 
 ;; Drawing
 
+(defun transmission-format-trackers (trackers)
+  (let ((fmt (concat "Tracker %d: %s (Tier %d)\n"
+                     "\t : %d peers, %d seeders, %d leechers, %d downloads")))
+    (mapconcat (lambda (e)
+                 (let-alist e
+                   (format fmt .id .scrape .tier
+                           (if (= -1 .lastAnnouncePeerCount) 0 .lastAnnouncePeerCount)
+                           (if (= -1 .seederCount) 0 .seederCount)
+                           (if (= -1 .leecherCount) 0 .leecherCount)
+                           (if (= -1 .downloadCount) 0 .downloadCount))))
+               trackers "\n")))
+
 (defun transmission-insert-entry (vec props)
   (let* ((entry (mapconcat #'identity vec " "))
          (start (point))
@@ -563,7 +575,8 @@ When called with a prefix, also unlink torrent data on disk."
               (concat "Date created:    " (transmission-time .dateCreated))
               (concat "Date added:      " (transmission-time .addedDate))
               (concat "Date finished:   " (transmission-time .doneDate))
-              (concat "Latest Activity: " (transmission-time .activityDate) "\n"))))
+              (concat "Latest Activity: " (transmission-time .activityDate) "\n")
+              (concat (transmission-format-trackers .trackerStats) "\n"))))
         (insert (mapconcat #'identity vec "\n"))))
     (add-text-properties (point-min) (point-max) 'id)
     (put-text-property (point-min) (point-max) 'id id)))
