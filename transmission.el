@@ -638,13 +638,17 @@ When called with a prefix, also unlink torrent data on disk."
      (2 'font-lock-keyword-face)))
   "Default expressions to highlight in `transmission-info-mode' buffers.")
 
+(defvar transmission-info-mode-map
+  (copy-keymap transmission-map)
+  "Keymap used in `transmission-info-mode' buffers.")
+
 (define-derived-mode transmission-info-mode special-mode "Transmission-Info"
   "Major mode for viewing and manipulating torrent attributes in Transmission.
 The hook `transmission-info-mode-hook' is run at mode
 initialization.
 
 Key bindings:
-\\{transmission-files-mode-map}"
+\\{transmission-info-mode-map}"
   :group 'transmission
   (buffer-disable-undo)
   (setq-local font-lock-defaults '(transmission-info-font-lock-keywords))
