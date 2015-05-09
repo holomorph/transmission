@@ -507,12 +507,11 @@ When called with a prefix, also unlink torrent data on disk."
 
 ;; Drawing
 
-(defun transmission-format-pieces (pieces _count)
+(defun transmission-format-pieces (pieces)
   (let* ((bits (mapcar #'identity (base64-decode-string pieces)))
          (s (transmission-map-bits-to-string bits)))
-   (concat (format "Pieces:\n\n")
-           (mapconcat #'identity (seq-partition s 72)
-                      "\n"))))
+    (mapconcat #'identity (seq-partition s 72)
+               "\n")))
 
 (defun transmission-format-trackers (trackers)
   (let ((fmt (concat "Tracker %d: %s (Tier %d)\n"
@@ -592,7 +591,7 @@ When called with a prefix, also unlink torrent data on disk."
               (format "Piece size: %s (%d bytes) each"
                       (file-size-human-readable .pieceSize transmission-file-size-units)
                       .pieceSize)
-              (concat (transmission-format-pieces .pieces .pieceCount) "\n"))))
+              (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces)))))
         (insert (mapconcat #'identity vec "\n"))))
     (add-text-properties (point-min) (point-max) 'id)
     (put-text-property (point-min) (point-max) 'id id)))
