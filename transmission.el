@@ -246,6 +246,10 @@ returned by `transmission-torrents'."
 
 ;; Other
 
+(defun transmission-have-percent (bytes totalbytes)
+  (if (eq totalbytes 0) 0
+    (/ (* 100 bytes) totalbytes)))
+
 (defun transmission-prop-values-in-region (prop)
   "Return a list of values taken by text property PROP in region
 or at point, otherwise nil."
@@ -561,7 +565,7 @@ When called with a prefix, also unlink torrent data on disk."
       (let-alist (elt files index)
         (let* ((vec
                 (vector
-                 (format "%3d%%" (/ (* 100 .bytesCompleted) .length))
+                 (format "%3d%%" (transmission-have-percent .bytesCompleted .length))
                  (format "%6s" (pcase .priority (-1 "low") (0 "normal") (1 "high")))
                  (format "%3s" (pcase .wanted (:json-false "no") (t "yes")))
                  (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
