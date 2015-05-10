@@ -32,6 +32,7 @@
 (require 'json)
 (require 'let-alist)
 (require 'seq)
+(require 'subr-x)
 
 (defgroup transmission nil
   "Interface to a Transmission session."
@@ -249,6 +250,14 @@ returned by `transmission-torrents'."
 (defun transmission-have-percent (bytes totalbytes)
   (if (eq totalbytes 0) 0
     (/ (* 100 bytes) totalbytes)))
+
+(defun transmission-files-directory-base (filename)
+  (let ((index (string-match "/" filename)))
+    (when index (substring filename 0 (1+ index)))))
+
+(defun transmission-files-directory-prefix-p (title files)
+  (seq-every-p (lambda (f) (string-prefix-p title (cdr-safe (assq 'name f))))
+               files))
 
 (defun transmission-prop-values-in-region (prop)
   "Return a list of values taken by text property PROP in region
@@ -559,6 +568,9 @@ When called with a prefix, also unlink torrent data on disk."
 (defun transmission-draw-files (id)
   (let* ((torrent (transmission-torrents `(:ids ,id :fields ,transmission-files-fields)))
          (files (transmission-files-sort torrent))
+         (file (cdr-safe (assq 'name (elt files 0))))
+         (directory (transmission-files-directory-base file))
+         (truncate (if directory (transmission-files-directory-prefix-p directory files)))
          (index 0))
     (erase-buffer)
     (while (< index (length files))
@@ -570,7 +582,7 @@ When called with a prefix, also unlink torrent data on disk."
                  (format "%3s" (pcase .wanted (:json-false "no") (t "yes")))
                  (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
                          (file-size-human-readable .length transmission-file-size-units))
-                 (concat .name "\n"))))
+                 (concat (if truncate (string-remove-prefix directory .name) .name) "\n"))))
           (transmission-insert-entry vec (list 'name .name 'index .index))))
       (setq index (1+ index)))
     (add-text-properties (point-min) (point-max) `(dir ,(transmission-torrent-value torrent 'downloadDir)))
