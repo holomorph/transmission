@@ -424,6 +424,12 @@ When called with a prefix, treat input as a string."
                   (user-error "Already added %s" .arguments.torrent-duplicate.name))))
         (_ (user-error .result))))))
 
+(defun transmission-reannounce ()
+  "Reannounce torrent at point or in region."
+  (interactive)
+  (let ((ids (transmission-prop-values-in-region 'id)))
+    (transmission-request "torrent-reannounce" `(:ids ,ids))))
+
 (defun transmission-remove (&optional unlink)
   "Prompt to remove torrent at point or torrents in region.
 When called with a prefix, also unlink torrent data on disk."
