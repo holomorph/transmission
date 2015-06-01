@@ -552,45 +552,41 @@ When called with a prefix, also unlink torrent data on disk."
     (add-text-properties start end props)))
 
 (defun transmission-draw-torrents ()
-  (let* ((torrents (transmission-torrents `(:fields ,transmission-torrent-get-fields)))
-         (index 0))
+  (let ((torrents (transmission-torrents `(:fields ,transmission-torrent-get-fields))))
     (erase-buffer)
-    (while (< index (length torrents))
-      (let-alist (elt torrents index)
-        (let* ((vec
-                (vector
-                 (format "%-4s" (transmission-eta .eta .percentDone))
-                 (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
-                         (file-size-human-readable .sizeWhenDone transmission-file-size-units))
-                 (format "%3d%%" (* 100 .percentDone))
-                 (format "%4d" (transmission-rate .rateDownload))
-                 (format "%3d" (transmission-rate .rateUpload))
-                 (format "%4.1f" (if (> .uploadRatio 0) .uploadRatio 0))
-                 (format "%-11s" (transmission-status .status .rateUpload .rateDownload))
-                 (concat .name "\n"))))
-          (transmission-insert-entry vec (list 'id .id))))
-      (setq index (1+ index)))))
+    (seq-doseq (element torrents)
+      (let-alist element
+        (let ((vec
+               (vector
+                (format "%-4s" (transmission-eta .eta .percentDone))
+                (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
+                        (file-size-human-readable .sizeWhenDone transmission-file-size-units))
+                (format "%3d%%" (* 100 .percentDone))
+                (format "%4d" (transmission-rate .rateDownload))
+                (format "%3d" (transmission-rate .rateUpload))
+                (format "%4.1f" (if (> .uploadRatio 0) .uploadRatio 0))
+                (format "%-11s" (transmission-status .status .rateUpload .rateDownload))
+                (concat .name "\n"))))
+          (transmission-insert-entry vec (list 'id .id)))))))
 
 (defun transmission-draw-files (id)
   (let* ((torrent (transmission-torrents `(:ids ,id :fields ,transmission-files-fields)))
          (files (transmission-files-sort torrent))
          (file (cdr-safe (assq 'name (elt files 0))))
          (directory (transmission-files-directory-base file))
-         (truncate (if directory (transmission-files-directory-prefix-p directory files)))
-         (index 0))
+         (truncate (if directory (transmission-files-directory-prefix-p directory files))))
     (erase-buffer)
-    (while (< index (length files))
-      (let-alist (elt files index)
-        (let* ((vec
-                (vector
-                 (format "%3d%%" (transmission-have-percent .bytesCompleted .length))
-                 (format "%6s" (pcase .priority (-1 "low") (0 "normal") (1 "high")))
-                 (format "%3s" (pcase .wanted (:json-false "no") (t "yes")))
-                 (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
-                         (file-size-human-readable .length transmission-file-size-units))
-                 (concat (if truncate (string-remove-prefix directory .name) .name) "\n"))))
-          (transmission-insert-entry vec (list 'name .name 'index .index))))
-      (setq index (1+ index)))
+    (seq-doseq (element files)
+      (let-alist element
+        (let ((vec
+               (vector
+                (format "%3d%%" (transmission-have-percent .bytesCompleted .length))
+                (format "%6s" (pcase .priority (-1 "low") (0 "normal") (1 "high")))
+                (format "%3s" (pcase .wanted (:json-false "no") (t "yes")))
+                (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
+                        (file-size-human-readable .length transmission-file-size-units))
+                (concat (if truncate (string-remove-prefix directory .name) .name) "\n"))))
+          (transmission-insert-entry vec (list 'name .name 'index .index)))))
     (add-text-properties (point-min) (point-max) `(dir ,(transmission-torrent-value torrent 'downloadDir)))
     (add-text-properties (point-min) (point-max) `(id ,id))))
 
