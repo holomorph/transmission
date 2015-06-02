@@ -108,7 +108,8 @@ See `format-time-string'."
 (defconst transmission-info-fields
   '("name" "hashString" "magnetLink" "activityDate" "addedDate"
     "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
-    "pieceSize" "trackers" "trackerStats"))
+    "pieceSize" "trackers" "trackerStats" "peersConnected" "peersGettingFromUs"
+    "peersSendingToUs"))
 
 (defconst transmission-session-header "X-Transmission-Session-Id"
   "The \"X-Transmission-Session-Id\" header key.")
@@ -600,6 +601,8 @@ When called with a prefix, also unlink torrent data on disk."
               (concat "Name: " .name)
               (concat "Hash: " .hashString)
               (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
+              (format "Peers: connected to %d, uploading to %d, downloading from %d\n"
+                      .peersConnected .peersGettingFromUs .peersSendingToUs)
               (concat "Date created:    " (transmission-time .dateCreated))
               (concat "Date added:      " (transmission-time .addedDate))
               (concat "Date finished:   " (transmission-time .doneDate))
