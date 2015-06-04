@@ -616,7 +616,7 @@ When called with a prefix, also unlink torrent data on disk."
         (insert (mapconcat #'identity vec "\n"))))
     (add-text-properties (point-min) (point-max) 'id)
     (put-text-property (point-min) (point-max) 'id id)))
-  
+
 (defun transmission-draw (function)
   "FUNCTION erases the buffer and draws a new one."
   (setq buffer-read-only nil)
