@@ -316,6 +316,15 @@ rate."
                                  (if enabled (format "%d KB/s" limit) "disabled")
                                  "): "))))))
 
+(defun transmission-prompt-ratio-limit ()
+  "Make a prompt to set seed ratio speed limit."
+  (let-alist (transmission-request "session-get")
+    (let ((limit .arguments.seedRatioLimit)
+          (enabled (eq t .arguments.seedRatioLimited)))
+      (list (read-number (concat "Set global seed ratio limit ("
+                                 (if enabled (format "%.1f" limit) "disabled")
+                                 "): "))))))
+
 (defun transmission-files-do (action)
   "Do stuff to files in `transmission-files-mode' buffers."
   (unless (memq action (list :files-wanted :files-unwanted
@@ -453,6 +462,13 @@ When called with a prefix, also unlink torrent data on disk."
   (interactive (transmission-prompt-speed-limit t))
   (let ((arguments (if (<= limit 0) '(:speed-limit-up-enabled :json-false)
                      `(:speed-limit-up-enabled t :speed-limit-up ,limit))))
+    (transmission-request "session-set" arguments)))
+
+(defun transmission-set-ratio (limit)
+  "Set global seed ratio limit."
+  (interactive (transmission-prompt-ratio-limit))
+  (let ((arguments (if (<= limit 0) '(:seedRatioLimited :json-false)
+                     `(:seedRatioLimited t :seedRatioLimit ,limit))))
     (transmission-request "session-set" arguments)))
 
 (defun transmission-toggle ()
@@ -731,6 +747,7 @@ Key bindings:
     (define-key map "a" 'transmission-add)
     (define-key map "d" 'transmission-set-download)
     (define-key map "i" 'transmission-info)
+    (define-key map "l" 'transmission-set-ratio)
     (define-key map "r" 'transmission-remove)
     (define-key map "s" 'transmission-toggle)
     (define-key map "u" 'transmission-set-upload)
