@@ -86,6 +86,12 @@ See `format-time-string'."
   :link '(function-link format-time-string)
   :group 'transmission)
 
+(defconst transmission-priority-alist
+  '((low . -1)
+    (normal . 0)
+    (high . 1))
+  "Alist of names to priority values.")
+
 (defconst transmission-status-plist
   '(0 "stopped"
     1 "verifywait"
@@ -450,6 +456,20 @@ When called with a prefix, also unlink torrent data on disk."
                                "torrent" (and (< 1 (length ids)) "s") "?"))
       (transmission-request "torrent-remove" arguments))))
 
+(defun transmission-set-bandwidth-priority (priority)
+  "Set bandwidth priority of torrent(s) at point or in region."
+  (interactive
+   (let ((completion-cycle-threshold t)
+         (prompt (format "Set bandwidth priority %s: "
+                         (mapcar #'car transmission-priority-alist))))
+     (list (completing-read prompt transmission-priority-alist nil t))))
+  (let* ((ids (transmission-prop-values-in-region 'id))
+         (number (cdr (assoc-string priority transmission-priority-alist)))
+         (arguments `(:ids ,ids :bandwidthPriority ,number)))
+    (if (car-safe ids)
+        (transmission-request "torrent-set" arguments)
+      (user-error "No torrent selected"))))
+
 (defun transmission-set-download (limit)
   "Set global download speed limit in KB/s."
   (interactive (transmission-prompt-speed-limit nil))
@@ -745,6 +765,7 @@ Key bindings:
     (define-key map [backtab] 'transmission-previous-torrent)
     (define-key map "\e\t" 'transmission-previous-torrent)
     (define-key map "a" 'transmission-add)
+    (define-key map "b" 'transmission-set-bandwidth-priority)
     (define-key map "d" 'transmission-set-download)
     (define-key map "i" 'transmission-info)
     (define-key map "l" 'transmission-set-ratio)
