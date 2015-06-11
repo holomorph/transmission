@@ -317,7 +317,7 @@ rate."
                                  "): "))))))
 
 (defun transmission-prompt-ratio-limit ()
-  "Make a prompt to set seed ratio speed limit."
+  "Make a prompt to set global seed ratio limit."
   (let-alist (transmission-request "session-get")
     (let ((limit .arguments.seedRatioLimit)
           (enabled (eq t .arguments.seedRatioLimited)))
