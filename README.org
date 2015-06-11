@@ -1,7 +1,8 @@
 #+TITLE: transmission.el
 #+STARTUP: showall
 
-An interface to a Transmission session for GNU Emacs 25.
+An interface to a Transmission session for GNU Emacs.  See the
+commentary in =transmission.el=.
 
 # #+CAPTION: Transmission logo wallpaper (from repository trunk)
 # [[https://trac.transmissionbt.com/export/14470/trunk/extras/transmission-1920.jpg]]
