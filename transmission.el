@@ -653,8 +653,8 @@ When called with a prefix, also unlink torrent data on disk."
     (add-text-properties (point-min) (point-max) 'id)
     (put-text-property (point-min) (point-max) 'id id)))
 
-(defun transmission-draw (function)
-  "FUNCTION erases the buffer and draws a new one."
+(defun transmission-draw (fun)
+  "FUN erases the buffer and draws a new one."
   (setq buffer-read-only nil)
   (let* ((old-buffer (current-buffer))
          (old-window-start (window-start))
@@ -662,21 +662,21 @@ When called with a prefix, also unlink torrent data on disk."
          (old-mark (when (region-active-p)
                      (let ((beg (region-beginning)))
                        (if (= old-window-point beg) (region-end) beg)))))
-    (funcall function)
+    (funcall fun)
     (if (not (equal (current-buffer) old-buffer))
         (goto-char (point-min))
       (goto-char old-window-point)
       (set-window-start nil old-window-start)
       (and old-mark (set-mark old-mark))))
-  (add-text-properties (point-min) (point-max) (list 'transmission-refresh function))
+  (add-text-properties (point-min) (point-max) (list 'transmission-refresh fun))
   (set-buffer-modified-p nil)
   (setq buffer-read-only t))
 
 (defun transmission-refresh (&optional _arg _noconfirm)
-  (let* ((position (text-property-not-all (point-min) (point-max)
+  (let* ((pos (text-property-not-all (point-min) (point-max)
                                           'transmission-refresh nil))
-         (function (get-text-property position 'transmission-refresh)))
-    (if function (transmission-draw function)))
+         (fun (get-text-property pos 'transmission-refresh)))
+    (if fun (transmission-draw fun)))
   (transmission-timer-run))
 
 
