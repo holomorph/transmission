@@ -1,3 +1,29 @@
+* Changes in 0.3
+
+** Features
+
+*** New commands for bandwidth priority, reannounce, global seed ratio
+limit
+
+*** Leading directory in files list is truncated if possible
+
+*** Added more torrent information to *transmission-info* buffer.
+Tracker URLs and tiers, along with peers, seeders, leechers, and
+snatches from each are displayed.
+
+Minimal peer information--numbers connected, seeding, leeching--is
+displayed.
+
+Torrent pieces are now displayed.  Needs fixing.
+
+** Added a Makefile and README
+
+** Bug fixes
+
+*** Fixed issue with not being able to add .torrent files.
+
+*** Fixed a divide-by-zero bug.
+
 * Changes in 0.2
 
 ** Now compatible with stable Emacs 24.4
