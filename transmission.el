@@ -151,6 +151,12 @@ See `format-time-string'."
 (define-error 'transmission-conflict
   "Wrong or missing header \"X-Transmission-Session-Id\"" 'error)
 
+(define-error 'transmission-unauthorized
+  "Unauthorized user" 'error)
+
+(define-error 'transmission-wrong-rpc-path
+  "Bad RPC path.  Check `transmission-rpc-path'" 'error)
+
 (defvar transmission-timer nil
   "Timer for repeating `revert-buffer' in a visible Transmission buffer.")
 
@@ -183,6 +189,8 @@ and signal the error."
     (let* ((buffer (current-buffer))
            (status (read buffer)))
       (pcase status
+        ((or 301 404 405) (signal 'transmission-wrong-rpc-path status))
+        (401 (signal 'transmission-unauthorized status))
         (409 (when (search-forward (format "%s: " transmission-session-header))
                (setq transmission-session-id (read buffer))
                (signal 'transmission-conflict status)))))))
