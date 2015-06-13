@@ -80,6 +80,14 @@
   :type 'string
   :group 'transmission)
 
+(defcustom transmission-rpc-auth nil
+  "Authorization (username, password) for using the RPC interface."
+  :type '(choice (const :tag "None" nil)
+                 (plist :tag "Username/password"
+                        :options ((:username string)
+                                  (:password string))))
+  :group 'transmission)
+
 (defcustom transmission-file-size-units nil
   "The flavor of units used to display file sizes.
 
@@ -195,12 +203,21 @@ and signal the error."
                (setq transmission-session-id (read buffer))
                (signal 'transmission-conflict status)))))))
 
+(defun transmission--auth-string ()
+  "returns transmission rpc auth header value"
+  (when transmission-rpc-auth
+    (let ((auth (concat (plist-get transmission-rpc-auth :username) ":"
+                        (plist-get transmission-rpc-auth :password))))
+      (concat "Basic " (base64-encode-string auth)))))
+
 (defun transmission-http-post (process content)
   (with-current-buffer (process-buffer process)
     (erase-buffer))
   (let ((path transmission-rpc-path)
         (headers (list (cons transmission-session-header transmission-session-id)
                        (cons "Content-length" (string-bytes content)))))
+    (when-let ((auth (transmission--auth-string)))
+      (push (cons "Authorization" auth) headers))
     (with-temp-buffer
       (insert (format "POST %s HTTP/1.1\r\n" path))
       (dolist (elt headers)
