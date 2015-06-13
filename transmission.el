@@ -39,9 +39,9 @@
 ;; individual files can be toggled for download, and their priorities
 ;; set.
 
-;; Customize-able are the session address components, the display of
-;; dates, file sizes and transfer rates, and the refreshing of the
-;; torrent list.
+;; Customize-able are the session address components, RPC credentials,
+;; the display of dates, file sizes and transfer rates, and the
+;; refreshing of the torrent list.
 
 ;; The design draws from a number of sources, including the
 ;; "transmission-remote" command line utility and the

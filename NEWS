@@ -1,3 +1,15 @@
+* Changes in 0.4
+
+*** Customization
+
+**** Session address
+The RPC path variable `transmission-path' is now named
+`transmission-rpc-path'.
+
+**** RPC authorization
+New variable `transmission-rpc-auth' allows RPC username and password
+to be configured.
+
 * Changes in 0.3
 
 ** Features
