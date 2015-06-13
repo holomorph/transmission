@@ -643,7 +643,7 @@ When called with a prefix, also unlink torrent data on disk."
         (let ((vec
                (vector
                 (format "%3d%%" (transmission-have-percent .bytesCompleted .length))
-                (format "%6s" (pcase .priority (-1 "low") (0 "normal") (1 "high")))
+                (format "%6s" (car (rassoc .priority transmission-priority-alist)))
                 (format "%3s" (pcase .wanted (:json-false "no") (t "yes")))
                 (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
                         (file-size-human-readable .length transmission-file-size-units))
