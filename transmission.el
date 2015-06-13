@@ -75,7 +75,7 @@
                  (integer :tag "Port"))
   :group 'transmission)
 
-(defcustom transmission-path "/transmission/rpc"
+(defcustom transmission-rpc-path "/transmission/rpc"
   "Path to the Transmission session RPC interface."
   :type 'string
   :group 'transmission)
@@ -190,7 +190,7 @@ and signal the error."
 (defun transmission-http-post (process content)
   (with-current-buffer (process-buffer process)
     (erase-buffer))
-  (let ((path transmission-path)
+  (let ((path transmission-rpc-path)
         (headers (list (cons transmission-session-header transmission-session-id)
                        (cons "Content-length" (string-bytes content)))))
     (with-temp-buffer
