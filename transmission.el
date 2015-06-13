@@ -204,7 +204,7 @@ and signal the error."
                (signal 'transmission-conflict status)))))))
 
 (defun transmission--auth-string ()
-  "returns transmission rpc auth header value"
+  "HTTP \"Authorization\" header value if `transmission-rpc-auth' is populated."
   (when transmission-rpc-auth
     (let ((auth (concat (plist-get transmission-rpc-auth :username) ":"
                         (plist-get transmission-rpc-auth :password))))
