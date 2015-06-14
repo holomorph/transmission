@@ -320,17 +320,17 @@ returned by `transmission-torrents'."
   "Return a list of values taken by text property PROP in region
 or at point, otherwise nil."
   (if (use-region-p)
-    (let ((beg (region-beginning))
-          (end (region-end))
-          (list '()))
-      (save-excursion
-        (goto-char beg)
-        (while (> end (point))
-          (push (get-text-property (point) prop) list)
-          (let ((pos (text-property-not-all (point) end prop (car-safe list))))
-            (goto-char (or pos end)))))
-      list)
-    (list (get-text-property (point) prop))))
+      (let ((beg (region-beginning))
+            (end (region-end))
+            (list '()))
+        (save-excursion
+          (goto-char beg)
+          (while (> end (point))
+            (push (get-text-property (point) prop) list)
+            (let ((pos (text-property-not-all (point) end prop (car-safe list))))
+              (goto-char (or pos end)))))
+        (and (car-safe list) list))
+    (get-text-property (point) prop)))
 
 (defun transmission-eta (seconds percent)
   "Return a string showing SECONDS in human-readable form;
@@ -387,12 +387,11 @@ rate."
                              :priority-high :priority-low
                              :priority-normal))
     (error "Invalid field %s" action))
-  (let ((id (get-char-property (point) 'id))
-        (indices (transmission-prop-values-in-region 'index)))
-    (if (not (and id indices))
-        (user-error "No files selected or at point")
+  (if-let ((id (get-char-property (point) 'id))
+           (indices (transmission-prop-values-in-region 'index)))
       (let ((arguments `(:ids ,id ,action ,indices)))
-        (transmission-request "torrent-set" arguments)))))
+        (transmission-request "torrent-set" arguments))
+    (user-error "No files selected or at point")))
 
 (defun transmission-files-sort (torrent)
   "Return the .files and .fileStats vectors in TORRENT, spliced
@@ -500,11 +499,12 @@ When called with a prefix, treat input as a string."
   "Prompt to remove torrent at point or torrents in region.
 When called with a prefix, also unlink torrent data on disk."
   (interactive "P")
-  (let* ((ids (transmission-prop-values-in-region 'id))
-         (arguments `(:ids ,ids :delete-local-data ,(and unlink t))))
-    (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
-                               "torrent" (and (< 1 (length ids)) "s") "?"))
-      (transmission-request "torrent-remove" arguments))))
+  (if-let ((ids (transmission-prop-values-in-region 'id))
+           (arguments `(:ids ,ids :delete-local-data ,(and unlink t))))
+      (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
+                                 "torrent" (and (< 1 (length ids)) "s") "?"))
+        (transmission-request "torrent-remove" arguments))
+    (user-error "No torrent selected")))
 
 (defun transmission-set-bandwidth-priority (priority)
   "Set bandwidth priority of torrent(s) at point or in region."
@@ -513,12 +513,11 @@ When called with a prefix, also unlink torrent data on disk."
          (prompt (format "Set bandwidth priority %s: "
                          (mapcar #'car transmission-priority-alist))))
      (list (completing-read prompt transmission-priority-alist nil t))))
-  (let* ((ids (transmission-prop-values-in-region 'id))
-         (number (cdr (assoc-string priority transmission-priority-alist)))
-         (arguments `(:ids ,ids :bandwidthPriority ,number)))
-    (if (car-safe ids)
-        (transmission-request "torrent-set" arguments)
-      (user-error "No torrent selected"))))
+  (if-let ((ids (transmission-prop-values-in-region 'id))
+           (number (cdr (assoc-string priority transmission-priority-alist)))
+           (arguments `(:ids ,ids :bandwidthPriority ,number)))
+      (transmission-request "torrent-set" arguments)
+    (user-error "No torrent selected")))
 
 (defun transmission-set-download (limit)
   "Set global download speed limit in KB/s."
