@@ -297,9 +297,9 @@ returned by `transmission-torrents'."
 
 (defun transmission-timer-revert ()
   (let ((buffer (get-buffer "*transmission*")))
-   (if (and buffer (eq buffer (current-buffer)))
-       (revert-buffer)
-     (cancel-timer transmission-timer))))
+    (if (and buffer (eq buffer (current-buffer)))
+        (revert-buffer)
+      (cancel-timer transmission-timer))))
 
 
 ;; Other
@@ -433,10 +433,10 @@ together with indices for each file, and sorted by file name."
                                                    'id id))))
         (message "No next torrent")
       (when (not (get-text-property skip 'id))
-          (save-excursion
-            (goto-char skip)
-            (setq skip (text-property-not-all skip (point-max)
-                                              'id nil))))
+        (save-excursion
+          (goto-char skip)
+          (setq skip (text-property-not-all skip (point-max)
+                                            'id nil))))
       (if skip (goto-char skip)
         (message "No next torrent")))))
 
@@ -477,8 +477,8 @@ When called with a prefix, treat input as a string."
                      current-prefix-arg))
   (let ((arguments (if (file-readable-p torrent)
                        `(:metainfo ,(with-temp-buffer
-                                     (insert-file-contents torrent)
-                                     (base64-encode-string (buffer-string))))
+                                      (insert-file-contents torrent)
+                                      (base64-encode-string (buffer-string))))
                      `(:filename ,torrent))))
     (let-alist (transmission-request "torrent-add" arguments)
       (pcase .result
@@ -543,14 +543,13 @@ When called with a prefix, also unlink torrent data on disk."
 (defun transmission-toggle ()
   "Toggle torrent between started and stopped."
   (interactive)
-  (let ((id (get-char-property (point) 'id)))
-    (if id
-        (let* ((torrent (transmission-torrents `(:ids ,id :fields ("status"))))
-               (status (transmission-torrent-value torrent 'status)))
-          (pcase status
-            (0 (transmission-request "torrent-start" `(:ids ,id)))
-            ((or 4 6) (transmission-request "torrent-stop" `(:ids ,id)))))
-      (user-error "No torrent selected"))))
+  (if-let ((id (get-char-property (point) 'id)))
+      (let* ((torrent (transmission-torrents (list :ids id :fields '("status"))))
+             (status (transmission-torrent-value torrent 'status)))
+        (pcase status
+          (0 (transmission-request "torrent-start" (list :ids id)))
+          ((or 4 6) (transmission-request "torrent-stop" (list :ids id)))))
+    (user-error "No torrent selected")))
 
 (defun transmission-verify ()
   "Verify torrent at point or in region."
