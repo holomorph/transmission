@@ -160,7 +160,7 @@ See `format-time-string'."
   "Wrong or missing header \"X-Transmission-Session-Id\"" 'error)
 
 (define-error 'transmission-unauthorized
-  "Unauthorized user" 'error)
+  "Unauthorized user.  Check `transmission-rpc-auth'" 'error)
 
 (define-error 'transmission-wrong-rpc-path
   "Bad RPC path.  Check `transmission-rpc-path'" 'error)
