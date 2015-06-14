@@ -723,10 +723,10 @@ When called with a prefix, also unlink torrent data on disk."
   (setq buffer-read-only t))
 
 (defun transmission-refresh (&optional _arg _noconfirm)
-  (let* ((pos (text-property-not-all (point-min) (point-max)
-                                          'transmission-refresh nil))
-         (fun (and pos (get-text-property pos 'transmission-refresh))))
-    (if fun (transmission-draw fun)))
+  (when-let ((pos (text-property-not-all (point-min) (point-max)
+                                         'transmission-refresh nil))
+             (fun (get-text-property pos 'transmission-refresh)))
+    (transmission-draw fun))
   (transmission-timer-run))
 
 
