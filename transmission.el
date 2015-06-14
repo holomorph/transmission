@@ -813,7 +813,6 @@ Key bindings:
     (define-key map [backtab] 'transmission-previous-torrent)
     (define-key map "\e\t" 'transmission-previous-torrent)
     (define-key map "a" 'transmission-add)
-    (define-key map "b" 'transmission-set-bandwidth-priority)
     (define-key map "d" 'transmission-set-download)
     (define-key map "i" 'transmission-info)
     (define-key map "l" 'transmission-set-ratio)
@@ -822,6 +821,7 @@ Key bindings:
     (define-key map "u" 'transmission-set-upload)
     (define-key map "v" 'transmission-verify)
     (define-key map "q" 'transmission-quit)
+    (define-key map "y" 'transmission-set-bandwidth-priority)
     map)
   "Keymap used in `transmission-mode' buffers.")
 
