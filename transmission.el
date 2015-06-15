@@ -330,7 +330,8 @@ or at point, otherwise nil."
             (let ((pos (text-property-not-all (point) end prop (car-safe list))))
               (goto-char (or pos end)))))
         (and (car-safe list) list))
-    (get-text-property (point) prop)))
+    (when-let ((value (get-text-property (point) prop)))
+      (list value))))
 
 (defun transmission-eta (seconds percent)
   "Return a string showing SECONDS in human-readable form;
