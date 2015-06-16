@@ -1,14 +1,28 @@
 * Changes in 0.4
 
-*** Customization
+** Features
 
-**** Session address
+*** New commands for adding and removing trackers
+
+*** Support for RPC username and password
+
+*** More HTTP errors are caught
+401 for bad RPC credentials, and a few others for an incorrect path
+to the RPC
+
+** Customization
+
+*** Session address
 The RPC path variable `transmission-path' is now named
 `transmission-rpc-path'.
 
-**** RPC authorization
+*** RPC authorization
 New variable `transmission-rpc-auth' allows RPC username and password
 to be configured.
+
+** Bug fixes
+
+*** transmission-prop-values-in-region does the right thing now
 
 * Changes in 0.3
 
