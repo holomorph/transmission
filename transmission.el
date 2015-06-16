@@ -489,7 +489,7 @@ together with indices for each file, and sorted by file name."
 
 ;;;###autoload
 (defun transmission-add (torrent &optional _arg)
-  "Add a torrent by filename, URL, or magnet link.
+  "Add a torrent by filename, URL, magnet link, or info hash.
 When called with a prefix, treat input as a string."
   (interactive (list (if (consp current-prefix-arg)
                          (read-string "Add link: ")
@@ -499,7 +499,9 @@ When called with a prefix, treat input as a string."
                        `(:metainfo ,(with-temp-buffer
                                       (insert-file-contents torrent)
                                       (base64-encode-string (buffer-string))))
-                     `(:filename ,torrent))))
+                     `(:filename ,(if (string-prefix-p "magnet:?" torrent)
+                                      torrent
+                                    (format "magnet:?xt=urn:btih:%s" torrent))))))
     (let-alist (transmission-request "torrent-add" arguments)
       (pcase .result
         ("success"

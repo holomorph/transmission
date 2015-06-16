@@ -2,6 +2,8 @@
 
 ** Features
 
+*** Torrents can now be added by BitTorrent info hash
+
 *** New commands for adding and removing trackers
 
 *** Support for RPC username and password
