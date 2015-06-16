@@ -382,6 +382,25 @@ rate."
                                  (if enabled (format "%.1f" limit) "disabled")
                                  "): "))))))
 
+(defun transmission-prompt-read-repeatedly (prompt &optional collection)
+  "Read strings until an input is blank.  Returns inputs in a list."
+  (let ((list '())
+        entry)
+   (catch :finished
+     (while t
+       (setq entry (if (not collection) (read-string prompt)
+                     (let ((completion-cycle-threshold t))
+                       (completing-read prompt collection))))
+       (if (and (not (string-empty-p entry))
+                (not (string-blank-p entry)))
+           (push entry list)
+         (throw :finished list))))))
+
+(defun transmission-list-trackers (id)
+  "Return the \"trackers\" array for torrent id ID."
+  (let ((torrent (transmission-torrents `(:ids ,id :fields ("trackers")))))
+    (transmission-torrent-value torrent 'trackers)))
+
 (defun transmission-files-do (action)
   "Do stuff to files in `transmission-files-mode' buffers."
   (unless (memq action (list :files-wanted :files-unwanted
@@ -550,6 +569,35 @@ When called with a prefix, also unlink torrent data on disk."
         (pcase status
           (0 (transmission-request "torrent-start" (list :ids id)))
           ((or 4 6) (transmission-request "torrent-stop" (list :ids id)))))
+    (user-error "No torrent selected")))
+
+(defun transmission-trackers-add ()
+  "Add announce URLs to torrent."
+  (interactive)
+  (if-let ((id (get-char-property (point) 'id)))
+      (let* ((urls (transmission-prompt-read-repeatedly "Add announce URLs: "))
+             (trackers (mapcar (lambda (elt) (cdr (assq 'announce elt)))
+                               (transmission-list-trackers id)))
+             ;; Don't add trackers that are already there
+             (arguments (list :ids id :trackerAdd (seq-difference urls trackers))))
+        (let-alist (transmission-request "torrent-set" arguments)
+          (message .result)))
+    (user-error "No torrent selected")))
+
+(defun transmission-trackers-remove ()
+  (interactive)
+  (if-let ((id (get-char-property (point) 'id)))
+      (let* ((trackers (mapcar (lambda (elt) (number-to-string (cdr (assq 'id elt))))
+                               (transmission-list-trackers id)))
+             (len (length trackers))
+             (prompt (concat "Remove tracker by ID"
+                             (if (> len 1) (format " (%d trackers): " len) ": ")))
+             (tids (transmission-prompt-read-repeatedly prompt trackers))
+             (arguments (list :ids id :trackerRemove (mapcar #'string-to-number tids))))
+        (let-alist (transmission-request "torrent-set" arguments)
+          (pcase .result
+            ("success" (message "success!"))
+            (_ (user-error .result)))))
     (user-error "No torrent selected")))
 
 (defun transmission-verify ()
@@ -745,7 +793,10 @@ When called with a prefix, also unlink torrent data on disk."
   "Default expressions to highlight in `transmission-info-mode' buffers.")
 
 (defvar transmission-info-mode-map
-  (copy-keymap transmission-map)
+  (let ((map (copy-keymap transmission-map)))
+    (define-key map "t" 'transmission-trackers-add)
+    (define-key map "T" 'transmission-trackers-remove)
+    map)
   "Keymap used in `transmission-info-mode' buffers.")
 
 (define-derived-mode transmission-info-mode special-mode "Transmission-Info"
@@ -819,6 +870,7 @@ Key bindings:
     (define-key map "l" 'transmission-set-ratio)
     (define-key map "r" 'transmission-remove)
     (define-key map "s" 'transmission-toggle)
+    (define-key map "t" 'transmission-trackers-add)
     (define-key map "u" 'transmission-set-upload)
     (define-key map "v" 'transmission-verify)
     (define-key map "q" 'transmission-quit)
