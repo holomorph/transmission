@@ -499,9 +499,9 @@ When called with a prefix, treat input as a string."
                        `(:metainfo ,(with-temp-buffer
                                       (insert-file-contents torrent)
                                       (base64-encode-string (buffer-string))))
-                     `(:filename ,(if (string-prefix-p "magnet:?" torrent)
-                                      torrent
-                                    (format "magnet:?xt=urn:btih:%s" torrent))))))
+                     `(:filename ,(if (string-match "\\`[[:xdigit:]]\\{40\\}\\'" torrent)
+                                      (format "magnet:?xt=urn:btih:%s" torrent)
+                                    torrent)))))
     (let-alist (transmission-request "torrent-add" arguments)
       (pcase .result
         ("success"
