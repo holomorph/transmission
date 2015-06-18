@@ -2,6 +2,12 @@
 
 ** Features
 
+*** Switching buffers is way less annoying now
+Point/mark is better preserved in buffers.  Opening the info and files
+buffers simply refresh if they are the same one (torrent id) that was
+drawn before.  The transmission-draw and transmission-refresh
+functions now do what they're supposed to do.
+
 *** Torrents can now be added by BitTorrent info hash
 
 *** New commands for adding and removing trackers
