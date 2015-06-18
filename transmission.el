@@ -823,7 +823,8 @@ Key bindings:
       (let ((old-id (get-text-property (point-min) 'id)))
         (unless (eq major-mode 'transmission-info-mode)
           (transmission-info-mode))
-        (unless (and old-id (eq old-id id))
+        (if (and old-id (eq old-id id))
+            (transmission-refresh)
           (transmission-draw (lambda () (transmission-draw-info id)))
           (goto-char (point-min)))))))
 
@@ -861,7 +862,8 @@ Key bindings:
       (let ((old-id (get-text-property (point-min) 'id)))
         (unless (eq major-mode 'transmission-files-mode)
           (transmission-files-mode))
-        (unless (and old-id (eq old-id id))
+        (if (and old-id (eq old-id id))
+            (transmission-refresh)
           (transmission-draw (lambda () (transmission-draw-files id)))
           (goto-char (point-min)))))))
 
