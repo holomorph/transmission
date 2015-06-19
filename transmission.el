@@ -811,7 +811,7 @@ Key bindings:
   (setq-local revert-buffer-function #'transmission-refresh))
 
 (defun transmission-info ()
-  "Open a Transmission files buffer for torrent id ID."
+  "Open a `transmission-info-mode' buffer for torrent id ID."
   (interactive)
   (let* ((id (get-char-property (point) 'id))
          (name "*transmission-info*")
@@ -850,7 +850,7 @@ Key bindings:
   (setq-local revert-buffer-function #'transmission-refresh))
 
 (defun transmission-files ()
-  "Open a Transmission files buffer for torrent id ID."
+  "Open a `transmission-files-mode' buffer for torrent id ID."
   (interactive)
   (let* ((id (get-char-property (point) 'id))
          (name "*transmission-files*")
@@ -902,7 +902,7 @@ Key bindings:
 
 ;;;###autoload
 (defun transmission ()
-  "Open a Transmission buffer."
+  "Open a `transmission-mode' buffer."
   (interactive)
   (let* ((name "*transmission*")
          (buffer (or (get-buffer name)
