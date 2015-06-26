@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.3
-;; Package-Requires: ((emacs "24.4") (let-alist "1.0.3") (seq "1.5"))
+;; Package-Requires: ((emacs "25"))
 ;; Keywords: comm, tools
 
 ;; This program is free software; you can redistribute it and/or
@@ -55,8 +55,6 @@
 (require 'calc-bin)
 (require 'cl-lib)
 (require 'json)
-(require 'let-alist)
-(require 'seq)
 (require 'subr-x)
 
 (defgroup transmission nil
@@ -423,10 +421,10 @@ together with indices for each file, and sorted by file name."
          (indices (cl-map 'vector (lambda (a b) (list (cons a b)))
                           (make-vector len 'index)
                           (number-sequence 0 len))))
-    (seq-sort (lambda (a b)
-                (string-lessp (cdr (assq 'name a))
-                              (cdr (assq 'name b))))
-              (cl-map 'vector #'append files indices))))
+    (sort (cl-map 'vector #'append files indices)
+          (lambda (a b)
+            (string-lessp (cdr (assq 'name a))
+                          (cdr (assq 'name b)))))))
 
 (defun transmission-time (seconds)
   (if (= 0 seconds)
@@ -488,13 +486,10 @@ together with indices for each file, and sorted by file name."
       (and (not (bobp)) (forward-char 1)))))
 
 ;;;###autoload
-(defun transmission-add (torrent &optional _arg)
+(defun transmission-add (torrent)
   "Add a torrent by filename, URL, magnet link, or info hash.
 When called with a prefix, treat input as a string."
-  (interactive (list (if (consp current-prefix-arg)
-                         (read-string "Add link: ")
-                       (read-file-name "Add file: "))
-                     current-prefix-arg))
+  (interactive (list (read-file-name "Add torrent: ")))
   (let ((arguments (if (file-readable-p torrent)
                        `(:metainfo ,(with-temp-buffer
                                       (insert-file-contents torrent)
