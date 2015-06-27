@@ -307,8 +307,10 @@ returned by `transmission-torrents'."
     (/ (* 100 bytes) totalbytes)))
 
 (defun transmission-files-directory-base (filename)
-  (let ((index (string-match "/" filename)))
-    (when index (substring filename 0 (1+ index)))))
+  "Returns the top-most parent directory in string FILENAME"
+  (when-let ((index (and (stringp filename)
+                         (string-match "/" filename))))
+    (substring filename 0 (1+ index))))
 
 (defun transmission-files-directory-prefix-p (title files)
   (seq-every-p (lambda (f) (string-prefix-p title (cdr-safe (assq 'name f))))
