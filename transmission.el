@@ -705,7 +705,7 @@ When called with a prefix, also unlink torrent data on disk."
 (defun transmission-draw-files (id)
   (let* ((torrent (transmission-torrents `(:ids ,id :fields ,transmission-files-fields)))
          (files (transmission-files-sort torrent))
-         (file (cdr-safe (assq 'name (elt files 0))))
+         (file (cdr-safe (assq 'name (and (not (seq-empty-p files)) (elt files 0)))))
          (directory (transmission-files-directory-base file))
          (truncate (if directory (transmission-files-directory-prefix-p directory files))))
     (erase-buffer)
