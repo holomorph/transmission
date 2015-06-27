@@ -270,12 +270,12 @@ Details regarding the Transmission RPC can be found here:
 from a \"torrent-get\" request with arguments ARGUMENTS."
   (let* ((request `("torrent-get" ,arguments))
          (response (apply #'transmission-request request)))
-    (cdr (cadr (assq 'arguments response)))))
+    (cdar (alist-get 'arguments response))))
 
 (defun transmission-torrent-value (torrent field)
   "Return value in FIELD of in TORRENT, the \"torrents\" vector
 returned by `transmission-torrents'."
-  (cdr (assq field (elt torrent 0))))
+  (alist-get field (elt torrent 0)))
 
 
 ;; Timer management
@@ -313,7 +313,7 @@ returned by `transmission-torrents'."
     (substring filename 0 (1+ index))))
 
 (defun transmission-files-directory-prefix-p (title files)
-  (seq-every-p (lambda (f) (string-prefix-p title (cdr-safe (assq 'name f))))
+  (seq-every-p (lambda (f) (string-prefix-p title (alist-get 'name f)))
                files))
 
 (defun transmission-prop-values-in-region (prop)
@@ -425,8 +425,8 @@ together with indices for each file, and sorted by file name."
                           (number-sequence 0 len))))
     (sort (cl-map 'vector #'append files indices)
           (lambda (a b)
-            (string-lessp (cdr (assq 'name a))
-                          (cdr (assq 'name b)))))))
+            (string-lessp (alist-get 'name a)
+                          (alist-get 'name b))))))
 
 (defun transmission-time (seconds)
   (if (= 0 seconds)
@@ -575,7 +575,7 @@ When called with a prefix, also unlink torrent data on disk."
   (interactive)
   (if-let ((id (get-char-property (point) 'id)))
       (let* ((urls (transmission-prompt-read-repeatedly "Add announce URLs: "))
-             (trackers (mapcar (lambda (elt) (cdr (assq 'announce elt)))
+             (trackers (mapcar (lambda (elt) (alist-get 'announce elt))
                                (transmission-list-trackers id)))
              ;; Don't add trackers that are already there
              (arguments (list :ids id :trackerAdd (seq-difference urls trackers))))
@@ -586,7 +586,7 @@ When called with a prefix, also unlink torrent data on disk."
 (defun transmission-trackers-remove ()
   (interactive)
   (if-let ((id (get-char-property (point) 'id)))
-      (let* ((trackers (mapcar (lambda (elt) (number-to-string (cdr (assq 'id elt))))
+      (let* ((trackers (mapcar (lambda (elt) (number-to-string (alist-get 'id elt)))
                                (transmission-list-trackers id)))
              (len (length trackers))
              (prompt (concat "Remove tracker by ID"
@@ -705,7 +705,7 @@ When called with a prefix, also unlink torrent data on disk."
 (defun transmission-draw-files (id)
   (let* ((torrent (transmission-torrents `(:ids ,id :fields ,transmission-files-fields)))
          (files (transmission-files-sort torrent))
-         (file (cdr-safe (assq 'name (and (not (seq-empty-p files)) (elt files 0)))))
+         (file (alist-get 'name (and (not (seq-empty-p files)) (elt files 0))))
          (directory (transmission-files-directory-base file))
          (truncate (if directory (transmission-files-directory-prefix-p directory files))))
     (erase-buffer)
