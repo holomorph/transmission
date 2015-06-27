@@ -440,6 +440,15 @@ together with indices for each file, and sorted by file name."
                   (math-format-radix int)))
               bits))
 
+(defmacro transmission-let-ids (bindings &rest body)
+  "Execute BODY, binding list `ids' with `transmission-prop-values-in-region'.
+Similar to `when-let', except calls user-error if bindings are not truthy."
+  (declare (indent 1) (debug t))
+  `(if-let ((ids (transmission-prop-values-in-region 'id))
+            ,@bindings)
+       (progn ,@body)
+     (user-error "No torrent selected")))
+
 
 ;; Interactive
 
@@ -511,19 +520,17 @@ When called with a prefix, treat input as a string."
 (defun transmission-reannounce ()
   "Reannounce torrent at point or in region."
   (interactive)
-  (let ((ids (transmission-prop-values-in-region 'id)))
-    (transmission-request "torrent-reannounce" `(:ids ,ids))))
+  (transmission-let-ids nil
+    (transmission-request "torrent-reannounce" (list :ids ids))))
 
 (defun transmission-remove (&optional unlink)
   "Prompt to remove torrent at point or torrents in region.
 When called with a prefix, also unlink torrent data on disk."
   (interactive "P")
-  (if-let ((ids (transmission-prop-values-in-region 'id))
-           (arguments `(:ids ,ids :delete-local-data ,(and unlink t))))
-      (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
-                                 "torrent" (and (< 1 (length ids)) "s") "?"))
-        (transmission-request "torrent-remove" arguments))
-    (user-error "No torrent selected")))
+  (transmission-let-ids ((arguments `(:ids ,ids :delete-local-data ,(and unlink t))))
+    (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
+                               "torrent" (and (< 1 (length ids)) "s") "?"))
+      (transmission-request "torrent-remove" arguments))))
 
 (defun transmission-set-bandwidth-priority (priority)
   "Set bandwidth priority of torrent(s) at point or in region."
@@ -532,11 +539,9 @@ When called with a prefix, also unlink torrent data on disk."
          (prompt (format "Set bandwidth priority %s: "
                          (mapcar #'car transmission-priority-alist))))
      (list (completing-read prompt transmission-priority-alist nil t))))
-  (if-let ((ids (transmission-prop-values-in-region 'id))
-           (number (cdr (assoc-string priority transmission-priority-alist)))
-           (arguments `(:ids ,ids :bandwidthPriority ,number)))
-      (transmission-request "torrent-set" arguments)
-    (user-error "No torrent selected")))
+  (transmission-let-ids ((number (cdr (assoc-string priority transmission-priority-alist)))
+                         (arguments `(:ids ,ids :bandwidthPriority ,number)))
+    (transmission-request "torrent-set" arguments)))
 
 (defun transmission-set-download (limit)
   "Set global download speed limit in KB/s."
@@ -562,26 +567,24 @@ When called with a prefix, also unlink torrent data on disk."
 (defun transmission-toggle ()
   "Toggle torrent between started and stopped."
   (interactive)
-  (if-let ((id (get-char-property (point) 'id)))
-      (let* ((torrent (transmission-torrents (list :ids id :fields '("status"))))
-             (status (transmission-torrent-value torrent 'status)))
-        (pcase status
-          (0 (transmission-request "torrent-start" (list :ids id)))
-          ((or 4 6) (transmission-request "torrent-stop" (list :ids id)))))
-    (user-error "No torrent selected")))
+  (transmission-let-ids nil
+    (let* ((torrent (transmission-torrents (list :ids ids :fields '("status"))))
+           (status (transmission-torrent-value torrent 'status)))
+      (pcase status
+        (0 (transmission-request "torrent-start" (list :ids ids)))
+        ((or 4 6) (transmission-request "torrent-stop" (list :ids ids)))))))
 
 (defun transmission-trackers-add ()
-  "Add announce URLs to torrent."
+  "Add announce URLs to torrent or torrents."
   (interactive)
-  (if-let ((id (get-char-property (point) 'id)))
-      (let* ((urls (transmission-prompt-read-repeatedly "Add announce URLs: "))
-             (trackers (mapcar (lambda (elt) (alist-get 'announce elt))
-                               (transmission-list-trackers id)))
-             ;; Don't add trackers that are already there
-             (arguments (list :ids id :trackerAdd (seq-difference urls trackers))))
-        (let-alist (transmission-request "torrent-set" arguments)
-          (message .result)))
-    (user-error "No torrent selected")))
+  (transmission-let-ids nil
+    (let* ((urls (transmission-prompt-read-repeatedly "Add announce URLs: "))
+           (trackers (mapcar (lambda (elt) (alist-get 'announce elt))
+                             (transmission-list-trackers ids)))
+           ;; Don't add trackers that are already there
+           (arguments (list :ids ids :trackerAdd (seq-difference urls trackers))))
+      (let-alist (transmission-request "torrent-set" arguments)
+        (message .result)))))
 
 (defun transmission-trackers-remove ()
   (interactive)
@@ -602,8 +605,8 @@ When called with a prefix, also unlink torrent data on disk."
 (defun transmission-verify ()
   "Verify torrent at point or in region."
   (interactive)
-  (let ((ids (transmission-prop-values-in-region 'id)))
-    (transmission-request "torrent-verify" `(:ids ,ids))))
+  (transmission-let-ids nil
+    (transmission-request "torrent-verify" (list :ids ids))))
 
 (defun transmission-quit ()
   "Quit."
