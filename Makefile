@@ -1,7 +1,7 @@
 VERSION = $(shell git describe --tags)
 
 SRC = transmission.el
-DISTFILES = Makefile $(SRC) LICENSE
+DISTFILES = Makefile $(SRC) LICENSE NEWS README.org
 
 PREFIX = /usr/local
 datarootdir := $(PREFIX)/share
