@@ -156,6 +156,12 @@ See `format-time-string'."
 (defvar transmission-session-id nil
   "The \"X-Transmission-Session-Id\" header value.")
 
+(defvar-local transmission-torrent-id nil
+  "The Transmission torrent ID integer corresponding to the current buffer.")
+
+(defvar-local transmission-refresh-function nil
+  "The name of the function applied to `transmission-draw'.")
+
 (define-error 'transmission-conflict
   "Wrong or missing header \"X-Transmission-Session-Id\"" 'error)
 
@@ -764,24 +770,19 @@ When called with a prefix, also unlink torrent data on disk."
   "FUN erases the buffer and draws a new one."
   (setq buffer-read-only nil)
   (funcall fun)
-  (add-text-properties (point-min) (point-max) (list 'transmission-refresh fun))
   (set-buffer-modified-p nil)
   (setq buffer-read-only t))
 
 (defun transmission-refresh (&optional _arg _noconfirm)
-  (let* ((pos (text-property-not-all (point-min) (point-max)
-                                     'transmission-refresh nil))
-         (fun (and pos (get-text-property pos 'transmission-refresh))))
-    (when fun
-      (let* ((old-window-start (window-start))
-             (old-window-point (window-point))
-             (old-mark (when (region-active-p)
-                         (let ((beg (region-beginning)))
-                           (if (= old-window-point beg) (region-end) beg)))))
-        (transmission-draw fun)
-        (goto-char old-window-point)
-        (set-window-start nil old-window-start)
-        (and old-mark (set-mark old-mark)))))
+  (let* ((old-window-start (window-start))
+         (old-window-point (window-point))
+         (old-mark (when (region-active-p)
+                     (let ((beg (region-beginning)))
+                       (if (= old-window-point beg) (region-end) beg)))))
+    (transmission-draw transmission-refresh-function)
+    (goto-char old-window-point)
+    (set-window-start nil old-window-start)
+    (and old-mark (set-mark old-mark)))
   (transmission-timer-run))
 
 
@@ -817,6 +818,8 @@ Key bindings:
   :group 'transmission
   (buffer-disable-undo)
   (setq-local font-lock-defaults '(transmission-info-font-lock-keywords))
+  (setq-local transmission-refresh-function
+              (lambda () (transmission-draw-info transmission-torrent-id)))
   (setq-local revert-buffer-function #'transmission-refresh))
 
 (defun transmission-info ()
@@ -834,7 +837,8 @@ Key bindings:
           (transmission-info-mode))
         (if (and old-id (eq old-id id))
             (transmission-refresh)
-          (transmission-draw (lambda () (transmission-draw-info id)))
+          (setq transmission-torrent-id id)
+          (transmission-draw transmission-refresh-function)
           (goto-char (point-min)))))))
 
 (defvar transmission-files-mode-map
@@ -856,6 +860,8 @@ Key bindings:
 \\{transmission-files-mode-map}"
   :group 'transmission
   (buffer-disable-undo)
+  (setq-local transmission-refresh-function
+              (lambda () (transmission-draw-files transmission-torrent-id)))
   (setq-local revert-buffer-function #'transmission-refresh))
 
 (defun transmission-files ()
@@ -873,7 +879,8 @@ Key bindings:
           (transmission-files-mode))
         (if (and old-id (eq old-id id))
             (transmission-refresh)
-          (transmission-draw (lambda () (transmission-draw-files id)))
+          (setq transmission-torrent-id id)
+          (transmission-draw transmission-refresh-function)
           (goto-char (point-min)))))))
 
 (defvar transmission-mode-map
@@ -899,13 +906,14 @@ Key bindings:
 (define-derived-mode transmission-mode special-mode "Transmission"
   "Major mode for interfacing with a Transmission daemon. See
 https://trac.transmissionbt.com/ for more information about
-transmission.  The hook `transmission-mode-hook' is run at mode
+Transmission.  The hook `transmission-mode-hook' is run at mode
 initialization.
 
 Key bindings:
 \\{transmission-mode-map}"
   :group 'transmission
   (buffer-disable-undo)
+  (setq-local transmission-refresh-function #'transmission-draw-torrents)
   (setq-local revert-buffer-function #'transmission-refresh)
   (add-hook 'post-command-hook #'transmission-timer-check nil 'local))
 
@@ -920,7 +928,7 @@ Key bindings:
     (if (eq major-mode 'transmission-mode)
         (transmission-refresh)
       (transmission-mode)
-      (transmission-draw #'transmission-draw-torrents)
+      (transmission-draw transmission-refresh-function)
       (goto-char (point-min)))))
 
 (provide 'transmission)
