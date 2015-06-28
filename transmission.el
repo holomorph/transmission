@@ -214,8 +214,8 @@ and signal the error."
   (let ((path transmission-rpc-path)
         (headers (list (cons transmission-session-header transmission-session-id)
                        (cons "Content-length" (string-bytes content)))))
-    (when-let ((auth (transmission--auth-string)))
-      (push (cons "Authorization" auth) headers))
+    (let ((auth (transmission--auth-string)))
+      (if auth (push (cons "Authorization" auth) headers)))
     (with-temp-buffer
       (insert (format "POST %s HTTP/1.1\r\n" path))
       (dolist (elt headers)
@@ -308,9 +308,9 @@ returned by `transmission-torrents'."
 
 (defun transmission-files-directory-base (filename)
   "Returns the top-most parent directory in string FILENAME"
-  (when-let ((index (and (stringp filename)
-                         (string-match "/" filename))))
-    (substring filename 0 (1+ index))))
+  (let ((index (and (stringp filename)
+                    (string-match "/" filename))))
+    (if index (substring filename 0 (1+ index)))))
 
 (defun transmission-files-directory-prefix-p (title files)
   (seq-every-p (lambda (f) (string-prefix-p title (cdr-safe (assq 'name f))))
@@ -330,8 +330,8 @@ or at point, otherwise nil."
             (let ((pos (text-property-not-all (point) end prop (car-safe list))))
               (goto-char (or pos end)))))
         (and (car-safe list) list))
-    (when-let ((value (get-text-property (point) prop)))
-      (list value))))
+    (let ((value (get-text-property (point) prop)))
+      (if value (list value)))))
 
 (defun transmission-eta (seconds percent)
   "Return a string showing SECONDS in human-readable form;
@@ -407,11 +407,12 @@ rate."
                              :priority-high :priority-low
                              :priority-normal))
     (error "Invalid field %s" action))
-  (if-let ((id (get-char-property (point) 'id))
-           (indices (transmission-prop-values-in-region 'index)))
-      (let ((arguments `(:ids ,id ,action ,indices)))
-        (transmission-request "torrent-set" arguments))
-    (user-error "No files selected or at point")))
+  (let ((id (get-char-property (point) 'id))
+        (indices (transmission-prop-values-in-region 'index)))
+    (if (and id indices)
+        (let ((arguments (list :ids id action indices)))
+          (transmission-request "torrent-set" arguments))
+      (user-error "No files selected or at point"))))
 
 (defun transmission-files-sort (torrent)
   "Return the .files and .fileStats vectors in TORRENT, spliced
@@ -444,10 +445,11 @@ together with indices for each file, and sorted by file name."
   "Execute BODY, binding list `ids' with `transmission-prop-values-in-region'.
 Similar to `when-let', except calls user-error if bindings are not truthy."
   (declare (indent 1) (debug t))
-  `(if-let ((ids (transmission-prop-values-in-region 'id))
-            ,@bindings)
-       (progn ,@body)
-     (user-error "No torrent selected")))
+  `(let* ((ids (transmission-prop-values-in-region 'id))
+          ,@bindings)
+     (if ids
+         (progn ,@body)
+       (user-error "No torrent selected"))))
 
 
 ;; Interactive
@@ -588,19 +590,20 @@ When called with a prefix, also unlink torrent data on disk."
 
 (defun transmission-trackers-remove ()
   (interactive)
-  (if-let ((id (get-char-property (point) 'id)))
-      (let* ((trackers (mapcar (lambda (elt) (number-to-string (cdr (assq 'id elt))))
-                               (transmission-list-trackers id)))
-             (len (length trackers))
-             (prompt (concat "Remove tracker by ID"
-                             (if (> len 1) (format " (%d trackers): " len) ": ")))
-             (tids (transmission-prompt-read-repeatedly prompt trackers))
-             (arguments (list :ids id :trackerRemove (mapcar #'string-to-number tids))))
-        (let-alist (transmission-request "torrent-set" arguments)
-          (pcase .result
-            ("success" (message "success!"))
-            (_ (user-error .result)))))
-    (user-error "No torrent selected")))
+  (let ((id (get-char-property (point) 'id)))
+    (if id
+        (let* ((trackers (mapcar (lambda (elt) (number-to-string (cdr (assq 'id elt))))
+                                 (transmission-list-trackers id)))
+               (len (length trackers))
+               (prompt (concat "Remove tracker by ID"
+                               (if (> len 1) (format " (%d trackers): " len) ": ")))
+               (tids (transmission-prompt-read-repeatedly prompt trackers))
+               (arguments (list :ids id :trackerRemove (mapcar #'string-to-number tids))))
+          (let-alist (transmission-request "torrent-set" arguments)
+            (pcase .result
+              ("success" (message "success!"))
+              (_ (user-error .result)))))
+      (user-error "No torrent selected"))))
 
 (defun transmission-verify ()
   "Verify torrent at point or in region."
@@ -761,18 +764,19 @@ When called with a prefix, also unlink torrent data on disk."
   (setq buffer-read-only t))
 
 (defun transmission-refresh (&optional _arg _noconfirm)
-  (when-let ((pos (text-property-not-all (point-min) (point-max)
-                                         'transmission-refresh nil))
-             (fun (get-text-property pos 'transmission-refresh)))
-    (let* ((old-window-start (window-start))
-           (old-window-point (window-point))
-           (old-mark (when (region-active-p)
-                       (let ((beg (region-beginning)))
-                         (if (= old-window-point beg) (region-end) beg)))))
-      (transmission-draw fun)
-      (goto-char old-window-point)
-      (set-window-start nil old-window-start)
-      (and old-mark (set-mark old-mark))))
+  (let* ((pos (text-property-not-all (point-min) (point-max)
+                                     'transmission-refresh nil))
+         (fun (and pos (get-text-property pos 'transmission-refresh))))
+    (when fun
+      (let* ((old-window-start (window-start))
+             (old-window-point (window-point))
+             (old-mark (when (region-active-p)
+                         (let ((beg (region-beginning)))
+                           (if (= old-window-point beg) (region-end) beg)))))
+        (transmission-draw fun)
+        (goto-char old-window-point)
+        (set-window-start nil old-window-start)
+        (and old-mark (set-mark old-mark)))))
   (transmission-timer-run))
 
 
