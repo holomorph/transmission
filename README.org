@@ -12,3 +12,18 @@ commentary in =transmission.el=.
 # https://github.com/fagga/transmission-remote-cli
 # https://trac.transmissionbt.com/browser/trunk/daemon/remote.c
 
+* Installation
+
+One can install as a package with
+
+#+BEGIN_SRC
+M-x package-install-file RET /path/to/transmission.el RET
+#+END_SRC
+
+Otherwise, for installing into one's =load-path=, a system install,
+etc., do the usual
+
+#+BEGIN_SRC
+make
+make install
+#+END_SRC
