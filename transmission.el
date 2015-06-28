@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014-2015  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
-;; Version: 0.3
+;; Version: 0.4
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.3") (seq "1.5"))
 ;; Keywords: comm, tools
 
@@ -34,10 +34,10 @@
 
 ;; "M-x transmission RET" pops up a torrent list.  One can add,
 ;; start/stop, verify, remove torrents, set speed limits, ratio
-;; limits, bandwidth priorities, etc.  Also, one can navigate to
-;; either a file list or torrent info context.  In the file list,
-;; individual files can be toggled for download, and their priorities
-;; set.
+;; limits, bandwidth priorities, trackers, etc.  Also, one can
+;; navigate to either a file list or torrent info context.  In the
+;; file list, individual files can be toggled for download, and their
+;; priorities set.
 
 ;; Customize-able are the session address components, RPC credentials,
 ;; the display of dates, file sizes and transfer rates, and the
