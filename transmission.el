@@ -664,13 +664,13 @@ When called with a prefix, also unlink torrent data on disk."
 
 (defun transmission-status (status up down)
   (let ((state (plist-get transmission-status-plist status))
-        (idle (propertize "idle" 'face 'shadow)))
+        (idle (propertize "idle" 'font-lock-face 'shadow)))
     (pcase status
-      (0 (propertize state 'face 'warning))
-      ((or 1 3 5) (propertize state 'face '(bold shadow)))
-      (2 (propertize state 'face 'font-lock-function-name-face))
-      (4 (if (> down 0) (propertize state 'face 'highlight) idle))
-      (6 (if (> up 0) (propertize state 'face 'success) idle))
+      (0 (propertize state 'font-lock-face 'warning))
+      ((or 1 3 5) (propertize state 'font-lock-face '(bold shadow)))
+      (2 (propertize state 'font-lock-face 'font-lock-function-name-face))
+      (4 (if (> down 0) (propertize state 'font-lock-face 'highlight) idle))
+      (6 (if (> up 0) (propertize state 'font-lock-face 'success) idle))
       (_ state))))
 
 
