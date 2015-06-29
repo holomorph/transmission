@@ -453,7 +453,8 @@ together with indices for each file, and sorted by file name."
   "Execute BODY, binding list `ids' with `transmission-prop-values-in-region'.
 Similar to `when-let', except calls user-error if bindings are not truthy."
   (declare (indent 1) (debug t))
-  `(let* ((ids (transmission-prop-values-in-region 'id))
+  `(let* ((ids (or (and transmission-torrent-id (list transmission-torrent-id))
+                   (transmission-prop-values-in-region 'id)))
           ,@bindings)
      (if ids
          (progn ,@body)
@@ -737,8 +738,7 @@ When called with a prefix, also unlink torrent data on disk."
                         (file-size-human-readable .length transmission-file-size-units))
                 (concat (if truncate (string-remove-prefix directory .name) .name) "\n"))))
           (transmission-insert-entry vec (list 'name .name 'index .index)))))
-    (add-text-properties (point-min) (point-max) `(dir ,(transmission-torrent-value torrent 'downloadDir)))
-    (add-text-properties (point-min) (point-max) `(id ,id))))
+    (add-text-properties (point-min) (point-max) `(dir ,(transmission-torrent-value torrent 'downloadDir)))))
 
 (defun transmission-draw-info (id)
   (let ((torrents (transmission-torrents `(:ids ,id :fields ,transmission-info-fields))))
@@ -762,9 +762,7 @@ When called with a prefix, also unlink torrent data on disk."
                       (file-size-human-readable .pieceSize transmission-file-size-units)
                       .pieceSize)
               (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces)))))
-        (insert (mapconcat #'identity vec "\n"))))
-    (add-text-properties (point-min) (point-max) 'id)
-    (put-text-property (point-min) (point-max) 'id id)))
+        (insert (mapconcat #'identity vec "\n"))))))
 
 (defun transmission-draw (fun)
   "FUN erases the buffer and draws a new one."
@@ -787,13 +785,15 @@ When called with a prefix, also unlink torrent data on disk."
 
 (defun transmission-context (name mode)
   "Open a new context in buffer name NAME with mode MODE."
-  (let ((id (get-char-property (point) 'id))
+  (let ((id (or transmission-torrent-id
+                (get-char-property (point) 'id)))
         (buffer (or (get-buffer name)
                     (generate-new-buffer name))))
     (if (not id)
         (user-error "No torrent selected")
       (switch-to-buffer buffer)
-      (let ((old-id (get-text-property (point-min) 'id)))
+      (let ((old-id (or transmission-torrent-id
+                        (get-text-property (point-min) 'id))))
         (unless (eq major-mode mode)
           (funcall mode))
         (if (and old-id (eq old-id id))
