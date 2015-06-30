@@ -415,7 +415,7 @@ rate."
                              :priority-high :priority-low
                              :priority-normal))
     (error "Invalid field %s" action))
-  (let ((id (get-char-property (point) 'id))
+  (let ((id transmission-torrent-id)
         (indices (transmission-prop-values-in-region 'index)))
     (if (and id indices)
         (let ((arguments (list :ids id action indices)))
@@ -602,7 +602,7 @@ When called with a prefix, also unlink torrent data on disk."
 
 (defun transmission-trackers-remove ()
   (interactive)
-  (let ((id (get-char-property (point) 'id)))
+  (let ((id transmission-torrent-id))
     (if id
         (let* ((trackers (mapcar (lambda (elt) (number-to-string (cdr (assq 'id elt))))
                                  (transmission-list-trackers id)))
