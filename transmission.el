@@ -398,7 +398,7 @@ rate."
      (while t
        (setq entry (if (not collection) (read-string prompt)
                      (let ((completion-cycle-threshold t))
-                       (completing-read prompt collection))))
+                       (completing-read prompt collection nil t))))
        (if (and (not (string-empty-p entry))
                 (not (string-blank-p entry)))
            (push entry list)
