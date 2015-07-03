@@ -648,20 +648,28 @@ When called with a prefix, also unlink torrent data on disk."
   (when (not (string= priority ""))
     (transmission-files-do (intern (concat ":priority-" priority)))))
 
+(defun transmission-files-file-at-point ()
+  "Return the absolute path of the torrent file at point, or nil.
+If the file named \"foo\" does not exist, try \"foo.part\" before returning."
+  (let* ((dir (file-name-as-directory (get-text-property (point) 'dir)))
+         (base (get-text-property (point) 'name))
+         (full (and dir base (concat dir base))))
+    (or (and (file-exists-p full) full)
+        (and (file-exists-p (concat full ".part"))
+             (concat full ".part")))))
+
 (defun transmission-files-command (command arg)
   "Run a command COMMAND on the file at point."
   (interactive
-   (let* ((base (file-name-as-directory (get-text-property (point) 'dir)))
-          (name (get-text-property (point) 'name))
-          (file (and base name (concat base name))))
-     (list
-      (read-shell-command (format "! on %s: " (file-name-nondirectory name)))
-      file)))
-  (if (file-exists-p arg)
-      (let* ((args (nconc (split-string command) (list arg)))
-             (prog (car args)))
-        (apply #'start-process prog nil args))
-    (message "File does not exist.")))
+   (let ((file (transmission-files-file-at-point)))
+     (if (not file)
+         (user-error "File does not exist.")
+       (list
+        (read-shell-command (format "! on %s: " (file-name-nondirectory file)))
+        file))))
+  (let* ((args (nconc (split-string command) (list arg)))
+         (prog (car args)))
+    (apply #'start-process prog nil args)))
 
 (defun transmission-status (status up down)
   (let ((state (plist-get transmission-status-plist status))
