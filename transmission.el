@@ -442,12 +442,11 @@ together with indices for each file, and sorted by file name."
       (format "Never")
     (format-time-string transmission-time-format (seconds-to-time seconds))))
 
-(defun transmission-map-bits-to-string (bits)
-  "Map list BITS to a human readable string."
-  (seq-mapcat (lambda (int)
-                (let ((calc-number-radix 2))
-                  (math-format-radix int)))
-              bits))
+(defun transmission-map-byte-to-string (byte)
+  "Map integer BYTE to an 8-bit binary representation as a string."
+  (let* ((calc-number-radix 2)
+         (string (math-format-radix byte)))
+    (concat (make-string (- 8 (length string)) ?0) string)))
 
 (defmacro transmission-let-ids (bindings &rest body)
   "Execute BODY, binding list `ids' with `transmission-prop-values-in-region'.
@@ -685,11 +684,10 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
 
 ;; Drawing
 
-(defun transmission-format-pieces (pieces)
-  (let* ((bits (mapcar #'identity (base64-decode-string pieces)))
-         (s (transmission-map-bits-to-string bits)))
-    (mapconcat #'identity (seq-partition s 72)
-               "\n")))
+(defun transmission-format-pieces (pieces count)
+  (let* ((bytes (mapcar #'identity (base64-decode-string pieces)))
+         (bits (seq-mapcat #'transmission-map-byte-to-string bytes)))
+    (mapconcat #'identity (seq-partition (seq-take bits count) 72) "\n")))
 
 (defun transmission-format-trackers (trackers)
   (let ((fmt (concat "Tracker %d: %s (Tier %d)\n"
@@ -769,7 +767,7 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
               (format "Piece size: %s (%d bytes) each"
                       (file-size-human-readable .pieceSize transmission-file-size-units)
                       .pieceSize)
-              (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces)))))
+              (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces .pieceCount)))))
         (insert (mapconcat #'identity vec "\n"))))))
 
 (defun transmission-draw (fun)
