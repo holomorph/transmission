@@ -310,6 +310,17 @@ returned by `transmission-torrents'."
 
 ;; Other
 
+(defun transmission-status (status up down)
+  (let ((state (plist-get transmission-status-plist status))
+        (idle (propertize "idle" 'font-lock-face 'shadow)))
+    (pcase status
+      (0 (propertize state 'font-lock-face 'warning))
+      ((or 1 3 5) (propertize state 'font-lock-face '(bold shadow)))
+      (2 (propertize state 'font-lock-face 'font-lock-function-name-face))
+      (4 (if (> down 0) (propertize state 'font-lock-face 'highlight) idle))
+      (6 (if (> up 0) (propertize state 'font-lock-face 'success) idle))
+      (_ state))))
+
 (defun transmission-have-percent (bytes totalbytes)
   (if (eq totalbytes 0) 0
     (/ (* 100 bytes) totalbytes)))
@@ -421,6 +432,16 @@ rate."
         (let ((arguments (list :ids id action indices)))
           (transmission-request "torrent-set" arguments))
       (user-error "No files selected or at point"))))
+
+(defun transmission-files-file-at-point ()
+  "Return the absolute path of the torrent file at point, or nil.
+If the file named \"foo\" does not exist, try \"foo.part\" before returning."
+  (let* ((dir (file-name-as-directory (get-text-property (point) 'dir)))
+         (base (get-text-property (point) 'name))
+         (full (and dir base (concat dir base))))
+    (or (and (file-exists-p full) full)
+        (and (file-exists-p (concat full ".part"))
+             (concat full ".part")))))
 
 (defun transmission-files-sort (torrent)
   "Return the .files and .fileStats vectors in TORRENT, spliced
@@ -647,16 +668,6 @@ When called with a prefix, also unlink torrent data on disk."
   (when (not (string= priority ""))
     (transmission-files-do (intern (concat ":priority-" priority)))))
 
-(defun transmission-files-file-at-point ()
-  "Return the absolute path of the torrent file at point, or nil.
-If the file named \"foo\" does not exist, try \"foo.part\" before returning."
-  (let* ((dir (file-name-as-directory (get-text-property (point) 'dir)))
-         (base (get-text-property (point) 'name))
-         (full (and dir base (concat dir base))))
-    (or (and (file-exists-p full) full)
-        (and (file-exists-p (concat full ".part"))
-             (concat full ".part")))))
-
 (defun transmission-files-command (command arg)
   "Run a command COMMAND on the file at point."
   (interactive
@@ -669,17 +680,6 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
   (let* ((args (nconc (split-string command) (list arg)))
          (prog (car args)))
     (apply #'start-process prog nil args)))
-
-(defun transmission-status (status up down)
-  (let ((state (plist-get transmission-status-plist status))
-        (idle (propertize "idle" 'font-lock-face 'shadow)))
-    (pcase status
-      (0 (propertize state 'font-lock-face 'warning))
-      ((or 1 3 5) (propertize state 'font-lock-face '(bold shadow)))
-      (2 (propertize state 'font-lock-face 'font-lock-function-name-face))
-      (4 (if (> down 0) (propertize state 'font-lock-face 'highlight) idle))
-      (6 (if (> up 0) (propertize state 'font-lock-face 'success) idle))
-      (_ state))))
 
 
 ;; Drawing
