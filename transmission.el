@@ -41,7 +41,8 @@
 
 ;; Customize-able are the session address components, RPC credentials,
 ;; the display of dates, file sizes and transfer rates, and the
-;; refreshing of the torrent list.
+;; refreshing of the torrent list.  See the `transmission'
+;; customization group.
 
 ;; The design draws from a number of sources, including the
 ;; "transmission-remote" command line utility and the
@@ -71,13 +72,15 @@
 
 (defcustom transmission-service 9091
   "Port or name of the service for the Transmission session."
-  :type '(choice (string :tag "Service")
+  :type '(choice (integer :tag "Default" 9091)
+                 (string :tag "Service")
                  (integer :tag "Port"))
   :group 'transmission)
 
 (defcustom transmission-rpc-path "/transmission/rpc"
   "Path to the Transmission session RPC interface."
-  :type 'string
+  :type '(choice (string :tag "Default" "/transmission/rpc")
+                 (string :tag "Other path"))
   :group 'transmission)
 
 (defcustom transmission-rpc-auth nil
@@ -107,7 +110,7 @@ See `file-size-human-readable'."
   "Period in seconds of the refresh timer."
   :type '(number :validate (lambda (w)
                              (unless (> (widget-value w) 0)
-                               (widget-put w :error "Invalid timer interval: value must be positive")
+                               (widget-put w :error "Value must be positive")
                                w)))
   :group 'transmission)
 
