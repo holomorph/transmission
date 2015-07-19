@@ -647,11 +647,15 @@ When called with a prefix, also unlink torrent data on disk."
     (transmission-request "torrent-verify" (list :ids ids))))
 
 (defun transmission-quit ()
-  "Quit."
+  "Quit and bury the buffer."
   (interactive)
-  (if (window-parent)
-      (delete-window)
-    (quit-window)))
+  (let ((cur (buffer-name (current-buffer)))
+        (prev (mapcar (lambda (b) (buffer-name (car b)))
+                      (window-prev-buffers))))
+    (if (seq-filter (lambda (s) (not (string-equal cur s)))
+                    prev)
+        (quit-window)
+      (delete-window))))
 
 (defun transmission-files-unwant ()
   (interactive)
