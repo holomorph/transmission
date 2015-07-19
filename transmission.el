@@ -655,7 +655,9 @@ When called with a prefix, also unlink torrent data on disk."
     (if (seq-filter (lambda (s) (not (string-equal cur s)))
                     prev)
         (quit-window)
-      (delete-window))))
+      (if (one-window-p)
+          (bury-buffer)
+        (delete-window)))))
 
 (defun transmission-files-unwant ()
   (interactive)
