@@ -796,24 +796,26 @@ When called with a prefix, also unlink torrent data on disk."
     (and old-mark (set-mark old-mark)))
   (transmission-timer-run))
 
-(defun transmission-context (name mode)
-  "Open a new context in buffer name NAME with mode MODE."
-  (let ((id (or transmission-torrent-id
-                (get-char-property (point) 'id)))
-        (buffer (or (get-buffer name)
-                    (generate-new-buffer name))))
-    (if (not id)
-        (user-error "No torrent selected")
-      (switch-to-buffer buffer)
-      (let ((old-id (or transmission-torrent-id
-                        (get-text-property (point-min) 'id))))
-        (unless (eq major-mode mode)
-          (funcall mode))
-        (if (and old-id (eq old-id id))
-            (transmission-refresh)
-          (setq transmission-torrent-id id)
-          (transmission-draw transmission-refresh-function)
-          (goto-char (point-min)))))))
+(defmacro transmission-context (mode)
+  "Switch to a context buffer of mode MODE."
+  (let ((name (format "*%s*" (replace-regexp-in-string "-mode\\'" ""
+                                                       (symbol-name mode)))))
+    `(let ((id (or transmission-torrent-id
+                   (get-char-property (point) 'id)))
+           (buffer (or (get-buffer ,name)
+                       (generate-new-buffer ,name))))
+       (if (not id)
+           (user-error "No torrent selected")
+         (switch-to-buffer buffer)
+         (let ((old-id (or transmission-torrent-id
+                           (get-text-property (point-min) 'id))))
+           (unless (eq major-mode ',mode)
+             (funcall #',mode))
+           (if (and old-id (eq old-id id))
+               (transmission-refresh)
+             (setq transmission-torrent-id id)
+             (transmission-draw transmission-refresh-function)
+             (goto-char (point-min))))))))
 
 
 ;; Major mode definitions
@@ -855,7 +857,7 @@ Key bindings:
 (defun transmission-info ()
   "Open a `transmission-info-mode' buffer for torrent at point."
   (interactive)
-  (transmission-context "*transmission-info*" 'transmission-info-mode))
+  (transmission-context transmission-info-mode))
 
 (defvar transmission-files-mode-map
   (let ((map (copy-keymap transmission-map)))
@@ -883,7 +885,7 @@ Key bindings:
 (defun transmission-files ()
   "Open a `transmission-files-mode' buffer for torrent at point."
   (interactive)
-  (transmission-context "*transmission-files*" 'transmission-files-mode))
+  (transmission-context transmission-files-mode))
 
 (defvar transmission-mode-map
   (let ((map (copy-keymap transmission-map)))
