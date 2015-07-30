@@ -325,8 +325,9 @@ returned by `transmission-torrents'."
       (_ state))))
 
 (defun transmission-have-percent (bytes totalbytes)
-  (if (eq totalbytes 0) 0
-    (/ (* 100 bytes) totalbytes)))
+  (condition-case nil
+      (/ (* 100 bytes) totalbytes)
+    (arith-error 0)))
 
 (defun transmission-files-directory-base (filename)
   "Returns the top-most parent directory in string FILENAME"
