@@ -14,6 +14,9 @@ commentary in =transmission.el=.
 
 * Installation
 
+Available as the =transmission= package on MELPA <http://melpa.org/>
+and marmalade <https://marmalade-repo.org/>.
+
 One can install as a package with
 
 #+BEGIN_SRC
