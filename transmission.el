@@ -850,9 +850,9 @@ Key bindings:
 \\{transmission-info-mode-map}"
   :group 'transmission
   (buffer-disable-undo)
-  (setq-local font-lock-defaults '(transmission-info-font-lock-keywords))
-  (setq-local transmission-refresh-function
-              (lambda () (transmission-draw-info transmission-torrent-id)))
+  (setq font-lock-defaults '(transmission-info-font-lock-keywords))
+  (setq transmission-refresh-function
+        (lambda () (transmission-draw-info transmission-torrent-id)))
   (setq-local revert-buffer-function #'transmission-refresh))
 
 (defun transmission-info ()
@@ -879,8 +879,8 @@ Key bindings:
 \\{transmission-files-mode-map}"
   :group 'transmission
   (buffer-disable-undo)
-  (setq-local transmission-refresh-function
-              (lambda () (transmission-draw-files transmission-torrent-id)))
+  (setq transmission-refresh-function
+        (lambda () (transmission-draw-files transmission-torrent-id)))
   (setq-local revert-buffer-function #'transmission-refresh))
 
 (defun transmission-files ()
@@ -918,9 +918,9 @@ Key bindings:
 \\{transmission-mode-map}"
   :group 'transmission
   (buffer-disable-undo)
-  (setq-local transmission-refresh-function #'transmission-draw-torrents)
+  (setq transmission-refresh-function #'transmission-draw-torrents)
   (setq-local revert-buffer-function #'transmission-refresh)
-  (add-hook 'post-command-hook #'transmission-timer-check nil 'local))
+  (add-hook 'post-command-hook #'transmission-timer-check nil t))
 
 ;;;###autoload
 (defun transmission ()
