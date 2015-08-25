@@ -789,7 +789,8 @@ When called with a prefix, also unlink torrent data on disk."
                (format "Piece size: %s (%d bytes) each"
                        (file-size-human-readable .pieceSize transmission-file-size-units)
                        .pieceSize)
-               (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces .pieceCount)))))
+               (when (and (not (= have 0)) (< have .pieceCount))
+                 (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces .pieceCount))))))
         (insert (mapconcat #'identity vec "\n"))))))
 
 (defun transmission-draw (fun)
