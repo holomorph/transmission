@@ -324,9 +324,9 @@ returned by `transmission-torrents'."
       (6 (if (> up 0) (propertize state 'font-lock-face 'success) idle))
       (_ state))))
 
-(defun transmission-have-percent (bytes totalbytes)
+(defun transmission-have-percent (have total)
   (condition-case nil
-      (/ (* 100 bytes) totalbytes)
+      (/ (* 100 have) total)
     (arith-error 0)))
 
 (defun transmission-files-directory-base (filename)
