@@ -159,6 +159,9 @@ See `format-time-string'."
 (defvar transmission-session-id nil
   "The \"X-Transmission-Session-Id\" header value.")
 
+(defvar-local transmission-torrent-vector nil
+  "Vector of Transmission torrent data.")
+
 (defvar-local transmission-torrent-id nil
   "The Transmission torrent ID integer corresponding to the current buffer.")
 
@@ -440,7 +443,8 @@ rate."
 (defun transmission-files-file-at-point ()
   "Return the absolute path of the torrent file at point, or nil.
 If the file named \"foo\" does not exist, try \"foo.part\" before returning."
-  (let* ((dir (file-name-as-directory (get-text-property (point) 'dir)))
+  (let* ((dir (file-name-as-directory
+               (transmission-torrent-value transmission-torrent-vector 'downloadDir)))
          (base (get-text-property (point) 'name))
          (full (and dir base (concat dir base))))
     (or (and (file-exists-p full) full)
@@ -728,26 +732,28 @@ When called with a prefix, also unlink torrent data on disk."
     (add-text-properties start end props)))
 
 (defun transmission-draw-torrents ()
-  (let ((torrents (transmission-torrents `(:fields ,transmission-torrent-get-fields))))
-    (erase-buffer)
-    (seq-doseq (element torrents)
-      (let-alist element
-        (let ((vec
-               (vector
-                (format "%-4s" (transmission-eta .eta .percentDone))
-                (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
-                        (file-size-human-readable .sizeWhenDone transmission-file-size-units))
-                (format "%3d%%" (* 100 .percentDone))
-                (format "%4d" (transmission-rate .rateDownload))
-                (format "%3d" (transmission-rate .rateUpload))
-                (format "%4.1f" (if (> .uploadRatio 0) .uploadRatio 0))
-                (format "%-11s" (transmission-status .status .rateUpload .rateDownload))
-                (concat .name "\n"))))
-          (transmission-insert-entry vec (list 'id .id)))))))
+  (setq transmission-torrent-vector
+        (transmission-torrents `(:fields ,transmission-torrent-get-fields)))
+  (erase-buffer)
+  (seq-doseq (element transmission-torrent-vector)
+    (let-alist element
+      (let ((vec
+             (vector
+              (format "%-4s" (transmission-eta .eta .percentDone))
+              (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
+                      (file-size-human-readable .sizeWhenDone transmission-file-size-units))
+              (format "%3d%%" (* 100 .percentDone))
+              (format "%4d" (transmission-rate .rateDownload))
+              (format "%3d" (transmission-rate .rateUpload))
+              (format "%4.1f" (if (> .uploadRatio 0) .uploadRatio 0))
+              (format "%-11s" (transmission-status .status .rateUpload .rateDownload))
+              (concat .name "\n"))))
+        (transmission-insert-entry vec (list 'id .id))))))
 
 (defun transmission-draw-files (id)
-  (let* ((torrent (transmission-torrents `(:ids ,id :fields ,transmission-files-fields)))
-         (files (transmission-files-sort torrent))
+  (setq transmission-torrent-vector
+        (transmission-torrents `(:ids ,id :fields ,transmission-files-fields)))
+  (let* ((files (transmission-files-sort transmission-torrent-vector))
          (file (cdr-safe (assq 'name (and (not (seq-empty-p files)) (elt files 0)))))
          (directory (transmission-files-directory-base file))
          (truncate (if directory (transmission-files-directory-prefix-p directory files))))
@@ -762,36 +768,36 @@ When called with a prefix, also unlink torrent data on disk."
                 (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
                         (file-size-human-readable .length transmission-file-size-units))
                 (concat (if truncate (string-remove-prefix directory .name) .name) "\n"))))
-          (transmission-insert-entry vec (list 'name .name 'index .index)))))
-    (add-text-properties (point-min) (point-max) `(dir ,(transmission-torrent-value torrent 'downloadDir)))))
+          (transmission-insert-entry vec (list 'name .name 'index .index)))))))
 
 (defun transmission-draw-info (id)
-  (let ((torrents (transmission-torrents `(:ids ,id :fields ,transmission-info-fields))))
-    (erase-buffer)
-    (let-alist (elt torrents 0)
-      (let* ((have (apply #'+ (mapcar #'transmission-hamming-weight
-                                      (base64-decode-string .pieces))))
-             (vec
-              (vector
-               (format "ID: %d" id)
-               (concat "Name: " .name)
-               (concat "Hash: " .hashString)
-               (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
-               (format "Peers: connected to %d, uploading to %d, downloading from %d\n"
-                       .peersConnected .peersGettingFromUs .peersSendingToUs)
-               (concat "Date created:    " (transmission-time .dateCreated))
-               (concat "Date added:      " (transmission-time .addedDate))
-               (concat "Date finished:   " (transmission-time .doneDate))
-               (concat "Latest Activity: " (transmission-time .activityDate) "\n")
-               (concat (transmission-format-trackers .trackerStats) "\n")
-               (format "Piece count: %d / %d (%d%%)" have .pieceCount
-                       (transmission-have-percent have .pieceCount))
-               (format "Piece size: %s (%d bytes) each"
-                       (file-size-human-readable .pieceSize transmission-file-size-units)
-                       .pieceSize)
-               (when (and (not (= have 0)) (< have .pieceCount))
-                 (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces .pieceCount))))))
-        (insert (mapconcat #'identity vec "\n"))))))
+  (setq transmission-torrent-vector
+        (transmission-torrents `(:ids ,id :fields ,transmission-info-fields)))
+  (erase-buffer)
+  (let-alist (elt transmission-torrent-vector 0)
+    (let* ((have (apply #'+ (mapcar #'transmission-hamming-weight
+                                    (base64-decode-string .pieces))))
+           (vec
+            (vector
+             (format "ID: %d" id)
+             (concat "Name: " .name)
+             (concat "Hash: " .hashString)
+             (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
+             (format "Peers: connected to %d, uploading to %d, downloading from %d\n"
+                     .peersConnected .peersGettingFromUs .peersSendingToUs)
+             (concat "Date created:    " (transmission-time .dateCreated))
+             (concat "Date added:      " (transmission-time .addedDate))
+             (concat "Date finished:   " (transmission-time .doneDate))
+             (concat "Latest Activity: " (transmission-time .activityDate) "\n")
+             (concat (transmission-format-trackers .trackerStats) "\n")
+             (format "Piece count: %d / %d (%d%%)" have .pieceCount
+                     (transmission-have-percent have .pieceCount))
+             (format "Piece size: %s (%d bytes) each"
+                     (file-size-human-readable .pieceSize transmission-file-size-units)
+                     .pieceSize)
+             (when (and (not (= have 0)) (< have .pieceCount))
+               (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces .pieceCount))))))
+      (insert (mapconcat #'identity vec "\n")))))
 
 (defun transmission-draw (fun)
   "FUN erases the buffer and draws a new one."
