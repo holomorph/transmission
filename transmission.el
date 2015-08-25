@@ -59,6 +59,7 @@
 (require 'let-alist)
 (require 'seq)
 (require 'subr-x)
+(require 'tabulated-list)
 
 (defgroup transmission nil
   "Interface to a Transmission session."
@@ -434,7 +435,8 @@ rate."
                              :priority-normal))
     (error "Invalid field %s" action))
   (let ((id transmission-torrent-id)
-        (indices (transmission-prop-values-in-region 'index)))
+        (indices (mapcar (lambda (id) (cdr (assq 'index id)))
+                         (transmission-prop-values-in-region 'tabulated-list-id))))
     (if (and id indices)
         (let ((arguments (list :ids id action indices)))
           (transmission-request "torrent-set" arguments))
@@ -445,7 +447,7 @@ rate."
 If the file named \"foo\" does not exist, try \"foo.part\" before returning."
   (let* ((dir (file-name-as-directory
                (transmission-torrent-value transmission-torrent-vector 'downloadDir)))
-         (base (get-text-property (point) 'name))
+         (base (cdr (assq 'name (tabulated-list-get-id))))
          (full (and dir base (concat dir base))))
     (or (and (file-exists-p full) full)
         (and (file-exists-p (concat full ".part"))
@@ -757,18 +759,21 @@ When called with a prefix, also unlink torrent data on disk."
          (file (cdr-safe (assq 'name (and (not (seq-empty-p files)) (elt files 0)))))
          (directory (transmission-files-directory-base file))
          (truncate (if directory (transmission-files-directory-prefix-p directory files))))
-    (erase-buffer)
+    (setq tabulated-list-entries nil)
     (seq-doseq (element files)
       (let-alist element
-        (let ((vec
-               (vector
-                (format "%3d%%" (transmission-have-percent .bytesCompleted .length))
-                (format "%6s" (car (rassoc .priority transmission-priority-alist)))
-                (format "%3s" (pcase .wanted (:json-false "no") (_ "yes")))
-                (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
-                        (file-size-human-readable .length transmission-file-size-units))
-                (concat (if truncate (string-remove-prefix directory .name) .name) "\n"))))
-          (transmission-insert-entry vec (list 'name .name 'index .index)))))))
+        (push
+         (list
+          element
+          (vector
+           (format "%3d%%" (transmission-have-percent .bytesCompleted .length))
+           (symbol-name (car (rassoc .priority transmission-priority-alist)))
+           (pcase .wanted (:json-false "no") (_ "yes"))
+           (file-size-human-readable .length transmission-file-size-units)
+           (if truncate (string-remove-prefix directory .name) .name)))
+         tabulated-list-entries)))
+    (setq tabulated-list-entries (reverse tabulated-list-entries))
+    (tabulated-list-print)))
 
 (defun transmission-draw-info (id)
   (setq transmission-torrent-vector
@@ -882,7 +887,7 @@ Key bindings:
   (transmission-context transmission-info-mode))
 
 (defvar transmission-files-mode-map
-  (let ((map (copy-keymap transmission-map)))
+  (let ((map (copy-keymap tabulated-list-mode-map)))
     (define-key map "!" 'transmission-files-command)
     (define-key map "i" 'transmission-info)
     (define-key map "u" 'transmission-files-unwant)
@@ -891,7 +896,7 @@ Key bindings:
     map)
   "Keymap used in `transmission-files-mode' buffers.")
 
-(define-derived-mode transmission-files-mode special-mode "Transmission-Files"
+(define-derived-mode transmission-files-mode tabulated-list-mode "Transmission-Files"
   "Major mode for interacting with torrent files in Transmission.
 The hook `transmission-files-mode-hook' is run at mode
 initialization.
@@ -900,9 +905,28 @@ Key bindings:
 \\{transmission-files-mode-map}"
   :group 'transmission
   (buffer-disable-undo)
+  (setq tabulated-list-format
+        [("Have" 4 t :right-align t)
+         ("Priority" 8 t)
+         ("Want" 4 t :right-align t)
+         ("Size" 9 (lambda (a b)
+                     (> (cdr (assq 'length (car a)))
+                        (cdr (assq 'length (car b)))))
+          :right-align t)
+         ("Name" 0 t)])
+  (setf (cadr (aref tabulated-list-format 3))
+        (if (eq 'iec transmission-file-size-units) 9 7))
+  (tabulated-list-init-header)
   (setq transmission-refresh-function
         (lambda () (transmission-draw-files transmission-torrent-id)))
-  (setq-local revert-buffer-function #'transmission-refresh))
+  (setq-local revert-buffer-function #'transmission-refresh)
+  (add-function :before (local 'revert-buffer-function)
+                (lambda (&optional _arg _noconfirm)
+                  (unless (eq (cadr (aref tabulated-list-format 3))
+                              (if (eq 'iec transmission-file-size-units) 9 7))
+                    (setf (cadr (aref tabulated-list-format 3))
+                          (if (eq 'iec transmission-file-size-units) 9 7))
+                    (tabulated-list-init-header)))))
 
 (defun transmission-files ()
   "Open a `transmission-files-mode' buffer for torrent at point."
