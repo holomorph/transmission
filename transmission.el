@@ -467,6 +467,17 @@ together with indices for each file, and sorted by file name."
       (format "Never")
     (format-time-string transmission-time-format (seconds-to-time seconds))))
 
+(defun transmission-hamming-weight (x)
+  "Calculate the Hamming weight of X."
+  (let ((m1 #x555555555555555)
+        (m2 #x333333333333333)
+        (m4 #x0f0f0f0f0f0f0f0f)
+        (h01 #x0101010101010101))
+    (setq x (- x (logand (lsh x -1) m1)))
+    (setq x (+ (logand x m2) (logand (lsh x -2) m2)))
+    (setq x (logand (+ x (lsh x -4)) m4))
+    (lsh (* x h01) -56)))
+
 (defun transmission-map-byte-to-string (byte)
   "Map integer BYTE to an 8-bit binary representation as a string."
   (let* ((calc-number-radix 2)
@@ -758,24 +769,27 @@ When called with a prefix, also unlink torrent data on disk."
   (let ((torrents (transmission-torrents `(:ids ,id :fields ,transmission-info-fields))))
     (erase-buffer)
     (let-alist (elt torrents 0)
-      (let ((vec
-             (vector
-              (format "ID: %d" id)
-              (concat "Name: " .name)
-              (concat "Hash: " .hashString)
-              (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
-              (format "Peers: connected to %d, uploading to %d, downloading from %d\n"
-                      .peersConnected .peersGettingFromUs .peersSendingToUs)
-              (concat "Date created:    " (transmission-time .dateCreated))
-              (concat "Date added:      " (transmission-time .addedDate))
-              (concat "Date finished:   " (transmission-time .doneDate))
-              (concat "Latest Activity: " (transmission-time .activityDate) "\n")
-              (concat (transmission-format-trackers .trackerStats) "\n")
-              (format "Piece count: %d" .pieceCount)
-              (format "Piece size: %s (%d bytes) each"
-                      (file-size-human-readable .pieceSize transmission-file-size-units)
-                      .pieceSize)
-              (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces .pieceCount)))))
+      (let* ((have (apply #'+ (mapcar #'transmission-hamming-weight
+                                      (base64-decode-string .pieces))))
+             (vec
+              (vector
+               (format "ID: %d" id)
+               (concat "Name: " .name)
+               (concat "Hash: " .hashString)
+               (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
+               (format "Peers: connected to %d, uploading to %d, downloading from %d\n"
+                       .peersConnected .peersGettingFromUs .peersSendingToUs)
+               (concat "Date created:    " (transmission-time .dateCreated))
+               (concat "Date added:      " (transmission-time .addedDate))
+               (concat "Date finished:   " (transmission-time .doneDate))
+               (concat "Latest Activity: " (transmission-time .activityDate) "\n")
+               (concat (transmission-format-trackers .trackerStats) "\n")
+               (format "Piece count: %d / %d (%d%%)" have .pieceCount
+                       (transmission-have-percent have .pieceCount))
+               (format "Piece size: %s (%d bytes) each"
+                       (file-size-human-readable .pieceSize transmission-file-size-units)
+                       .pieceSize)
+               (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces .pieceCount)))))
         (insert (mapconcat #'identity vec "\n"))))))
 
 (defun transmission-draw (fun)
