@@ -163,7 +163,7 @@ See `format-time-string'."
   "Vector of Transmission torrent data.")
 
 (defvar-local transmission-torrent-id nil
-  "The Transmission torrent ID integer corresponding to the current buffer.")
+  "The Transmission torrent ID integer.")
 
 (defvar-local transmission-refresh-function nil
   "The name of the function applied to `transmission-draw'.")
