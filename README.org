@@ -30,3 +30,17 @@ etc., do the usual
 make
 make install
 #+END_SRC
+
+* Setup
+
+The customizables =transmission-host=, =transmission-service=, and
+=transmission-rpc-path= are used for the URL to communicate with a
+Transmission RPC server.  The defaults reflect the URL
+<http://localhost:9091/transmission/rpc>. Also, there is
+=transmission-rpc-auth= for setting a username and password.
+
+To see the rest of the customizable variables, do
+
+#+BEGIN_SRC
+M-x customize-group RET transmission RET
+#+END_SRC
