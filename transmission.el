@@ -482,8 +482,8 @@ together with indices for each file, and sorted by file name."
     (setq x (logand (+ x (lsh x -4)) m4))
     (lsh (* x h01) -56)))
 
-(defun transmission-map-byte-to-string (byte)
-  "Map integer BYTE to an 8-bit binary representation as a string."
+(defun transmission-byte->string (byte)
+  "Format integer BYTE into a string."
   (let* ((calc-number-radix 2)
          (string (math-format-radix byte)))
     (concat (make-string (- 8 (length string)) ?0) string)))
@@ -709,7 +709,7 @@ When called with a prefix, also unlink torrent data on disk."
 
 (defun transmission-format-pieces (pieces count)
   (let* ((bytes (mapcar #'identity (base64-decode-string pieces)))
-         (bits (seq-mapcat #'transmission-map-byte-to-string bytes)))
+         (bits (seq-mapcat #'transmission-byte->string bytes)))
     (mapconcat #'identity (seq-partition (seq-take bits count) 72) "\n")))
 
 (defun transmission-format-trackers (trackers)
