@@ -731,9 +731,9 @@ When called with a prefix, also unlink torrent data on disk."
            (pcase .wanted (:json-false "no") (_ "yes"))
            (file-size-human-readable .length transmission-file-size-units)
            (if truncate (string-remove-prefix directory .name) .name)))
-         tabulated-list-entries)))
-    (setq tabulated-list-entries (reverse tabulated-list-entries))
-    (tabulated-list-print)))
+         tabulated-list-entries))))
+  (setq tabulated-list-entries (reverse tabulated-list-entries))
+  (tabulated-list-print))
 
 (defun transmission-draw-info (id)
   (setq transmission-torrent-vector
