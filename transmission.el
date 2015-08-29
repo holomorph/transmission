@@ -495,7 +495,8 @@ together with indices for each file, and sorted by file name."
 Similar to `when-let', except calls user-error if bindings are not truthy."
   (declare (indent 1) (debug t))
   `(let* ((ids (or (and transmission-torrent-id (list transmission-torrent-id))
-                   (transmission-prop-values-in-region 'id)))
+                   (mapcar (lambda (id) (cdr (assq 'index id)))
+                           (transmission-prop-values-in-region 'tabulated-list-id))))
           ,@bindings)
      (if ids
          (progn ,@body)
@@ -736,21 +737,24 @@ When called with a prefix, also unlink torrent data on disk."
 (defun transmission-draw-torrents ()
   (setq transmission-torrent-vector
         (transmission-torrents `(:fields ,transmission-torrent-get-fields)))
-  (erase-buffer)
+  (setq tabulated-list-entries nil)
   (seq-doseq (element transmission-torrent-vector)
     (let-alist element
-      (let ((vec
-             (vector
-              (format "%-4s" (transmission-eta .eta .percentDone))
-              (format (if (eq 'iec transmission-file-size-units) "%9s" "%7s")
-                      (file-size-human-readable .sizeWhenDone transmission-file-size-units))
-              (format "%3d%%" (* 100 .percentDone))
-              (format "%4d" (transmission-rate .rateDownload))
-              (format "%3d" (transmission-rate .rateUpload))
-              (format "%4.1f" (if (> .uploadRatio 0) .uploadRatio 0))
-              (format "%-11s" (transmission-status .status .rateUpload .rateDownload))
-              (concat .name "\n"))))
-        (transmission-insert-entry vec (list 'id .id))))))
+      (push
+       (list
+        element
+        (vector
+         (transmission-eta .eta .percentDone)
+         (file-size-human-readable .sizeWhenDone transmission-file-size-units)
+         (format "%3d%%" (* 100 .percentDone))
+         (format "%d" (transmission-rate .rateDownload))
+         (format "%d" (transmission-rate .rateUpload))
+         (format "%4.1f" (if (> .uploadRatio 0) .uploadRatio 0))
+         (transmission-status .status .rateUpload .rateDownload)
+         .name))
+       tabulated-list-entries)))
+  (setq tabulated-list-entries (reverse tabulated-list-entries))
+  (tabulated-list-print))
 
 (defun transmission-draw-files (id)
   (setq transmission-torrent-vector
@@ -828,14 +832,14 @@ When called with a prefix, also unlink torrent data on disk."
   (let ((name (format "*%s*" (replace-regexp-in-string "-mode\\'" ""
                                                        (symbol-name mode)))))
     `(let ((id (or transmission-torrent-id
-                   (get-char-property (point) 'id)))
+                   (cdr (assq 'id (tabulated-list-get-id)))))
            (buffer (or (get-buffer ,name)
                        (generate-new-buffer ,name))))
        (if (not id)
            (user-error "No torrent selected")
          (switch-to-buffer buffer)
          (let ((old-id (or transmission-torrent-id
-                           (get-text-property (point-min) 'id))))
+                           (cdr (assq 'id (tabulated-list-get-id))))))
            (unless (eq major-mode ',mode)
              (funcall #',mode))
            (if (and old-id (eq old-id id))
@@ -934,7 +938,7 @@ Key bindings:
   (transmission-context transmission-files-mode))
 
 (defvar transmission-mode-map
-  (let ((map (copy-keymap transmission-map)))
+  (let ((map (copy-keymap tabulated-list-mode-map)))
     (define-key map (kbd "RET") 'transmission-files)
     (define-key map "\t" 'transmission-next-torrent)
     (define-key map [backtab] 'transmission-previous-torrent)
@@ -953,7 +957,7 @@ Key bindings:
     map)
   "Keymap used in `transmission-mode' buffers.")
 
-(define-derived-mode transmission-mode special-mode "Transmission"
+(define-derived-mode transmission-mode tabulated-list-mode "Transmission"
   "Major mode for interfacing with a Transmission daemon. See
 https://trac.transmissionbt.com/ for more information about
 Transmission.  The hook `transmission-mode-hook' is run at mode
@@ -963,9 +967,31 @@ Key bindings:
 \\{transmission-mode-map}"
   :group 'transmission
   (buffer-disable-undo)
+  (setq tabulated-list-format
+        [("ETA" 4 t :right-align t)
+         ("Size" 9 (lambda (a b)
+                     (> (cdr (assq 'sizeWhenDone (car a)))
+                        (cdr (assq 'sizeWhenDone (car b)))))
+          :right-align t)
+         ("Have" 4 t :right-align t)
+         ("Down" 4 t :right-align t)
+         ("Up" 3 t :right-align t)
+         ("Ratio" 5 t :right-align t)
+         ("Status" 11 t)
+         ("Name" 0 t)])
+  (setf (cadr (aref tabulated-list-format 1))
+        (if (eq 'iec transmission-file-size-units) 9 7))
+  (tabulated-list-init-header)
   (setq transmission-refresh-function #'transmission-draw-torrents)
   (setq-local revert-buffer-function #'transmission-refresh)
-  (add-hook 'post-command-hook #'transmission-timer-check nil t))
+  (add-hook 'post-command-hook #'transmission-timer-check nil t)
+  (add-function :before (local 'revert-buffer-function)
+                (lambda (&optional _arg _noconfirm)
+                  (unless (eq (cadr (aref tabulated-list-format 1))
+                              (if (eq 'iec transmission-file-size-units) 9 7))
+                    (setf (cadr (aref tabulated-list-format 1))
+                          (if (eq 'iec transmission-file-size-units) 9 7))
+                    (tabulated-list-init-header)))))
 
 ;;;###autoload
 (defun transmission ()
