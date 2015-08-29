@@ -505,50 +505,6 @@ Similar to `when-let', except calls user-error if bindings are not truthy."
 
 ;; Interactive
 
-(defun transmission-next-torrent ()
-  "Skip to the next torrent."
-  (interactive)
-  (let* ((id (get-text-property (point) 'id))
-         (skip (text-property-any (point) (point-max) 'id id)))
-    (if (or (eobp)
-            (not (setq skip (text-property-not-all skip (point-max)
-                                                   'id id))))
-        (message "No next torrent")
-      (when (not (get-text-property skip 'id))
-        (save-excursion
-          (goto-char skip)
-          (setq skip (text-property-not-all skip (point-max)
-                                            'id nil))))
-      (if skip (goto-char skip)
-        (message "No next torrent")))))
-
-(defun transmission-previous-torrent ()
-  "Skip to the previous torrent."
-  (interactive)
-  (let ((id (get-text-property (point) 'id))
-        (start (point))
-        (found nil))
-    ;; Skip past the current link.
-    (while (and (not (bobp))
-                (numberp id)
-                (eq id (get-text-property (point) 'id)))
-      (forward-char -1))
-    ;; Find the previous link.
-    (while (and (not (bobp))
-                (or (not (numberp (get-text-property (point) 'id)))
-                    (not (setq found (= id (get-text-property (point) 'id))))))
-      (forward-char -1)
-      (setq id (get-text-property (point) 'id)))
-    (if (not found)
-        (progn
-          (message "No previous torrent")
-          (goto-char start))
-      ;; Put point at the start of the link.
-      (while (and (not (bobp))
-                  (eq id (get-text-property (point) 'id)))
-        (forward-char -1))
-      (and (not (bobp)) (forward-char 1)))))
-
 ;;;###autoload
 (defun transmission-add (torrent &optional _arg)
   "Add a torrent by filename, URL, magnet link, or info hash.
@@ -940,9 +896,6 @@ Key bindings:
 (defvar transmission-mode-map
   (let ((map (copy-keymap tabulated-list-mode-map)))
     (define-key map (kbd "RET") 'transmission-files)
-    (define-key map "\t" 'transmission-next-torrent)
-    (define-key map [backtab] 'transmission-previous-torrent)
-    (define-key map "\e\t" 'transmission-previous-torrent)
     (define-key map "a" 'transmission-add)
     (define-key map "d" 'transmission-set-download)
     (define-key map "i" 'transmission-info)
