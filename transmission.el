@@ -272,7 +272,7 @@ Details regarding the Transmission RPC can be found here:
             (transmission-send process content)
           (transmission-conflict
            (transmission-send process content)))
-      (when (and process (process-live-p process))
+      (when (process-live-p process)
         (delete-process process)
         (kill-buffer (process-buffer process))))))
 
