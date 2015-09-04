@@ -495,7 +495,7 @@ together with indices for each file, and sorted by file name."
 Similar to `when-let', except calls user-error if bindings are not truthy."
   (declare (indent 1) (debug t))
   `(let* ((ids (or (and transmission-torrent-id (list transmission-torrent-id))
-                   (mapcar (lambda (id) (cdr (assq 'index id)))
+                   (mapcar (lambda (id) (cdr (assq 'id id)))
                            (transmission-prop-values-in-region 'tabulated-list-id))))
           ,@bindings)
      (if ids
