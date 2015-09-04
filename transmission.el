@@ -921,7 +921,10 @@ Key bindings:
   :group 'transmission
   (buffer-disable-undo)
   (setq tabulated-list-format
-        [("ETA" 4 t :right-align t)
+        [("ETA" 4 (lambda (a b)
+                     (> (cdr (assq 'eta (car a)))
+                        (cdr (assq 'eta (car b)))))
+          :right-align t)
          ("Size" 9 (lambda (a b)
                      (> (cdr (assq 'sizeWhenDone (car a)))
                         (cdr (assq 'sizeWhenDone (car b)))))
