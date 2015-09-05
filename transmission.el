@@ -692,32 +692,27 @@ When called with a prefix, also unlink torrent data on disk."
                            (if (= -1 .downloadCount) 0 .downloadCount))))
                trackers "\n")))
 
-(defun transmission-insert-entry (vec props)
-  (let* ((entry (mapconcat #'identity vec " "))
-         (start (point))
-         (end (+ start (length entry))))
-    (insert entry)
-    (add-text-properties start end props)))
+(defmacro transmission-do-entries (seq &rest body)
+  "Map over SEQ, pushing each element to `tabulated-list-entries'.
+Each form in BODY is a column descriptor."
+  (declare (indent 1) (debug t))
+  `(seq-doseq (elt ,seq)
+     (let-alist elt
+       (push (list elt (vector ,@body)) tabulated-list-entries))))
 
 (defun transmission-draw-torrents ()
   (setq transmission-torrent-vector
         (transmission-torrents `(:fields ,transmission-torrent-get-fields)))
   (setq tabulated-list-entries nil)
-  (seq-doseq (element transmission-torrent-vector)
-    (let-alist element
-      (push
-       (list
-        element
-        (vector
-         (transmission-eta .eta .percentDone)
-         (file-size-human-readable .sizeWhenDone transmission-file-size-units)
-         (format "%3d%%" (* 100 .percentDone))
-         (format "%d" (transmission-rate .rateDownload))
-         (format "%d" (transmission-rate .rateUpload))
-         (format "%4.1f" (if (> .uploadRatio 0) .uploadRatio 0))
-         (transmission-status .status .rateUpload .rateDownload)
-         .name))
-       tabulated-list-entries)))
+  (transmission-do-entries transmission-torrent-vector
+    (transmission-eta .eta .percentDone)
+    (file-size-human-readable .sizeWhenDone transmission-file-size-units)
+    (format "%3d%%" (* 100 .percentDone))
+    (format "%d" (transmission-rate .rateDownload))
+    (format "%d" (transmission-rate .rateUpload))
+    (format "%4.1f" (if (> .uploadRatio 0) .uploadRatio 0))
+    (transmission-status .status .rateUpload .rateDownload)
+    .name)
   (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
@@ -729,18 +724,12 @@ When called with a prefix, also unlink torrent data on disk."
          (directory (transmission-files-directory-base file))
          (truncate (if directory (transmission-files-directory-prefix-p directory files))))
     (setq tabulated-list-entries nil)
-    (seq-doseq (element files)
-      (let-alist element
-        (push
-         (list
-          element
-          (vector
-           (format "%3d%%" (transmission-have-percent .bytesCompleted .length))
-           (symbol-name (car (rassoc .priority transmission-priority-alist)))
-           (pcase .wanted (:json-false "no") (_ "yes"))
-           (file-size-human-readable .length transmission-file-size-units)
-           (if truncate (string-remove-prefix directory .name) .name)))
-         tabulated-list-entries))))
+    (transmission-do-entries files
+      (format "%3d%%" (transmission-have-percent .bytesCompleted .length))
+      (symbol-name (car (rassoc .priority transmission-priority-alist)))
+      (pcase .wanted (:json-false "no") (_ "yes"))
+      (file-size-human-readable .length transmission-file-size-units)
+      (if truncate (string-remove-prefix directory .name) .name)))
   (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
