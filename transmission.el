@@ -666,6 +666,15 @@ When called with a prefix, also unlink torrent data on disk."
 
 ;; Drawing
 
+(defun transmission-tabulated-list-format (&optional _arg _noconfirm)
+  "Initialize tabulated-list header or update `tabulated-list-format'."
+  (let ((idx (seq-some-p (lambda (e) (plist-get (cdr e) :transmission-size))
+                         tabulated-list-format)))
+    (if (eq (cadr idx) (if (eq 'iec transmission-file-size-units) 9 7))
+        (or header-line-format (tabulated-list-init-header))
+      (setf (cadr idx) (if (eq 'iec transmission-file-size-units) 9 7))
+      (tabulated-list-init-header))))
+
 (defun transmission-format-pieces (pieces count)
   (let* ((bytes (mapcar #'identity (base64-decode-string pieces)))
          (bits (seq-mapcat #'transmission-map-byte-to-string bytes)))
@@ -872,21 +881,14 @@ Key bindings:
          ("Size" 9 (lambda (a b)
                      (> (cdr (assq 'length (car a)))
                         (cdr (assq 'length (car b)))))
-          :right-align t)
+          :right-align t :transmission-size t)
          ("Name" 0 t)])
-  (setf (cadr (aref tabulated-list-format 3))
-        (if (eq 'iec transmission-file-size-units) 9 7))
-  (tabulated-list-init-header)
+  (transmission-tabulated-list-format)
   (setq transmission-refresh-function
         (lambda () (transmission-draw-files transmission-torrent-id)))
   (setq-local revert-buffer-function #'transmission-refresh)
   (add-function :before (local 'revert-buffer-function)
-                (lambda (&optional _arg _noconfirm)
-                  (unless (eq (cadr (aref tabulated-list-format 3))
-                              (if (eq 'iec transmission-file-size-units) 9 7))
-                    (setf (cadr (aref tabulated-list-format 3))
-                          (if (eq 'iec transmission-file-size-units) 9 7))
-                    (tabulated-list-init-header)))))
+                #'transmission-tabulated-list-format))
 
 (defun transmission-files ()
   "Open a `transmission-files-mode' buffer for torrent at point."
@@ -928,26 +930,19 @@ Key bindings:
          ("Size" 9 (lambda (a b)
                      (> (cdr (assq 'sizeWhenDone (car a)))
                         (cdr (assq 'sizeWhenDone (car b)))))
-          :right-align t)
+          :right-align t :transmission-size t)
          ("Have" 4 t :right-align t)
          ("Down" 4 t :right-align t)
          ("Up" 3 t :right-align t)
          ("Ratio" 5 t :right-align t)
          ("Status" 11 t)
          ("Name" 0 t)])
-  (setf (cadr (aref tabulated-list-format 1))
-        (if (eq 'iec transmission-file-size-units) 9 7))
-  (tabulated-list-init-header)
+  (transmission-tabulated-list-format)
   (setq transmission-refresh-function #'transmission-draw-torrents)
   (setq-local revert-buffer-function #'transmission-refresh)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (add-function :before (local 'revert-buffer-function)
-                (lambda (&optional _arg _noconfirm)
-                  (unless (eq (cadr (aref tabulated-list-format 1))
-                              (if (eq 'iec transmission-file-size-units) 9 7))
-                    (setf (cadr (aref tabulated-list-format 1))
-                          (if (eq 'iec transmission-file-size-units) 9 7))
-                    (tabulated-list-init-header)))))
+                #'transmission-tabulated-list-format))
 
 ;;;###autoload
 (defun transmission ()
