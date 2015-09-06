@@ -255,12 +255,17 @@ and signal the error."
 
 (defun transmission-ensure-process ()
   (let* ((name "transmission")
-         (process (get-process name)))
+         (process (get-process name))
+         (local (string-prefix-p "/" transmission-host)))
     (if (process-live-p process)
         process
-      (open-network-stream name (format "*%s" name)
-                           transmission-host
-                           transmission-service))))
+      ;; I believe
+      ;; https://trac.transmissionbt.com/ticket/5265
+      (make-network-process
+       :name name :buffer (format " *%s*" name)
+       :host transmission-host
+       :service (if local transmission-host transmission-service)
+       :family (if local 'local)))))
 
 (defun transmission-request (method &optional arguments tag)
   "Send a request to Transmission.
