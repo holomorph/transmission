@@ -1,3 +1,33 @@
+* Changes in 0.5
+
+** Features
+
+*** Download directory can be specified when adding a torrent
+by prefixing `transmission-add`
+
+*** `tabulated-list-mode` is employed for torrent and file listing.
+This adds some sorting facilities to these listings, as well as a
+header line.
+
+*** Pieces are only shown if the torrent is in progress.
+A count of pieces obtained and a percentage are shown.
+
+** Fixes
+
+*** transmission-quit is smarter now
+
+*** More use is made of global and buffer-local variables
+For instance, `transmission-torrent-id`, `transmission-torrent-vector`
+
+* Changes in 0.4.1
+
+*** Display of pieces is now correct
+
+*** `transmission-files-command` now tries incomplete .part files
+
+*** Use 'font-lock-face instead of 'font property
+Fontification goes missing sometimes otherwise
+
 * Changes in 0.4
 
 ** Features
