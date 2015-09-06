@@ -463,10 +463,10 @@ together with indices for each file, and sorted by file name."
          (indices (cl-map 'vector (lambda (a b) (list (cons a b)))
                           (make-vector len 'index)
                           (number-sequence 0 len))))
-    (seq-sort (lambda (a b)
-                (string-lessp (cdr (assq 'name a))
-                              (cdr (assq 'name b))))
-              (cl-map 'vector #'append files indices))))
+    (cl-sort (cl-map 'vector #'append files indices)
+             (lambda (a b)
+               (string< (cdr (assq 'name a))
+                        (cdr (assq 'name b)))))))
 
 (defun transmission-time (seconds)
   (if (= 0 seconds)
@@ -697,9 +697,10 @@ When called with a prefix, also unlink torrent data on disk."
   "Map over SEQ, pushing each element to `tabulated-list-entries'.
 Each form in BODY is a column descriptor."
   (declare (indent 1) (debug t))
-  `(seq-doseq (elt ,seq)
-     (let-alist elt
-       (push (list elt (vector ,@body)) tabulated-list-entries))))
+  `(mapc (lambda (elt)
+           (let-alist elt
+             (push (list elt (vector ,@body)) tabulated-list-entries)))
+         ,seq))
 
 (defun transmission-draw-torrents ()
   (setq transmission-torrent-vector
@@ -721,7 +722,7 @@ Each form in BODY is a column descriptor."
   (setq transmission-torrent-vector
         (transmission-torrents `(:ids ,id :fields ,transmission-files-fields)))
   (let* ((files (transmission-files-sort transmission-torrent-vector))
-         (file (cdr-safe (assq 'name (and (not (seq-empty-p files)) (elt files 0)))))
+         (file (cdr (assq 'name (unless (zerop (length files)) (elt files 0)))))
          (directory (transmission-files-directory-base file))
          (truncate (if directory (transmission-files-directory-prefix-p directory files))))
     (setq tabulated-list-entries nil)
