@@ -233,8 +233,9 @@ and signal the error."
       (if auth (push (cons "Authorization" auth) headers)))
     (with-temp-buffer
       (insert (format "POST %s HTTP/1.1\r\n" path))
-      (dolist (elt headers)
-        (insert (format "%s: %s\r\n" (car elt) (cdr elt))))
+      (mapc (lambda (elt)
+              (insert (format "%s: %s\r\n" (car elt) (cdr elt))))
+            headers)
       (insert "\r\n")
       (insert content)
       (process-send-string process (buffer-string)))))
