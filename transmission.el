@@ -877,7 +877,7 @@ Key bindings:
   :group 'transmission
   (buffer-disable-undo)
   (setq tabulated-list-format
-        [("Have" 4 t :right-align t)
+        [("Have" 4 nil :right-align t)
          ("Priority" 8 t)
          ("Want" 4 t :right-align t)
          ("Size" 9 (lambda (a b)
@@ -933,10 +933,10 @@ Key bindings:
                      (> (cdr (assq 'sizeWhenDone (car a)))
                         (cdr (assq 'sizeWhenDone (car b)))))
           :right-align t :transmission-size t)
-         ("Have" 4 t :right-align t)
-         ("Down" 4 t :right-align t)
-         ("Up" 3 t :right-align t)
-         ("Ratio" 5 t :right-align t)
+         ("Have" 4 nil :right-align t)
+         ("Down" 4 nil :right-align t)
+         ("Up" 3 nil :right-align t)
+         ("Ratio" 5 nil :right-align t)
          ("Status" 11 t)
          ("Name" 0 t)])
   (transmission-tabulated-list-format)
