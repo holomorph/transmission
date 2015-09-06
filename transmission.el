@@ -768,7 +768,7 @@ Each form in BODY is a column descriptor."
                      .pieceSize)
              (when (and (not (= have 0)) (< have .pieceCount))
                (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces .pieceCount))))))
-      (insert (mapconcat #'identity vec "\n")))))
+      (insert (mapconcat #'identity (remove nil vec) "\n")))))
 
 (defun transmission-draw (fun)
   "FUN erases the buffer and draws a new one."
