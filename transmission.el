@@ -669,8 +669,8 @@ When called with a prefix, also unlink torrent data on disk."
 
 (defun transmission-tabulated-list-format (&optional _arg _noconfirm)
   "Initialize tabulated-list header or update `tabulated-list-format'."
-  (let ((idx (seq-some-p (lambda (e) (plist-get (cdr e) :transmission-size))
-                         tabulated-list-format)))
+  (let ((idx (cl-some (lambda (e) (if (plist-get (cdr e) :transmission-size) e))
+                      tabulated-list-format)))
     (if (eq (cadr idx) (if (eq 'iec transmission-file-size-units) 9 7))
         (or header-line-format (tabulated-list-init-header))
       (setf (cadr idx) (if (eq 'iec transmission-file-size-units) 9 7))
@@ -678,8 +678,8 @@ When called with a prefix, also unlink torrent data on disk."
 
 (defun transmission-format-pieces (pieces count)
   (let* ((bytes (mapcar #'identity (base64-decode-string pieces)))
-         (bits (seq-mapcat #'transmission-byte->string bytes)))
-    (mapconcat #'identity (seq-partition (seq-take bits count) 72) "\n")))
+         (bits (mapconcat #'transmission-byte->string bytes "")))
+    (mapconcat #'identity (seq-partition (substring bits 0 count) 72) "\n")))
 
 (defun transmission-format-trackers (trackers)
   (let ((fmt (concat "Tracker %d: %s (Tier %d)\n"
