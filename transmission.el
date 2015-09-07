@@ -334,7 +334,8 @@ returned by `transmission-torrents'."
       (6 (if (> up 0) (propertize state 'font-lock-face 'success) idle))
       (_ state))))
 
-(defun transmission-have-percent (have total)
+(defun transmission-percent (have total)
+  "Return floor of the percentage of HAVE by TOTAL."
   (condition-case nil
       (/ (* 100 have) total)
     (arith-error 0)))
@@ -743,7 +744,7 @@ Each form in BODY is a column descriptor."
          (truncate (if directory (transmission-files-directory-prefix-p directory files))))
     (setq tabulated-list-entries nil)
     (transmission-do-entries files
-      (format "%3d%%" (transmission-have-percent .bytesCompleted .length))
+      (format "%3d%%" (transmission-percent .bytesCompleted .length))
       (symbol-name (car (rassoc .priority transmission-priority-alist)))
       (pcase .wanted (:json-false "no") (_ "yes"))
       (file-size-human-readable .length transmission-file-size-units)
@@ -772,7 +773,7 @@ Each form in BODY is a column descriptor."
              (concat "Latest Activity: " (transmission-time .activityDate) "\n")
              (concat (transmission-format-trackers .trackerStats) "\n")
              (format "Piece count: %d / %d (%d%%)" have .pieceCount
-                     (transmission-have-percent have .pieceCount))
+                     (transmission-percent have .pieceCount))
              (format "Piece size: %s (%d bytes) each"
                      (file-size-human-readable .pieceSize transmission-file-size-units)
                      .pieceSize)
