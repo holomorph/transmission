@@ -536,6 +536,16 @@ When called with a prefix, prompt for DIRECTORY."
                   (user-error "Already added %s" .arguments.torrent-duplicate.name))))
         (_ (user-error .result))))))
 
+(defun transmission-move (location)
+  "Move torrent at point or in region to a new location."
+  (interactive (list (read-directory-name "New directory: ")))
+  (transmission-let-ids ((arguments (list :ids ids :move t
+                                          :location (expand-file-name location))))
+    (when (y-or-n-p (format "Move torrent%s to %s? "
+                            (if (cdr ids) "s" "")
+                            location))
+     (transmission-request "torrent-set-location" arguments))))
+
 (defun transmission-reannounce ()
   "Reannounce torrent at point or in region."
   (interactive)
@@ -833,6 +843,7 @@ Each form in BODY is a column descriptor."
 
 (defvar transmission-info-mode-map
   (let ((map (copy-keymap transmission-map)))
+    (define-key map "m" 'transmission-move)
     (define-key map "t" 'transmission-trackers-add)
     (define-key map "T" 'transmission-trackers-remove)
     map)
@@ -861,6 +872,7 @@ Key bindings:
   (let ((map (copy-keymap tabulated-list-mode-map)))
     (define-key map "!" 'transmission-files-command)
     (define-key map "i" 'transmission-info)
+    (define-key map "m" 'transmission-move)
     (define-key map "u" 'transmission-files-unwant)
     (define-key map "w" 'transmission-files-want)
     (define-key map "y" 'transmission-files-priority)
@@ -904,6 +916,7 @@ Key bindings:
     (define-key map "d" 'transmission-set-download)
     (define-key map "i" 'transmission-info)
     (define-key map "l" 'transmission-set-ratio)
+    (define-key map "m" 'transmission-move)
     (define-key map "r" 'transmission-remove)
     (define-key map "s" 'transmission-toggle)
     (define-key map "t" 'transmission-trackers-add)
