@@ -828,13 +828,6 @@ Each form in BODY is a column descriptor."
 
 ;; Major mode definitions
 
-(defvar transmission-map
-  (let ((map (copy-keymap special-mode-map)))
-    (define-key map "p" 'previous-line)
-    (define-key map "n" 'next-line)
-    map)
-  "Common keymap used in Transmission mode buffers.")
-
 (defvar transmission-info-font-lock-keywords
   `(("^\\(.*?:\\)[[:blank:]]*\\(.*\\)$"
      (1 'font-lock-type-face)
@@ -842,7 +835,9 @@ Each form in BODY is a column descriptor."
   "Default expressions to highlight in `transmission-info-mode' buffers.")
 
 (defvar transmission-info-mode-map
-  (let ((map (copy-keymap transmission-map)))
+  (let ((map (copy-keymap special-mode-map)))
+    (define-key map "p" 'previous-line)
+    (define-key map "n" 'next-line)
     (define-key map "m" 'transmission-move)
     (define-key map "t" 'transmission-trackers-add)
     (define-key map "T" 'transmission-trackers-remove)
