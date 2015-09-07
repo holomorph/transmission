@@ -92,7 +92,7 @@
                                   (:password string))))
   :group 'transmission)
 
-(defcustom transmission-file-size-units nil
+(defcustom transmission-units nil
   "The flavor of units used to display file sizes.
 
 See `file-size-human-readable'."
@@ -334,6 +334,9 @@ returned by `transmission-torrents'."
       (6 (if (> up 0) (propertize state 'font-lock-face 'success) idle))
       (_ state))))
 
+(defun transmission-size (bytes)
+  (file-size-human-readable bytes transmission-units))
+
 (defun transmission-percent (have total)
   "Return floor of the percentage of HAVE by TOTAL."
   (condition-case nil
@@ -390,8 +393,8 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
 
 (defun transmission-rate (bytes)
   "Return a the rate BYTES per second scaled according to
-`transmission-file-size-units'."
-  (let ((scale (if (eq 'iec transmission-file-size-units) 1024 1000)))
+`transmission-units'."
+  (let ((scale (if (eq 'iec transmission-units) 1024 1000)))
     (/ bytes scale)))
 
 (defun transmission-prompt-speed-limit (upload)
@@ -688,9 +691,9 @@ When called with a prefix, also unlink torrent data on disk."
   "Initialize tabulated-list header or update `tabulated-list-format'."
   (let ((idx (cl-some (lambda (e) (if (plist-get (cdr e) :transmission-size) e))
                       tabulated-list-format)))
-    (if (eq (cadr idx) (if (eq 'iec transmission-file-size-units) 9 7))
+    (if (eq (cadr idx) (if (eq 'iec transmission-units) 9 7))
         (or header-line-format (tabulated-list-init-header))
-      (setf (cadr idx) (if (eq 'iec transmission-file-size-units) 9 7))
+      (setf (cadr idx) (if (eq 'iec transmission-units) 9 7))
       (tabulated-list-init-header))))
 
 (defun transmission-format-pieces (pieces count)
@@ -725,7 +728,7 @@ Each form in BODY is a column descriptor."
   (setq tabulated-list-entries nil)
   (transmission-do-entries transmission-torrent-vector
     (transmission-eta .eta .percentDone)
-    (file-size-human-readable .sizeWhenDone transmission-file-size-units)
+    (transmission-size .sizeWhenDone)
     (format "%3d%%" (* 100 .percentDone))
     (format "%d" (transmission-rate .rateDownload))
     (format "%d" (transmission-rate .rateUpload))
@@ -747,7 +750,7 @@ Each form in BODY is a column descriptor."
       (format "%3d%%" (transmission-percent .bytesCompleted .length))
       (symbol-name (car (rassoc .priority transmission-priority-alist)))
       (pcase .wanted (:json-false "no") (_ "yes"))
-      (file-size-human-readable .length transmission-file-size-units)
+      (transmission-size .length)
       (if truncate (string-remove-prefix directory .name) .name)))
   (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
@@ -775,7 +778,7 @@ Each form in BODY is a column descriptor."
              (format "Piece count: %d / %d (%d%%)" have .pieceCount
                      (transmission-percent have .pieceCount))
              (format "Piece size: %s (%d bytes) each"
-                     (file-size-human-readable .pieceSize transmission-file-size-units)
+                     (transmission-size .pieceSize)
                      .pieceSize)
              (when (and (not (= have 0)) (< have .pieceCount))
                (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces .pieceCount))))))
