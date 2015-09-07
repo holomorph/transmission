@@ -152,7 +152,9 @@ See `format-time-string'."
   '("name" "hashString" "magnetLink" "activityDate" "addedDate"
     "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
     "pieceSize" "trackers" "trackerStats" "peersConnected" "peersGettingFromUs"
-    "peersSendingToUs"))
+    "peersSendingToUs" "sizeWhenDone" "error" "errorString" "wanted" "files"
+    "downloadedEver" "corruptEver" "haveValid" "totalSize" "percentDone"
+    "seedRatioLimit" "seedRatioMode" "bandwidthPriority"))
 
 (defconst transmission-session-header "X-Transmission-Session-Id"
   "The \"X-Transmission-Session-Id\" header key.")
@@ -500,6 +502,13 @@ together with indices for each file, and sorted by file name."
          (string (math-format-radix byte)))
     (concat (make-string (- 8 (length string)) ?0) string)))
 
+(defun transmission-torrent-seed-ratio (tlimit mode)
+  "String showing a torrent's seed ratio limit."
+  (pcase mode
+    (0 "Session limit")
+    (1 (format "%d (torrent-specific limit)" tlimit))
+    (2 "Unlimited")))
+
 (defmacro transmission-let-ids (bindings &rest body)
   "Execute BODY, binding list `ids' with `transmission-prop-values-in-region'.
 Similar to `when-let', except calls user-error if bindings are not truthy."
@@ -762,12 +771,24 @@ Each form in BODY is a column descriptor."
   (let-alist (elt transmission-torrent-vector 0)
     (let* ((have (apply #'+ (mapcar #'transmission-hamming-weight
                                     (base64-decode-string .pieces))))
+           (wanted (apply #'+ (cl-mapcar (lambda (w f)
+                                           (if (not (zerop w))
+                                               (cdr (assq 'length f)) 0))
+                                         .wanted .files)))
            (vec
             (vector
              (format "ID: %d" id)
              (concat "Name: " .name)
              (concat "Hash: " .hashString)
              (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
+             (format "Percent done: %d%%" (* 100 .percentDone))
+             (format "Bandwidth priority: %s"
+                     (car (rassoc .bandwidthPriority transmission-priority-alist)))
+             (concat "Ratio limit: "
+                     (transmission-torrent-seed-ratio .seedRatioLimit .seedRatioMode))
+             (unless (zerop .error)
+               (format "Error: %d %s\n" .error
+                       (propertize .errorString 'font-lock-face 'error)))
              (format "Peers: connected to %d, uploading to %d, downloading from %d\n"
                      .peersConnected .peersGettingFromUs .peersSendingToUs)
              (concat "Date created:    " (transmission-time .dateCreated))
@@ -775,11 +796,22 @@ Each form in BODY is a column descriptor."
              (concat "Date finished:   " (transmission-time .doneDate))
              (concat "Latest Activity: " (transmission-time .activityDate) "\n")
              (concat (transmission-format-trackers .trackerStats) "\n")
-             (format "Piece count: %d / %d (%d%%)" have .pieceCount
-                     (transmission-percent have .pieceCount))
+             (format "Wanted: %s (%d bytes)" (transmission-size wanted)
+                     wanted)
+             (format "Downloaded: %s (%d bytes)" (transmission-size .downloadedEver)
+                     .downloadedEver)
+             (format "Verified: %s (%d bytes)" (transmission-size .haveValid)
+                     .haveValid)
+             (unless (zerop .corruptEver)
+               (format "Corrupt: %s (%d bytes)" (transmission-size .corruptEver)
+                       .corruptEver))
+             (format "Total size: %s (%d bytes)" (transmission-size .totalSize)
+                     .totalSize)
              (format "Piece size: %s (%d bytes) each"
                      (transmission-size .pieceSize)
                      .pieceSize)
+             (format "Piece count: %d / %d (%d%%)" have .pieceCount
+                     (transmission-percent have .pieceCount))
              (when (and (not (= have 0)) (< have .pieceCount))
                (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces .pieceCount))))))
       (insert (mapconcat #'identity (remove nil vec) "\n")))))
