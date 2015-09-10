@@ -693,6 +693,14 @@ When called with a prefix, also unlink torrent data on disk."
          (prog (car args)))
     (apply #'start-process prog nil args)))
 
+(defun transmission-find-file ()
+  "Visit the file at point with `find-file-read-only'."
+  (interactive)
+  (let ((file (transmission-files-file-at-point)))
+    (if file
+        (find-file-read-only file)
+      (user-error "File does not exist."))))
+
 
 ;; Drawing
 
@@ -901,6 +909,7 @@ Key bindings:
 
 (defvar transmission-files-mode-map
   (let ((map (copy-keymap tabulated-list-mode-map)))
+    (define-key map (kbd "RET") 'transmission-find-file)
     (define-key map "!" 'transmission-files-command)
     (define-key map "i" 'transmission-info)
     (define-key map "m" 'transmission-move)

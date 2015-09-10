@@ -11,6 +11,8 @@ by prefixing `transmission-add`
 This adds some sorting facilities to these listings, as well as a
 header line.
 
+*** New command `transmission-find-file' for visiting from the file list
+
 *** Pieces are only shown if the torrent is in progress.
 A count of pieces obtained and a percentage are shown.
 
