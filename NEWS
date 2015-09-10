@@ -13,8 +13,16 @@ header line.
 
 *** New command `transmission-find-file' for visiting from the file list
 
+*** More information is shown in the info context
+
 *** Pieces are only shown if the torrent is in progress.
 A count of pieces obtained and a percentage are shown.
+
+** Changes
+
+*** Renamed some things
+
+**** `transmission-file-size-units' renamed to `transmission-units'
 
 ** Fixes
 
