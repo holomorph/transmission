@@ -858,16 +858,17 @@ Each form in BODY is a column descriptor."
                        (generate-new-buffer ,name))))
        (if (not id)
            (user-error "No torrent selected")
-         (switch-to-buffer buffer)
-         (let ((old-id (or transmission-torrent-id
-                           (cdr (assq 'id (tabulated-list-get-id))))))
-           (unless (eq major-mode ',mode)
-             (funcall #',mode))
-           (if (and old-id (eq old-id id))
-               (transmission-refresh)
-             (setq transmission-torrent-id id)
-             (transmission-draw transmission-refresh-function)
-             (goto-char (point-min))))))))
+         (with-current-buffer buffer
+           (let ((old-id (or transmission-torrent-id
+                             (cdr (assq 'id (tabulated-list-get-id))))))
+             (unless (eq major-mode ',mode)
+               (funcall #',mode))
+             (if (and old-id (eq old-id id))
+                 (transmission-refresh)
+               (setq transmission-torrent-id id)
+               (transmission-draw transmission-refresh-function)
+               (goto-char (point-min)))))
+         (switch-to-buffer buffer)))))
 
 
 ;; Major mode definitions
@@ -1007,12 +1008,13 @@ Key bindings:
          (buffer (or (get-buffer name)
                      (generate-new-buffer name))))
     (unless (eq buffer (current-buffer))
-      (switch-to-buffer-other-window buffer)
-      (if (eq major-mode 'transmission-mode)
-          (transmission-refresh)
-        (transmission-mode)
-        (transmission-draw transmission-refresh-function)
-        (goto-char (point-min))))))
+      (with-current-buffer buffer
+        (if (eq major-mode 'transmission-mode)
+            (transmission-refresh)
+          (transmission-mode)
+          (transmission-draw transmission-refresh-function)
+          (goto-char (point-min))))
+      (switch-to-buffer-other-window buffer))))
 
 (provide 'transmission)
 
