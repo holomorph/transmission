@@ -777,51 +777,45 @@ Each form in BODY is a column descriptor."
         (transmission-torrents `(:ids ,id :fields ,transmission-info-fields)))
   (erase-buffer)
   (let-alist (elt transmission-torrent-vector 0)
-    (let* ((have (apply #'+ (mapcar #'transmission-hamming-weight
-                                    (base64-decode-string .pieces))))
-           (wanted (apply #'+ (cl-mapcar (lambda (w f)
-                                           (if (not (zerop w))
-                                               (cdr (assq 'length f)) 0))
-                                         .wanted .files)))
-           (vec
-            (vector
-             (format "ID: %d" id)
-             (concat "Name: " .name)
-             (concat "Hash: " .hashString)
-             (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
-             (format "Percent done: %d%%" (* 100 .percentDone))
-             (format "Bandwidth priority: %s"
-                     (car (rassoc .bandwidthPriority transmission-priority-alist)))
-             (concat "Ratio limit: "
-                     (transmission-torrent-seed-ratio .seedRatioLimit .seedRatioMode))
-             (unless (zerop .error)
-               (format "Error: %d %s\n" .error
-                       (propertize .errorString 'font-lock-face 'error)))
-             (format "Peers: connected to %d, uploading to %d, downloading from %d\n"
-                     .peersConnected .peersGettingFromUs .peersSendingToUs)
-             (concat "Date created:    " (transmission-time .dateCreated))
-             (concat "Date added:      " (transmission-time .addedDate))
-             (concat "Date finished:   " (transmission-time .doneDate))
-             (concat "Latest Activity: " (transmission-time .activityDate) "\n")
-             (concat (transmission-format-trackers .trackerStats) "\n")
-             (format "Wanted: %s (%d bytes)" (transmission-size wanted)
-                     wanted)
-             (format "Downloaded: %s (%d bytes)" (transmission-size .downloadedEver)
-                     .downloadedEver)
-             (format "Verified: %s (%d bytes)" (transmission-size .haveValid)
-                     .haveValid)
-             (unless (zerop .corruptEver)
-               (format "Corrupt: %s (%d bytes)" (transmission-size .corruptEver)
-                       .corruptEver))
-             (format "Total size: %s (%d bytes)" (transmission-size .totalSize)
-                     .totalSize)
-             (format "Piece size: %s (%d bytes) each"
-                     (transmission-size .pieceSize)
-                     .pieceSize)
-             (format "Piece count: %d / %d (%d%%)" have .pieceCount
-                     (transmission-percent have .pieceCount))
-             (when (and (not (= have 0)) (< have .pieceCount))
-               (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces .pieceCount))))))
+    (let ((vec
+           (vector
+            (format "ID: %d" id)
+            (concat "Name: " .name)
+            (concat "Hash: " .hashString)
+            (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
+            (format "Percent done: %d%%" (* 100 .percentDone))
+            (format "Bandwidth priority: %s"
+                    (car (rassoc .bandwidthPriority transmission-priority-alist)))
+            (concat "Ratio limit: "
+                    (transmission-torrent-seed-ratio .seedRatioLimit .seedRatioMode))
+            (unless (zerop .error)
+              (format "Error: %d %s\n" .error
+                      (propertize .errorString 'font-lock-face 'error)))
+            (format "Peers: connected to %d, uploading to %d, downloading from %d\n"
+                    .peersConnected .peersGettingFromUs .peersSendingToUs)
+            (concat "Date created:    " (transmission-time .dateCreated))
+            (concat "Date added:      " (transmission-time .addedDate))
+            (concat "Date finished:   " (transmission-time .doneDate))
+            (concat "Latest Activity: " (transmission-time .activityDate) "\n")
+            (concat (transmission-format-trackers .trackerStats) "\n")
+            (let ((wanted (apply #'+ (cl-mapcar (lambda (w f)
+                                                  (if (not (zerop w))
+                                                      (cdr (assq 'length f)) 0))
+                                                .wanted .files))))
+              (format "Wanted: %s (%d bytes)" (transmission-size wanted) wanted))
+            (format "Downloaded: %s (%d bytes)" (transmission-size .downloadedEver) .downloadedEver)
+            (format "Verified: %s (%d bytes)" (transmission-size .haveValid) .haveValid)
+            (unless (zerop .corruptEver)
+              (format "Corrupt: %s (%d bytes)" (transmission-size .corruptEver) .corruptEver))
+            (format "Total size: %s (%d bytes)" (transmission-size .totalSize) .totalSize)
+            (format "Piece size: %s (%d bytes) each" (transmission-size .pieceSize) .pieceSize)
+            (let ((have (apply #'+ (mapcar #'transmission-hamming-weight
+                                           (base64-decode-string .pieces)))))
+              (concat
+               (format "Piece count: %d / %d (%d%%)" have .pieceCount
+                       (transmission-percent have .pieceCount))
+               (when (and (not (= have 0)) (< have .pieceCount))
+                 (format "Pieces:\n\n%s\n" (transmission-format-pieces .pieces .pieceCount))))))))
       (insert (mapconcat #'identity (remove nil vec) "\n")))))
 
 (defun transmission-draw (fun)
