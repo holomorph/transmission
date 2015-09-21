@@ -898,6 +898,15 @@ Each form in BODY is a column descriptor."
     map)
   "Keymap used in `transmission-info-mode' buffers.")
 
+(easy-menu-define transmission-info-mode-menu transmission-info-mode-map
+  "Menu used in `transmission-info-mode' buffers."
+  '("Transmission-Info"
+    ["Add Tracker URLs" transmission-trackers-add]
+    ["Remove Trackers" transmission-trackers-remove]
+    "--"
+    ["Refresh" revert-buffer]
+    ["Quit" quit-window]))
+
 (define-derived-mode transmission-info-mode special-mode "Transmission-Info"
   "Major mode for viewing and manipulating torrent attributes in Transmission.
 The hook `transmission-info-mode-hook' is run at mode
@@ -928,6 +937,18 @@ Key bindings:
     (define-key map "y" 'transmission-files-priority)
     map)
   "Keymap used in `transmission-files-mode' buffers.")
+
+(easy-menu-define transmission-files-mode-menu transmission-files-mode-map
+  "Menu used in `transmission-files-mode' buffers."
+  '("Transmission-Files"
+    ["Run Command On File" transmission-files-command]
+    ["Mark Files Unwanted" transmission-files-unwant]
+    ["Mark Files Wanted" transmission-files-want]
+    ["Set File's Bandwidth Priority" transmission-files-priority]
+    ["View Torrent Info" transmission-info]
+    "--"
+    ["Refresh" revert-buffer]
+    ["Quit" quit-window]))
 
 (define-derived-mode transmission-files-mode tabulated-list-mode "Transmission-Files"
   "Major mode for interacting with torrent files in Transmission.
@@ -976,6 +997,18 @@ Key bindings:
     (define-key map "y" 'transmission-set-bandwidth-priority)
     map)
   "Keymap used in `transmission-mode' buffers.")
+
+(easy-menu-define transmission-mode-menu transmission-mode-map
+  "Menu used in `transmission-mode' buffers."
+  '("Transmission"
+    ["Add Torrent" transmission-add]
+    ["Start/Stop Torrent" transmission-toggle
+     :help "Toggle pause on torrents at point or in region"]
+    ["View Torrent Files" transmission-files]
+    ["View Torrent Info" transmission-info]
+    "--"
+    ["Refresh" revert-buffer]
+    ["Quit" transmission-quit]))
 
 (define-derived-mode transmission-mode tabulated-list-mode "Transmission"
   "Major mode for interfacing with a Transmission daemon. See
