@@ -729,7 +729,7 @@ When called with a prefix, also unlink torrent data on disk."
 
 (defun transmission-format-pieces (pieces count)
   "Format into a string the bitfield PIECES holding COUNT boolean flags."
-  (let* ((bytes (mapcar #'identity (base64-decode-string pieces)))
+  (let* ((bytes (base64-decode-string pieces))
          (bits (mapconcat #'transmission-byte->string bytes "")))
     (mapconcat #'identity (seq-partition (substring bits 0 count) 72) "\n")))
 
