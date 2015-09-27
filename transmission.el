@@ -56,10 +56,12 @@
 (require 'calc-bin)
 (require 'cl-lib)
 (require 'json)
-(require 'let-alist)
 (require 'seq)
-(require 'subr-x)
 (require 'tabulated-list)
+
+(eval-when-compile
+  (require 'let-alist)
+  (require 'subr-x))
 
 (defgroup transmission nil
   "Interface to a Transmission session."
