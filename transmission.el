@@ -228,6 +228,7 @@ update `transmission-session-id' and signal the error."
       (concat "Basic " (base64-encode-string auth)))))
 
 (defun transmission-http-post (process content)
+  "Send to PROCESS an HTTP POST request containing CONTENT."
   (with-current-buffer (process-buffer process)
     (erase-buffer))
   (let ((path transmission-rpc-path)
@@ -332,6 +333,9 @@ TORRENT is the \"torrents\" vector returned by `transmission-torrents'."
 ;; Other
 
 (defun transmission-status (status up down)
+  "Return a propertized string describing torrent status.
+STATUS is a key of `transmission-status-plist'. UP and DOWN are
+transmission rates."
   (let ((state (plist-get transmission-status-plist status))
         (idle (propertize "idle" 'font-lock-face 'shadow)))
     (pcase status
