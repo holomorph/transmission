@@ -581,12 +581,13 @@ When called with a prefix, prompt for DIRECTORY."
   (transmission-let-ids nil
     (transmission-request "torrent-reannounce" (list :ids ids))))
 
-(defun transmission-remove (&optional unlink)
+(defun transmission-remove ()
   "Prompt to remove torrent at point or torrents in region.
 When called with a prefix, also unlink torrent data on disk."
   (interactive "P")
-  (transmission-let-ids ((arguments `(:ids ,ids :delete-local-data ,(and unlink t))))
-    (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
+  (transmission-let-ids ((arguments (list :ids ids :delete-local-data
+                                          (and current-prefix-arg t))))
+    (when (yes-or-no-p (concat "Remove " (and current-prefix-arg "and unlink ")
                                "torrent" (and (< 1 (length ids)) "s") "?"))
       (transmission-request "torrent-remove" arguments))))
 
