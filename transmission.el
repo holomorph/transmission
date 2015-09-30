@@ -334,7 +334,7 @@ TORRENT is the \"torrents\" vector returned by `transmission-torrents'."
 
 (defun transmission-status (status up down)
   "Return a propertized string describing torrent status.
-STATUS is a key of `transmission-status-plist'. UP and DOWN are
+STATUS is a key of `transmission-status-plist'.  UP and DOWN are
 transmission rates."
   (let ((state (plist-get transmission-status-plist status))
         (idle (propertize "idle" 'font-lock-face 'shadow)))
@@ -583,7 +583,7 @@ When called with a prefix, prompt for DIRECTORY."
 
 (defun transmission-remove (&optional unlink)
   "Prompt to remove torrent at point or torrents in region.
-When called with a prefix, also unlink torrent data on disk."
+When called with a prefix UNLINK, also unlink torrent data on disk."
   (interactive "P")
   (transmission-let-ids ((arguments `(:ids ,ids :delete-local-data ,(and unlink t))))
     (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
