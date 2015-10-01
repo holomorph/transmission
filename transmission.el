@@ -965,6 +965,7 @@ Key bindings:
 \\{transmission-files-mode-map}"
   :group 'transmission
   (buffer-disable-undo)
+  (setq-local line-move-visual nil)
   (setq tabulated-list-format
         [("Have" 4 nil :right-align t)
          ("Priority" 8 t)
@@ -1026,6 +1027,7 @@ Key bindings:
 \\{transmission-mode-map}"
   :group 'transmission
   (buffer-disable-undo)
+  (setq-local line-move-visual nil)
   (setq tabulated-list-format
         [("ETA" 4 (lambda (a b)
                      (> (cdr (assq 'eta (car a)))
