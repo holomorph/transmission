@@ -9,7 +9,7 @@ emacsdir := $(datarootdir)/emacs/site-lisp
 
 EMACS = emacs
 
-all: $(SRC:=.gz) $(SRC:.el=.elc)
+all: $(SRC:.el=.elc)
 
 clean:
 	$(RM) $(SRC:=.gz) $(SRC:.el=.elc)
