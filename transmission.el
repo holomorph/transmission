@@ -639,8 +639,9 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
     (let* ((urls (transmission-prompt-read-repeatedly "Add announce URLs: "))
            (trackers (mapcar (lambda (elt) (cdr (assq 'announce elt)))
                              (transmission-list-trackers ids)))
-           ;; Don't add trackers that are already there
-           (arguments (list :ids ids :trackerAdd (seq-difference urls trackers))))
+           (arguments (list :ids ids :trackerAdd
+                            ;; Don't add trackers that are already there
+                            (cl-set-difference urls trackers))))
       (let-alist (transmission-request "torrent-set" arguments)
         (message .result)))))
 
