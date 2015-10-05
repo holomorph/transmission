@@ -976,7 +976,6 @@ initialization.
 Key bindings:
 \\{transmission-files-mode-map}"
   :group 'transmission
-  (buffer-disable-undo)
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
         `[("Have" 4 nil :right-align t)
@@ -1039,7 +1038,6 @@ initialization.
 Key bindings:
 \\{transmission-mode-map}"
   :group 'transmission
-  (buffer-disable-undo)
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
         `[("ETA" 4 ,(transmission-tabulated-list-pred 'eta)
