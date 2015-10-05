@@ -924,7 +924,9 @@ Each form in BODY is a column descriptor."
 
 (define-derived-mode transmission-info-mode special-mode "Transmission-Info"
   "Major mode for viewing and manipulating torrent attributes in Transmission.
-The hook `transmission-info-mode-hook' is run at mode
+
+In addition to any hooks its parent mode might have run, this
+mode runs the hook `transmission-info-mode-hook' at mode
 initialization.
 
 Key bindings:
@@ -967,7 +969,9 @@ Key bindings:
 
 (define-derived-mode transmission-files-mode tabulated-list-mode "Transmission-Files"
   "Major mode for interacting with torrent files in Transmission.
-The hook `transmission-files-mode-hook' is run at mode
+
+In addition to any hooks its parent mode might have run, this
+mode runs the hook `transmission-files-mode-hook' at mode
 initialization.
 
 Key bindings:
@@ -1027,7 +1031,10 @@ Key bindings:
 (define-derived-mode transmission-mode tabulated-list-mode "Transmission"
   "Major mode for interfacing with a Transmission daemon. See
 https://trac.transmissionbt.com/ for more information about
-Transmission.  The hook `transmission-mode-hook' is run at mode
+Transmission.
+
+In addition to any hooks its parent mode might have run, this
+mode runs the hook `transmission-mode-hook' at mode
 initialization.
 
 Key bindings:
