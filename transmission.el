@@ -848,11 +848,10 @@ Each form in BODY is a column descriptor."
       (insert (mapconcat #'identity (remove nil vec) "\n")))))
 
 (defun transmission-draw (fun)
-  "FUN erases the buffer and draws a new one."
-  (setq buffer-read-only nil)
-  (funcall fun)
-  (set-buffer-modified-p nil)
-  (setq buffer-read-only t))
+  "Draw the buffer with new contents.
+FUN should update the buffer contents."
+  (with-silent-modifications
+    (funcall fun)))
 
 (defun transmission-refresh (&optional _arg _noconfirm)
   (let* ((old-window-start (window-start))
@@ -931,7 +930,7 @@ initialization.
 Key bindings:
 \\{transmission-info-mode-map}"
   :group 'transmission
-  (buffer-disable-undo)
+  (setq buffer-undo-list t)
   (setq font-lock-defaults '(transmission-info-font-lock-keywords))
   (setq transmission-refresh-function
         (lambda () (transmission-draw-info transmission-torrent-id)))
