@@ -246,6 +246,8 @@ update `transmission-session-id' and signal the error."
       (process-send-string process (buffer-string)))))
 
 (defun transmission-wait (process)
+  "Wait to receive HTTP response from PROCESS.
+Return JSON object parsed from content."
   (with-current-buffer (process-buffer process)
     (while (and (not (transmission--content-finished-p))
                 (process-live-p process))
