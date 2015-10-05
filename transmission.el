@@ -910,6 +910,7 @@ FUN should update the buffer contents."
     (define-key map "m" 'transmission-move)
     (define-key map "t" 'transmission-trackers-add)
     (define-key map "T" 'transmission-trackers-remove)
+    (define-key map "y" 'transmission-set-bandwidth-priority)
     map)
   "Keymap used in `transmission-info-mode' buffers.")
 
@@ -920,6 +921,7 @@ FUN should update the buffer contents."
     ["Remove Trackers" transmission-trackers-remove]
     ["Move Torrent" transmission-move]
     ["Reannounce Torrent" transmission-reannounce]
+    ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
     ["Verify Torrent" transmission-verify]
     "--"
     ["Refresh" revert-buffer]
