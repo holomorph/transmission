@@ -299,8 +299,7 @@ Details regarding the Transmission RPC can be found here:
   "Return a \"torrents\" vector of objects from a \"torrent-get\" request.
 Each object is an alist containing key-value pairs matching the
 \"fields\" value in ARGUMENTS."
-  (let ((response (transmission-request "torrent-get" arguments)))
-    (cdr (cadr (assq 'arguments response)))))
+  (cdr (cadr (assq 'arguments (transmission-request "torrent-get" arguments)))))
 
 (defun transmission-torrent-value (torrent field)
   "Return value in vector TORRENT of key FIELD.
