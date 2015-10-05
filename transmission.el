@@ -778,7 +778,7 @@ Each form in BODY is a column descriptor."
     (format "%3d%%" (* 100 .percentDone))
     (format "%d" (transmission-rate .rateDownload))
     (format "%d" (transmission-rate .rateUpload))
-    (format "%4.1f" (if (> .uploadRatio 0) .uploadRatio 0))
+    (format "%.1f" (if (> .uploadRatio 0) .uploadRatio 0))
     (transmission-status .status .rateUpload .rateDownload)
     .name)
   (setq tabulated-list-entries (reverse tabulated-list-entries))
