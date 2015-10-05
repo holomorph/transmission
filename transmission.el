@@ -918,6 +918,9 @@ FUN should update the buffer contents."
   '("Transmission-Info"
     ["Add Tracker URLs" transmission-trackers-add]
     ["Remove Trackers" transmission-trackers-remove]
+    ["Move Torrent" transmission-move]
+    ["Reannounce Torrent" transmission-reannounce]
+    ["Verify Torrent" transmission-verify]
     "--"
     ["Refresh" revert-buffer]
     ["Quit" quit-window]))
@@ -959,9 +962,11 @@ Key bindings:
   "Menu used in `transmission-files-mode' buffers."
   '("Transmission-Files"
     ["Run Command On File" transmission-files-command]
+    ["Visit File" transmission-find-file
+     "Switch to a read-only buffer visiting file at point"]
     ["Mark Files Unwanted" transmission-files-unwant]
     ["Mark Files Wanted" transmission-files-want]
-    ["Set File's Bandwidth Priority" transmission-files-priority]
+    ["Set Files' Bandwidth Priority" transmission-files-priority]
     ["View Torrent Info" transmission-info]
     "--"
     ["Refresh" revert-buffer]
@@ -1021,6 +1026,15 @@ Key bindings:
     ["Add Torrent" transmission-add]
     ["Start/Stop Torrent" transmission-toggle
      :help "Toggle pause on torrents at point or in region"]
+    ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
+    ("Set Limits"
+     ["Set Global Download Limit" transmission-set-download]
+     ["Set Global Upload Limit" transmission-set-upload]
+     ["Set Global Seed Ratio Limit" transmission-set-ratio])
+    ["Move Torrent" transmission-move]
+    ["Reannounce Torrent" transmission-reannounce]
+    ["Verify Torrent" transmission-verify]
+    "--"
     ["View Torrent Files" transmission-files]
     ["View Torrent Info" transmission-info]
     "--"
