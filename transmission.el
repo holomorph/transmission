@@ -857,6 +857,8 @@ FUN should update the buffer contents."
     (funcall fun)))
 
 (defun transmission-refresh (&optional _arg _noconfirm)
+  "Refresh the current buffer, restoring window position, point, and mark.
+Also run the timer for timer object `transmission-timer'."
   (let* ((old-window-start (window-start))
          (old-column (current-column))
          (old-line (line-number-at-pos))
