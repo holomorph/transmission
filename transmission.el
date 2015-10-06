@@ -409,8 +409,8 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
 (defun transmission-rate (bytes)
   "Return a rate in units kilobytes per second.
 The rate is calculated from BYTES according to `transmission-units'."
-  (let ((scale (if (eq 'iec transmission-units) 1024 1000)))
-    (/ bytes scale)))
+  (/ bytes
+     (if (eq 'iec transmission-units) 1024 1000)))
 
 (defun transmission-prompt-speed-limit (upload)
   "Make a prompt to set transfer speed limit.
