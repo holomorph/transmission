@@ -1,3 +1,19 @@
+* Changes in 0.6
+
+** Features
+
+*** Each major mode now has a menu
+
+*** Torrent list conditionally shows ∞ in place of Inf for ETA
+
+*** Applied some optimizations
+
+**** Replaced some seq- functions with their (faster) cl- counterparts.
+
+**** `transmission-draw-info' should be faster now
+
+**** Set `line-move-visual' to nil in tabulated-list buffers
+
 * Changes in 0.5
 
 ** Features
