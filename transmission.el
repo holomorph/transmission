@@ -363,10 +363,10 @@ transmission rates."
                     (string-match "/" filename))))
     (if index (substring filename 0 (1+ index)))))
 
-(defun transmission-files-directory-prefix-p (title files)
-  "Return t if TITLE is a prefix to every element in FILES, otherwise nil."
-  (seq-every-p (lambda (f) (string-prefix-p title (cdr-safe (assq 'name f))))
-               files))
+(defun transmission-every-prefix-p (prefix list)
+  "Return t if PREFIX is a prefix to every string in LIST, otherwise nil."
+  (seq-every-p (lambda (string) (string-prefix-p prefix string))
+               list))
 
 (defun transmission-prop-values-in-region (prop)
   "Return a list of truthy values of text property PROP in region or at point.
@@ -790,9 +790,9 @@ Each form in BODY is a column descriptor."
   (setq transmission-torrent-vector
         (transmission-torrents `(:ids ,id :fields ,transmission-files-fields)))
   (let* ((files (transmission-files-sort transmission-torrent-vector))
-         (file (cdr (assq 'name (unless (zerop (length files)) (elt files 0)))))
-         (directory (transmission-files-directory-base file))
-         (truncate (if directory (transmission-files-directory-prefix-p directory files))))
+         (names (mapcar (lambda (x) (cdr (assq 'name x))) files))
+         (directory (transmission-files-directory-base (car names)))
+         (truncate (if directory (transmission-every-prefix-p directory names))))
     (setq tabulated-list-entries nil)
     (transmission-do-entries files
       (format "%3d%%" (transmission-percent .bytesCompleted .length))
