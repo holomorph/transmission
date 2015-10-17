@@ -434,17 +434,18 @@ for download rate."
                                  (if enabled (format "%.1f" limit) "disabled")
                                  "): "))))))
 
-(defun transmission-prompt-read-repeatedly (prompt &optional collection)
+(defun transmission-prompt-read-repeatedly (prompt &optional collection cycle)
   "Read strings until an input is blank, with optional completion.
 PROMPT is a string to prompt with.
 COLLECTION can be a list among other things.  See `completing-read'.
+CYCLE controls the value of `completion-cycle-threshold'.
 Returns a list of non-blank inputs."
   (let ((list '())
         entry)
    (catch :finished
      (while t
        (setq entry (if (not collection) (read-string prompt)
-                     (let ((completion-cycle-threshold t))
+                     (let ((completion-cycle-threshold cycle))
                        (completing-read prompt collection nil t))))
        (if (and (not (string-empty-p entry))
                 (not (string-blank-p entry)))
@@ -664,7 +665,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                (len (length trackers))
                (prompt (concat "Remove tracker by ID"
                                (if (> len 1) (format " (%d trackers): " len) ": ")))
-               (tids (transmission-prompt-read-repeatedly prompt trackers))
+               (tids (transmission-prompt-read-repeatedly prompt trackers t))
                (arguments (list :ids id :trackerRemove (mapcar #'string-to-number tids))))
           (let-alist (transmission-request "torrent-set" arguments)
             (pcase .result
