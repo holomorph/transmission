@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.5
-;; Package-Requires: ((emacs "24.4") (let-alist "1.0.3") (seq "1.5"))
+;; Package-Requires: ((emacs "24.4") (let-alist "1.0.3"))
 ;; Keywords: comm, tools
 
 ;; This program is free software; you can redistribute it and/or
@@ -56,7 +56,6 @@
 (require 'calc-bin)
 (require 'cl-lib)
 (require 'json)
-(require 'seq)
 (require 'tabulated-list)
 
 (eval-when-compile
@@ -365,8 +364,8 @@ transmission rates."
 
 (defun transmission-every-prefix-p (prefix list)
   "Return t if PREFIX is a prefix to every string in LIST, otherwise nil."
-  (seq-every-p (lambda (string) (string-prefix-p prefix string))
-               list))
+  (cl-every (lambda (string) (string-prefix-p prefix string))
+            list))
 
 (defun transmission-prop-values-in-region (prop)
   "Return a list of truthy values of text property PROP in region or at point.
@@ -748,7 +747,15 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Format into a string the bitfield PIECES holding COUNT boolean flags."
   (let* ((bytes (base64-decode-string pieces))
          (bits (mapconcat #'transmission-byte->string bytes "")))
-    (mapconcat #'identity (seq-partition (substring bits 0 count) 72) "\n")))
+    (cl-flet ((string-partition (s n)
+                (let ((res '()))
+                  (while (not (string-empty-p s))
+                    (let* ((last (length s))
+                           (middle (min n last)))
+                      (push (substring s 0 middle) res)
+                      (setq s (substring s middle last))))
+                  (nreverse res))))
+      (string-join (string-partition (substring bits 0 count) 72) "\n"))))
 
 (defun transmission-format-trackers (trackers)
   (let ((fmt (concat "Tracker %d: %s (Tier %d)\n"
