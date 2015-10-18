@@ -446,7 +446,8 @@ Returns a list of non-blank inputs."
                      (completing-read prompt collection nil)))
        (if (and (not (string-empty-p entry))
                 (not (string-blank-p entry)))
-           (push entry list)
+           (progn (push entry list)
+                  (setq collection (delete entry collection)))
          (throw :finished list))))))
 
 (defun transmission-list-trackers (id)
