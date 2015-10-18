@@ -660,9 +660,10 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
     (if id
         (let* ((trackers (mapcar (lambda (elt) (number-to-string (cdr (assq 'id elt))))
                                  (transmission-list-trackers id)))
-               (len (length trackers))
-               (prompt (concat "Remove tracker by ID"
-                               (if (> len 1) (format " (%d trackers): " len) ": ")))
+               (prompt (if trackers
+                           (format "Remove tracker by ID (%d trackers): "
+                                   (length trackers))
+                         (user-error "No trackers to remove")))
                (completion-cycle-threshold t)
                (tids (transmission-prompt-read-repeatedly prompt trackers))
                (arguments (list :ids id :trackerRemove (mapcar #'string-to-number tids))))
