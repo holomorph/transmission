@@ -443,8 +443,7 @@ Returns a list of non-blank inputs."
    (catch :finished
      (while t
        (setq entry (if (not collection) (read-string prompt)
-                     (let ((completion-cycle-threshold t))
-                       (completing-read prompt collection nil t))))
+                     (completing-read prompt collection nil)))
        (if (and (not (string-empty-p entry))
                 (not (string-blank-p entry)))
            (push entry list)
@@ -663,6 +662,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                (len (length trackers))
                (prompt (concat "Remove tracker by ID"
                                (if (> len 1) (format " (%d trackers): " len) ": ")))
+               (completion-cycle-threshold t)
                (tids (transmission-prompt-read-repeatedly prompt trackers))
                (arguments (list :ids id :trackerRemove (mapcar #'string-to-number tids))))
           (let-alist (transmission-request "torrent-set" arguments)
