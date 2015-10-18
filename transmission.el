@@ -455,6 +455,18 @@ Returns a list of non-blank inputs."
   (let ((torrent (transmission-torrents `(:ids ,id :fields ("trackers")))))
     (transmission-torrent-value torrent 'trackers)))
 
+(defun transmission-list-unique-announce-urls ()
+  "Return a list of unique announce URLs from all current torrents."
+  (let* ((torrents (transmission-torrents '(:fields ("trackers"))))
+         (trackers (mapcar (lambda (alist) (cdr (assq 'trackers alist)))
+                           torrents))
+         (urls (mapcar (lambda (vector)
+                         (mapcar (lambda (alist)
+                                   (cdr (assq 'announce alist)))
+                                 vector))
+                       trackers)))
+    (cl-delete-duplicates (apply #'append urls) :test #'string=)))
+
 (defun transmission-files-do (action)
   "Apply ACTION to files in `transmission-files-mode' buffers."
   (unless (memq action (list :files-wanted :files-unwanted
@@ -643,15 +655,18 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-trackers-add ()
   "Add announce URLs to torrent or torrents."
   (interactive)
-  (transmission-let-ids nil
-    (let* ((urls (transmission-prompt-read-repeatedly "Add announce URLs: "))
-           (trackers (mapcar (lambda (elt) (cdr (assq 'announce elt)))
-                             (transmission-list-trackers ids)))
-           (arguments (list :ids ids :trackerAdd
-                            ;; Don't add trackers that are already there
-                            (cl-set-difference urls trackers :test #'equal))))
-      (let-alist (transmission-request "torrent-set" arguments)
-        (message .result)))))
+  (transmission-let-ids
+      ((trackers (mapcar (lambda (elt) (cdr (assq 'announce elt)))
+                         (transmission-list-trackers ids)))
+       (urls (transmission-prompt-read-repeatedly
+              "Add announce URLs: "
+              (cl-set-difference (transmission-list-unique-announce-urls)
+                                 trackers :test #'equal)))
+       (arguments (list :ids ids :trackerAdd
+                        ;; Don't add trackers that are already there
+                        (cl-set-difference urls trackers :test #'equal))))
+    (let-alist (transmission-request "torrent-set" arguments)
+      (message .result))))
 
 (defun transmission-trackers-remove ()
   "Prompt for trackers to remove by ID from torrent at point."
