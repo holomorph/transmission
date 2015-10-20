@@ -527,7 +527,7 @@ The two are spliced together with indices for each file, sorted by file name."
 (defun transmission-byte->string (byte)
   "Format integer BYTE into a string."
   (let* ((calc-number-radix 2)
-         (string (math-format-radix byte)))
+         (string (math-format-binary byte)))
     (concat (make-string (- 8 (length string)) ?0) string)))
 
 (defun transmission-torrent-seed-ratio (tlimit mode)
