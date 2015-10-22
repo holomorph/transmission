@@ -230,13 +230,12 @@ update `transmission-session-id' and signal the error."
   "Send to PROCESS an HTTP POST request containing CONTENT."
   (with-current-buffer (process-buffer process)
     (erase-buffer))
-  (let ((path transmission-rpc-path)
-        (headers (list (cons transmission-session-header transmission-session-id)
+  (let ((headers (list (cons transmission-session-header transmission-session-id)
                        (cons "Content-length" (string-bytes content)))))
     (let ((auth (transmission--auth-string)))
       (if auth (push (cons "Authorization" auth) headers)))
     (with-temp-buffer
-      (insert (format "POST %s HTTP/1.1\r\n" path))
+      (insert (format "POST %s HTTP/1.1\r\n" transmission-rpc-path))
       (mapc (lambda (elt)
               (insert (format "%s: %s\r\n" (car elt) (cdr elt))))
             headers)
@@ -645,12 +644,12 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-toggle ()
   "Toggle torrent between started and stopped."
   (interactive)
-  (transmission-let-ids nil
-    (let* ((torrent (transmission-torrents (list :ids ids :fields '("status"))))
-           (status (transmission-torrent-value torrent 'status)))
-      (pcase status
-        (0 (transmission-request "torrent-start" (list :ids ids)))
-        ((or 4 6) (transmission-request "torrent-stop" (list :ids ids)))))))
+  (transmission-let-ids
+      ((torrent (transmission-torrents (list :ids ids :fields '("status"))))
+       (status (transmission-torrent-value torrent 'status)))
+    (pcase status
+      (0 (transmission-request "torrent-start" (list :ids ids)))
+      ((or 4 6) (transmission-request "torrent-stop" (list :ids ids))))))
 
 (defun transmission-trackers-add ()
   "Add announce URLs to torrent or torrents."
