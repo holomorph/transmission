@@ -259,6 +259,9 @@ Return JSON object parsed from content."
   (transmission-wait process))
 
 (defun transmission-ensure-process ()
+  "Return a network process connected to a transmission daemon.
+When creating a new connection, the address is determined by the
+custom variables `transmission-host' and `transmission-service'."
   (let* ((name "transmission")
          (process (get-process name))
          (local (string-prefix-p "/" transmission-host)))
