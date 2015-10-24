@@ -873,7 +873,7 @@ Each form in BODY is a column descriptor."
          (format "Piece count: %d / %d (%d%%)" have .pieceCount
                  (transmission-percent have .pieceCount))
          (when (and (/= have 0) (< have .pieceCount))
-           (format "\nPieces:\n\n%s\n"
+           (format "\nPieces:\n\n%s"
                    (transmission-format-pieces .pieces .pieceCount)))))))))
 
 (defun transmission-draw (fun)
