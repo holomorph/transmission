@@ -293,6 +293,42 @@ Details regarding the Transmission RPC can be found here:
         (kill-buffer (process-buffer process))))))
 
 
+;; Asynchronous calls
+
+(defun transmission-process-filter (process _string)
+  "Function used as a supplement to the default process filter."
+  (when (buffer-live-p (process-buffer process))
+    (with-current-buffer (process-buffer process)
+      (when (transmission--content-finished-p)
+        (condition-case e
+            (progn (transmission--status)
+                   (delete-process process))
+          (transmission-conflict
+           (erase-buffer)
+           (let ((content (process-get process :transmission-request)))
+             (transmission-http-post process content)))
+          (error
+           (delete-process process)
+           (signal (car e) (cdr e))))))))
+
+(defun transmission-process-sentinel (process _message)
+  "Return HTTP response content and kill PROCESS's buffer."
+  (when (buffer-live-p (process-buffer process))
+    (kill-buffer (process-buffer process))))
+
+(defun transmission-request-async (method &optional arguments tag)
+  "Send a request to Transmission asynchronously.
+
+METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
+  (let ((process (transmission-make-network-process))
+        (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
+    (set-process-sentinel process #'transmission-process-sentinel)
+    (add-function :after (process-filter process) 'transmission-process-filter)
+    (process-put process :transmission-request content)
+    (transmission-http-post process content)
+    process))
+
+
 ;; Response parsing
 
 (defun transmission-torrents (arguments)
