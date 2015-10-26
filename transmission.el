@@ -74,14 +74,14 @@
 
 (defcustom transmission-service 9091
   "Port or name of the service for the Transmission session."
-  :type '(choice (integer :tag "Default" 9091)
+  :type '(choice (const :tag "Default" 9091)
                  (string :tag "Service")
                  (integer :tag "Port"))
   :group 'transmission)
 
 (defcustom transmission-rpc-path "/transmission/rpc"
   "Path to the Transmission session RPC interface."
-  :type '(choice (string :tag "Default" "/transmission/rpc")
+  :type '(choice (const :tag "Default" "/transmission/rpc")
                  (string :tag "Other path"))
   :group 'transmission)
 
