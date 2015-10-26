@@ -6,9 +6,14 @@
 
 *** Torrent list conditionally shows ∞ in place of Inf for ETA
 
+*** Adding trackers now has completion.
+The collection of things to complete is a list of trackers from all
+torrents known to transmission.
+
 *** Applied some optimizations
 
 **** Replaced some seq- functions with their (faster) cl- counterparts.
+Ultimately dropped the dependency on seq.el
 
 **** `transmission-draw-info' should be faster now
 
