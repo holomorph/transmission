@@ -780,7 +780,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                      "\t : %d peers, %d seeders, %d leechers, %d downloads")))
     (mapconcat (lambda (e)
                  (let-alist e
-                   (format fmt .id .scrape .tier
+                   (format fmt .id .announce .tier
                            (if (= -1 .lastAnnouncePeerCount) 0 .lastAnnouncePeerCount)
                            (if (= -1 .seederCount) 0 .seederCount)
                            (if (= -1 .leecherCount) 0 .leecherCount)
