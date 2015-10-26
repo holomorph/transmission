@@ -258,22 +258,19 @@ Return JSON object parsed from content."
   (transmission-http-post process content)
   (transmission-wait process))
 
-(defun transmission-ensure-process ()
-  "Return a network process connected to a transmission daemon.
+(defun transmission-make-network-process ()
+  "Return a network client process connected to a transmission daemon.
 When creating a new connection, the address is determined by the
 custom variables `transmission-host' and `transmission-service'."
-  (let* ((name "transmission")
-         (process (get-process name))
-         (local (string-prefix-p "/" transmission-host)))
-    (if (process-live-p process)
-        process
-      ;; I believe
-      ;; https://trac.transmissionbt.com/ticket/5265
-      (make-network-process
-       :name name :buffer (format " *%s*" name)
-       :host transmission-host
-       :service (if local transmission-host transmission-service)
-       :family (if local 'local)))))
+  (let ((buffer (generate-new-buffer " *transmission*"))
+        (local (string-prefix-p "/" transmission-host)))
+    ;; I believe
+    ;; https://trac.transmissionbt.com/ticket/5265
+    (make-network-process
+     :name "transmission" :buffer buffer
+     :host transmission-host
+     :service (if local transmission-host transmission-service)
+     :family (if local 'local))))
 
 (defun transmission-request (method &optional arguments tag)
   "Send a request to Transmission.
@@ -284,7 +281,7 @@ TAG is an integer and ignored.
 
 Details regarding the Transmission RPC can be found here:
 <https://trac.transmissionbt.com/browser/trunk/extras/rpc-spec.txt>"
-  (let ((process (transmission-ensure-process))
+  (let ((process (transmission-make-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
     (unwind-protect
         (condition-case nil
