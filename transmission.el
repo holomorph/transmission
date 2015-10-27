@@ -304,7 +304,6 @@ Details regarding the Transmission RPC can be found here:
             (progn (transmission--status)
                    (delete-process process))
           (transmission-conflict
-           (erase-buffer)
            (let ((content (process-get process :transmission-request)))
              (transmission-http-post process content)))
           (error
