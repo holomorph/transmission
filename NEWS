@@ -19,6 +19,9 @@ Ultimately dropped the dependency on seq.el
 
 **** Set `line-move-visual' to nil in tabulated-list buffers
 
+*** New function `transmission-request-async` for sending requests
+without blocking to wait for a response.
+
 * Changes in 0.5
 
 ** Features
