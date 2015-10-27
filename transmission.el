@@ -255,6 +255,7 @@ Return JSON object parsed from content."
     (json-read)))
 
 (defun transmission-send (process content)
+  "Send PROCESS string CONTENT and wait for response synchronously."
   (transmission-http-post process content)
   (transmission-wait process))
 
@@ -296,7 +297,7 @@ Details regarding the Transmission RPC can be found here:
 ;; Asynchronous calls
 
 (defun transmission-process-filter (process _string)
-  "Function used as a supplement to the default process filter."
+  "Function used as a supplement to the default filter function for PROCESS."
   (when (buffer-live-p (process-buffer process))
     (with-current-buffer (process-buffer process)
       (when (transmission--content-finished-p)
@@ -311,7 +312,7 @@ Details regarding the Transmission RPC can be found here:
            (signal (car e) (cdr e))))))))
 
 (defun transmission-process-sentinel (process _message)
-  "Return HTTP response content and kill PROCESS's buffer."
+  "Kill PROCESS's buffer."
   (when (buffer-live-p (process-buffer process))
     (kill-buffer (process-buffer process))))
 
