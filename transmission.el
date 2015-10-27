@@ -684,7 +684,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
       ((torrent (transmission-torrents (list :ids ids :fields '("status"))))
        (status (transmission-torrent-value torrent 'status))
        (method (pcase status (0 "torrent-start") (_ "torrent-stop"))))
-    (transmission-request method (list :ids ids))))
+    (transmission-request-async method (list :ids ids))))
 
 (defun transmission-trackers-add ()
   "Add announce URLs to torrent or torrents."
