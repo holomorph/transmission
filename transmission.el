@@ -513,7 +513,7 @@ Returns a list of non-blank inputs."
                          (transmission-prop-values-in-region 'tabulated-list-id))))
     (if (and id indices)
         (let ((arguments (list :ids id action indices)))
-          (transmission-request "torrent-set" arguments))
+          (transmission-request-async "torrent-set" arguments))
       (user-error "No files selected or at point"))))
 
 (defun transmission-files-file-at-point ()
@@ -628,13 +628,13 @@ When called with a prefix, prompt for DIRECTORY."
     (when (y-or-n-p (format "Move torrent%s to %s? "
                             (if (cdr ids) "s" "")
                             location))
-     (transmission-request "torrent-set-location" arguments))))
+     (transmission-request-async "torrent-set-location" arguments))))
 
 (defun transmission-reannounce ()
   "Reannounce torrent at point or in region."
   (interactive)
   (transmission-let-ids nil
-    (transmission-request "torrent-reannounce" (list :ids ids))))
+    (transmission-request-async "torrent-reannounce" (list :ids ids))))
 
 (defun transmission-remove (&optional unlink)
   "Prompt to remove torrent at point or torrents in region.
@@ -643,7 +643,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-let-ids ((arguments `(:ids ,ids :delete-local-data ,(and unlink t))))
     (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
                                "torrent" (and (< 1 (length ids)) "s") "?"))
-      (transmission-request "torrent-remove" arguments))))
+      (transmission-request-async "torrent-remove" arguments))))
 
 (defun transmission-set-bandwidth-priority (priority)
   "Set bandwidth PRIORITY of torrent(s) at point or in region."
@@ -654,28 +654,28 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
      (list (completing-read prompt transmission-priority-alist nil t))))
   (transmission-let-ids ((number (cdr (assoc-string priority transmission-priority-alist)))
                          (arguments `(:ids ,ids :bandwidthPriority ,number)))
-    (transmission-request "torrent-set" arguments)))
+    (transmission-request-async "torrent-set" arguments)))
 
 (defun transmission-set-download (limit)
   "Set global download speed LIMIT in KB/s."
   (interactive (transmission-prompt-speed-limit nil))
   (let ((arguments (if (<= limit 0) '(:speed-limit-down-enabled :json-false)
                      `(:speed-limit-down-enabled t :speed-limit-down ,limit))))
-    (transmission-request "session-set" arguments)))
+    (transmission-request-async "session-set" arguments)))
 
 (defun transmission-set-upload (limit)
   "Set global upload speed LIMIT in KB/s."
   (interactive (transmission-prompt-speed-limit t))
   (let ((arguments (if (<= limit 0) '(:speed-limit-up-enabled :json-false)
                      `(:speed-limit-up-enabled t :speed-limit-up ,limit))))
-    (transmission-request "session-set" arguments)))
+    (transmission-request-async "session-set" arguments)))
 
 (defun transmission-set-ratio (limit)
   "Set global seed ratio LIMIT."
   (interactive (transmission-prompt-ratio-limit))
   (let ((arguments (if (<= limit 0) '(:seedRatioLimited :json-false)
                      `(:seedRatioLimited t :seedRatioLimit ,limit))))
-    (transmission-request "session-set" arguments)))
+    (transmission-request-async "session-set" arguments)))
 
 (defun transmission-toggle ()
   "Toggle torrent between started and stopped."
@@ -726,7 +726,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Verify torrent at point or in region."
   (interactive)
   (transmission-let-ids nil
-    (transmission-request "torrent-verify" (list :ids ids))))
+    (transmission-request-async "torrent-verify" (list :ids ids))))
 
 (defun transmission-quit ()
   "Quit and bury the buffer."
