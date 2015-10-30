@@ -239,8 +239,7 @@ update `transmission-session-id' and signal the error."
       (mapc (lambda (elt)
               (insert (format "%s: %s\r\n" (car elt) (cdr elt))))
             headers)
-      (insert "\r\n")
-      (insert content)
+      (insert "\r\n" content)
       (process-send-string process (buffer-string)))))
 
 (defun transmission-wait (process)
