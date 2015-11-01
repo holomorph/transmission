@@ -571,6 +571,22 @@ The two are spliced together with indices for each file, sorted by file name."
     (1 (format "%d (torrent-specific limit)" tlimit))
     (2 "Unlimited")))
 
+(defun transmission-group-digits (n)
+  "Group digits of natural number N with delimiter \",\"."
+  (if (< n 1000)
+      (format "%s" n)
+    (let ((regexp (eval-when-compile (rx (group (= 3 digit))))))
+      ;; Good place for `thread-last' and `nreverse'
+      ;; (thread-last (nreverse (number-to-string n))
+      ;;     (replace-regexp-in-string regexp "\\1,")
+      ;;     (string-remove-suffix ",")
+      ;;     (nreverse))
+      (string-reverse
+       (string-remove-suffix
+        ","
+        (replace-regexp-in-string
+         regexp "\\1," (string-reverse (number-to-string n))))))))
+
 (defmacro transmission-tabulated-list-pred (key)
   "Return a sorting predicate comparing values of KEY.
 KEY should be a key in an element of `tabulated-list-entries'."
@@ -794,7 +810,8 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 
 (defun transmission-format-size (bytes)
   "Format size BYTES into a more readable string."
-  (format "%s (%d bytes)" (transmission-size bytes) bytes))
+  (format "%s (%s bytes)" (transmission-size bytes)
+          (transmission-group-digits bytes)))
 
 (defun transmission-format-pieces (pieces count)
   "Format into a string the bitfield PIECES holding COUNT boolean flags."
