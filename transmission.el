@@ -792,6 +792,10 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
       (setf (cadr idx) (if (eq 'iec transmission-units) 9 7))
       (tabulated-list-init-header))))
 
+(defun transmission-format-size (bytes)
+  "Format size BYTES into a more readable string."
+  (format "%s (%d bytes)" (transmission-size bytes) bytes))
+
 (defun transmission-format-pieces (pieces count)
   "Format into a string the bitfield PIECES holding COUNT boolean flags."
   (let* ((bytes (base64-decode-string pieces))
@@ -891,13 +895,13 @@ Each form in BODY is a column descriptor."
                                             (if (not (zerop w))
                                                 (cdr (assq 'length f)) 0))
                                           .wanted .files))))
-        (format "Wanted: %s (%d bytes)" (transmission-size wanted) wanted))
-      (format "Downloaded: %s (%d bytes)" (transmission-size .downloadedEver) .downloadedEver)
-      (format "Verified: %s (%d bytes)" (transmission-size .haveValid) .haveValid)
+        (concat "Wanted: " (transmission-format-size wanted)))
+      (concat "Downloaded: " (transmission-format-size .downloadedEver))
+      (concat "Verified: " (transmission-format-size .haveValid))
       (unless (zerop .corruptEver)
-        (format "Corrupt: %s (%d bytes)" (transmission-size .corruptEver) .corruptEver))
-      (format "Total size: %s (%d bytes)" (transmission-size .totalSize) .totalSize)
-      (format "Piece size: %s (%d bytes) each" (transmission-size .pieceSize) .pieceSize)
+        (concat "Corrupt: " (transmission-format-size .corruptEver)))
+      (concat "Total size: " (transmission-format-size .totalSize))
+      (format "Piece size: %s each" (transmission-format-size .pieceSize))
       (let ((have (apply #'+ (mapcar #'transmission-hamming-weight
                                      (base64-decode-string .pieces)))))
         (concat
