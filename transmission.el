@@ -581,11 +581,13 @@ The two are spliced together with indices for each file, sorted by file name."
       ;;     (replace-regexp-in-string regexp "\\1,")
       ;;     (string-remove-suffix ",")
       ;;     (nreverse))
-      (string-reverse
-       (string-remove-suffix
-        ","
-        (replace-regexp-in-string
-         regexp "\\1," (string-reverse (number-to-string n))))))))
+      (cl-macrolet ((reverse-string (str)
+                      `(apply #'string (nreverse (string-to-list ,str)))))
+        (reverse-string
+         (string-remove-suffix
+          ","
+          (replace-regexp-in-string
+           regexp "\\1," (reverse-string (number-to-string n)))))))))
 
 (defmacro transmission-tabulated-list-pred (key)
   "Return a sorting predicate comparing values of KEY.
