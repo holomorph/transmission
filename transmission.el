@@ -576,11 +576,11 @@ The two are spliced together with indices for each file, sorted by file name."
   (if (< n 1000)
       (format "%s" n)
     (let ((regexp (eval-when-compile (rx (group (= 3 digit))))))
-      ;; Good place for `thread-last' and `nreverse'
-      ;; (thread-last (nreverse (number-to-string n))
+      ;; Good place for `thread-last' and `reverse'
+      ;; (thread-last (reverse (number-to-string n))
       ;;     (replace-regexp-in-string regexp "\\1,")
       ;;     (string-remove-suffix ",")
-      ;;     (nreverse))
+      ;;     (reverse))
       (cl-macrolet ((reverse-string (str)
                       `(apply #'string (nreverse (string-to-list ,str)))))
         (reverse-string
