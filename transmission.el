@@ -499,7 +499,7 @@ Returns a list of non-blank inputs."
                                    (cdr (assq 'announce alist)))
                                  vector))
                        trackers)))
-    (cl-delete-duplicates (apply #'append urls) :test #'string=)))
+    (delete-dups (apply #'append urls))))
 
 (defun transmission-files-do (action)
   "Apply ACTION to files in `transmission-files-mode' buffers."
