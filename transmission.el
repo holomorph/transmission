@@ -712,11 +712,12 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                          (transmission-list-trackers ids)))
        (urls (transmission-prompt-read-repeatedly
               "Add announce URLs: "
-              (cl-set-difference (transmission-list-unique-announce-urls)
-                                 trackers :test #'equal)))
+              (cl-loop for url in (transmission-list-unique-announce-urls)
+                       unless (member url trackers) collect url)))
        (arguments (list :ids ids :trackerAdd
                         ;; Don't add trackers that are already there
-                        (cl-set-difference urls trackers :test #'equal))))
+                        (cl-loop for url in urls
+                                 unless (member url trackers) collect url))))
     (let-alist (transmission-request "torrent-set" arguments)
       (message .result))))
 
