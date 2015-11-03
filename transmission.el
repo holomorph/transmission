@@ -662,16 +662,17 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                                "torrent" (and (< 1 (length ids)) "s") "?"))
       (transmission-request-async "torrent-remove" arguments))))
 
-(defun transmission-set-bandwidth-priority (priority)
-  "Set bandwidth PRIORITY of torrent(s) at point or in region."
-  (interactive
-   (let ((completion-cycle-threshold t)
-         (prompt (format "Set bandwidth priority %s: "
-                         (mapcar #'car transmission-priority-alist))))
-     (list (completing-read prompt transmission-priority-alist nil t))))
-  (transmission-let-ids ((number (cdr (assoc-string priority transmission-priority-alist)))
-                         (arguments `(:ids ,ids :bandwidthPriority ,number)))
-    (transmission-request-async "torrent-set" arguments)))
+(defun transmission-set-bandwidth-priority ()
+  "Set bandwidth priority of torrent(s) at point or in region."
+  (interactive)
+  (transmission-let-ids nil
+    (let* ((completion-cycle-threshold t)
+           (prompt (format "Set bandwidth priority %s: "
+                           (mapcar #'car transmission-priority-alist)))
+           (priority (completing-read prompt transmission-priority-alist nil t))
+           (number (cdr (assoc-string priority transmission-priority-alist)))
+           (arguments `(:ids ,ids :bandwidthPriority ,number)))
+      (transmission-request-async "torrent-set" arguments))))
 
 (defun transmission-set-download (limit)
   "Set global download speed LIMIT in KB/s."
