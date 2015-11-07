@@ -304,7 +304,7 @@ Details regarding the Transmission RPC can be found here:
             (progn (transmission--status)
                    (delete-process process))
           (transmission-conflict
-           (let ((content (process-get process :transmission-request)))
+           (let ((content (process-get process :request)))
              (transmission-http-post process content)))
           (error
            (delete-process process)
@@ -323,7 +323,7 @@ METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
     (set-process-sentinel process #'transmission-process-sentinel)
     (add-function :after (process-filter process) 'transmission-process-filter)
-    (process-put process :transmission-request content)
+    (process-put process :request content)
     (transmission-http-post process content)
     process))
 
