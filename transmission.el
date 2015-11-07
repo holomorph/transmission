@@ -722,7 +722,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Add announce URLs to torrent or torrents."
   (interactive)
   (transmission-let-ids
-      ((trackers (mapcar (lambda (elt) (cdr (assq 'announce elt)))
+      ((trackers (mapcar (lambda (x) (cdr (assq 'announce x)))
                          (transmission-list-trackers ids)))
        (urls (transmission-prompt-read-repeatedly
               "Add announce URLs: "
@@ -740,7 +740,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (interactive)
   (let ((id transmission-torrent-id))
     (if id
-        (let* ((trackers (mapcar (lambda (elt) (number-to-string (cdr (assq 'id elt))))
+        (let* ((trackers (mapcar (lambda (x) (number-to-string (cdr (assq 'id x))))
                                  (transmission-list-trackers id)))
                (prompt (if trackers
                            (format "Remove tracker by ID (%d trackers): "
@@ -861,9 +861,9 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Map over SEQ, pushing each element to `tabulated-list-entries'.
 Each form in BODY is a column descriptor."
   (declare (indent 1) (debug t))
-  `(mapc (lambda (elt)
-           (let-alist elt
-             (push (list elt (vector ,@body)) tabulated-list-entries)))
+  `(mapc (lambda (x)
+           (let-alist x
+             (push (list x (vector ,@body)) tabulated-list-entries)))
          ,seq))
 
 (defun transmission-draw-torrents ()
@@ -905,7 +905,7 @@ Each form in BODY is a column descriptor."
   (erase-buffer)
   (let-alist (elt transmission-torrent-vector 0)
     (mapc
-     (lambda (elt) (if elt (insert elt "\n")))
+     (lambda (s) (if s (insert s "\n")))
      (vector
       (format "ID: %d" id)
       (concat "Name: " .name)
