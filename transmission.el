@@ -309,7 +309,7 @@ Details regarding the Transmission RPC can be found here:
           (error
            (process-put process :callback nil)
            (delete-process process)
-           (signal (car e) (cdr e))))))))
+           (message "%s" (error-message-string e))))))))
 
 (defun transmission-process-sentinel (process _message)
   "Dispatch callback function for PROCESS and kill the process buffer."
