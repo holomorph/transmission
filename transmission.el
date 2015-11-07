@@ -307,23 +307,37 @@ Details regarding the Transmission RPC can be found here:
            (let ((content (process-get process :request)))
              (transmission-http-post process content)))
           (error
+           (process-put process :callback nil)
            (delete-process process)
            (signal (car e) (cdr e))))))))
 
 (defun transmission-process-sentinel (process _message)
-  "Kill PROCESS's buffer."
+  "Dispatch callback function for PROCESS and kill the process buffer."
   (when (buffer-live-p (process-buffer process))
-    (kill-buffer (process-buffer process))))
+    (unwind-protect
+        (let* ((callback (process-get process :callback))
+               (buffer (and callback (process-get process :buffer)))
+               (content (and callback
+                             (with-current-buffer (process-buffer process)
+                               (transmission--move-to-content)
+                               (buffer-substring (point) (point-max))))))
+          (when (and callback (buffer-live-p buffer))
+            (with-current-buffer buffer
+              (funcall callback content))))
+      (kill-buffer (process-buffer process)))))
 
-(defun transmission-request-async (method &optional arguments tag)
+(defun transmission-request-async (callback method &optional arguments tag)
   "Send a request to Transmission asynchronously.
 
+CALLBACK accepts one argument, the HTTP response content.
 METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
   (let ((process (transmission-make-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
     (set-process-sentinel process #'transmission-process-sentinel)
     (add-function :after (process-filter process) 'transmission-process-filter)
     (process-put process :request content)
+    (process-put process :buffer (current-buffer))
+    (process-put process :callback callback)
     (transmission-http-post process content)
     process))
 
@@ -512,7 +526,7 @@ Returns a list of non-blank inputs."
                          (transmission-prop-values-in-region 'tabulated-list-id))))
     (if (and id indices)
         (let ((arguments (list :ids id action indices)))
-          (transmission-request-async "torrent-set" arguments))
+          (transmission-request-async nil "torrent-set" arguments))
       (user-error "No files selected or at point"))))
 
 (defun transmission-files-file-at-point ()
@@ -645,13 +659,13 @@ When called with a prefix, prompt for DIRECTORY."
     (when (y-or-n-p (format "Move torrent%s to %s? "
                             (if (cdr ids) "s" "")
                             location))
-     (transmission-request-async "torrent-set-location" arguments))))
+     (transmission-request-async nil "torrent-set-location" arguments))))
 
 (defun transmission-reannounce ()
   "Reannounce torrent at point or in region."
   (interactive)
   (transmission-let-ids nil
-    (transmission-request-async "torrent-reannounce" (list :ids ids))))
+    (transmission-request-async nil "torrent-reannounce" (list :ids ids))))
 
 (defun transmission-remove (&optional unlink)
   "Prompt to remove torrent at point or torrents in region.
@@ -660,7 +674,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-let-ids ((arguments `(:ids ,ids :delete-local-data ,(and unlink t))))
     (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
                                "torrent" (and (< 1 (length ids)) "s") "?"))
-      (transmission-request-async "torrent-remove" arguments))))
+      (transmission-request-async nil "torrent-remove" arguments))))
 
 (defun transmission-set-bandwidth-priority ()
   "Set bandwidth priority of torrent(s) at point or in region."
@@ -672,28 +686,28 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
            (priority (completing-read prompt transmission-priority-alist nil t))
            (number (cdr (assoc-string priority transmission-priority-alist)))
            (arguments `(:ids ,ids :bandwidthPriority ,number)))
-      (transmission-request-async "torrent-set" arguments))))
+      (transmission-request-async nil "torrent-set" arguments))))
 
 (defun transmission-set-download (limit)
   "Set global download speed LIMIT in KB/s."
   (interactive (transmission-prompt-speed-limit nil))
   (let ((arguments (if (<= limit 0) '(:speed-limit-down-enabled :json-false)
                      `(:speed-limit-down-enabled t :speed-limit-down ,limit))))
-    (transmission-request-async "session-set" arguments)))
+    (transmission-request-async nil "session-set" arguments)))
 
 (defun transmission-set-upload (limit)
   "Set global upload speed LIMIT in KB/s."
   (interactive (transmission-prompt-speed-limit t))
   (let ((arguments (if (<= limit 0) '(:speed-limit-up-enabled :json-false)
                      `(:speed-limit-up-enabled t :speed-limit-up ,limit))))
-    (transmission-request-async "session-set" arguments)))
+    (transmission-request-async nil "session-set" arguments)))
 
 (defun transmission-set-ratio (limit)
   "Set global seed ratio LIMIT."
   (interactive (transmission-prompt-ratio-limit))
   (let ((arguments (if (<= limit 0) '(:seedRatioLimited :json-false)
                      `(:seedRatioLimited t :seedRatioLimit ,limit))))
-    (transmission-request-async "session-set" arguments)))
+    (transmission-request-async nil "session-set" arguments)))
 
 (defun transmission-toggle ()
   "Toggle torrent between started and stopped."
@@ -702,7 +716,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
       ((torrent (transmission-torrents (list :ids ids :fields '("status"))))
        (status (transmission-torrent-value torrent 'status))
        (method (pcase status (0 "torrent-start") (_ "torrent-stop"))))
-    (transmission-request-async method (list :ids ids))))
+    (transmission-request-async nil method (list :ids ids))))
 
 (defun transmission-trackers-add ()
   "Add announce URLs to torrent or torrents."
@@ -745,7 +759,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Verify torrent at point or in region."
   (interactive)
   (transmission-let-ids nil
-    (transmission-request-async "torrent-verify" (list :ids ids))))
+    (transmission-request-async nil "torrent-verify" (list :ids ids))))
 
 (defun transmission-quit ()
   "Quit and bury the buffer."
