@@ -673,7 +673,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (interactive "P")
   (transmission-let-ids ((arguments `(:ids ,ids :delete-local-data ,(and unlink t))))
     (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
-                               "torrent" (and (< 1 (length ids)) "s") "?"))
+                               "torrent" (and (< 1 (length ids)) "s") "? "))
       (transmission-request-async nil "torrent-remove" arguments))))
 
 (defun transmission-set-bandwidth-priority ()
