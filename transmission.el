@@ -741,16 +741,20 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (interactive)
   (let ((id transmission-torrent-id))
     (if id
-        (let* ((trackers (mapcar (lambda (x) (number-to-string (cdr (assq 'id x))))
-                                 (transmission-list-trackers id)))
-               (prompt (if trackers
-                           (format "Remove tracker by ID (%d trackers): "
-                                   (length trackers))
+        (let* ((array (transmission-list-trackers id))
+               (prompt (if array
+                           (format "Remove tracker (%d trackers): "
+                                   (length array))
                          (user-error "No trackers to remove")))
-               (completion-cycle-threshold t)
-               (tids (or (transmission-prompt-read-repeatedly prompt trackers)
+               (trackers (mapcar (lambda (x) (cdr (assq 'announce x))) array))
+               (urls (or (transmission-prompt-read-repeatedly prompt trackers)
                          (user-error "No trackers selected for removal")))
-               (arguments (list :ids id :trackerRemove (mapcar #'string-to-number tids))))
+               (tids (mapcar (lambda (x) (cdr (assq 'id x)))
+                             (cl-loop for alist across array
+                                      if (member (cdr (assq 'announce alist))
+                                                 urls)
+                                      collect alist)))
+               (arguments (list :ids id :trackerRemove tids)))
           (let-alist (transmission-request "torrent-set" arguments)
             (pcase .result
               ("success" (message "success!"))
