@@ -550,10 +550,10 @@ The two are spliced together with indices for each file, sorted by file name."
          (indices (cl-map 'vector (lambda (a b) (list (cons a b)))
                           (make-vector len 'index)
                           (number-sequence 0 len))))
-    (cl-sort (cl-map 'vector #'append files indices)
-             (lambda (a b)
-               (string< (cdr (assq 'name a))
-                        (cdr (assq 'name b)))))))
+    (sort (cl-mapcar #'append files indices)
+          (lambda (a b)
+            (string< (cdr (assq 'name a))
+                     (cdr (assq 'name b)))))))
 
 (defun transmission-time (seconds)
   "Format a time string, given SECONDS from the epoch."
