@@ -1,3 +1,11 @@
+* Changes in 0.7
+
+** Features
+
+*** Removing trackers is now (finally) done by announce URL
+
+*** Numbers in the *info* buffer now have comma separators
+
 * Changes in 0.6
 
 ** Features
