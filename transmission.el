@@ -724,10 +724,11 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-let-ids
       ((trackers (mapcar (lambda (x) (cdr (assq 'announce x)))
                          (transmission-list-trackers ids)))
-       (urls (transmission-prompt-read-repeatedly
-              "Add announce URLs: "
-              (cl-loop for url in (transmission-list-unique-announce-urls)
-                       unless (member url trackers) collect url)))
+       (urls (or (transmission-prompt-read-repeatedly
+                  "Add announce URLs: "
+                  (cl-loop for url in (transmission-list-unique-announce-urls)
+                           unless (member url trackers) collect url))
+                 (user-error "No trackers to add")))
        (arguments (list :ids ids :trackerAdd
                         ;; Don't add trackers that are already there
                         (cl-loop for url in urls
@@ -747,7 +748,8 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                                    (length trackers))
                          (user-error "No trackers to remove")))
                (completion-cycle-threshold t)
-               (tids (transmission-prompt-read-repeatedly prompt trackers))
+               (tids (or (transmission-prompt-read-repeatedly prompt trackers)
+                         (user-error "No trackers selected for removal")))
                (arguments (list :ids id :trackerRemove (mapcar #'string-to-number tids))))
           (let-alist (transmission-request "torrent-set" arguments)
             (pcase .result
