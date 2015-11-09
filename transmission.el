@@ -733,8 +733,10 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                         ;; Don't add trackers that are already there
                         (cl-loop for url in urls
                                  unless (member url trackers) collect url))))
-    (let-alist (transmission-request "torrent-set" arguments)
-      (message .result))))
+    (transmission-request-async
+     (lambda (content)
+       (let-alist (json-read-from-string content) (message .result)))
+     "torrent-set" arguments)))
 
 (defun transmission-trackers-remove ()
   "Prompt for trackers to remove by ID from torrent at point."
@@ -755,10 +757,10 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                                                  urls)
                                       collect alist)))
                (arguments (list :ids id :trackerRemove tids)))
-          (let-alist (transmission-request "torrent-set" arguments)
-            (pcase .result
-              ("success" (message "success!"))
-              (_ (user-error .result)))))
+          (transmission-request-async
+           (lambda (content)
+             (let-alist (json-read-from-string content) (message .result)))
+           "torrent-set" arguments))
       (user-error "No torrent selected"))))
 
 (defun transmission-verify ()
