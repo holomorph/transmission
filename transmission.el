@@ -642,14 +642,17 @@ When called with a prefix, prompt for DIRECTORY."
                                     (format "magnet:?xt=urn:btih:%s" torrent)
                                   torrent)))
                  (list :download-dir directory))))
-    (let-alist (transmission-request "torrent-add" arguments)
-      (pcase .result
-        ("success"
-         (or (and .arguments.torrent-added.name
-                  (message "Added %s" .arguments.torrent-added.name))
-             (and .arguments.torrent-duplicate.name
-                  (user-error "Already added %s" .arguments.torrent-duplicate.name))))
-        (_ (user-error .result))))))
+    (transmission-request-async
+     (lambda (content)
+       (let-alist (json-read-from-string content)
+         (pcase .result
+           ("success"
+            (or (and .arguments.torrent-added.name
+                     (message "Added %s" .arguments.torrent-added.name))
+                (and .arguments.torrent-duplicate.name
+                     (message "Already added %s" .arguments.torrent-duplicate.name))))
+           (_ (message .result)))))
+     "torrent-add" arguments)))
 
 (defun transmission-move (location)
   "Move torrent at point or in region to a new LOCATION."
