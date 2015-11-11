@@ -662,7 +662,7 @@ When called with a prefix, prompt for DIRECTORY."
     (when (y-or-n-p (format "Move torrent%s to %s? "
                             (if (cdr ids) "s" "")
                             location))
-     (transmission-request-async nil "torrent-set-location" arguments))))
+      (transmission-request-async nil "torrent-set-location" arguments))))
 
 (defun transmission-reannounce ()
   "Reannounce torrent at point or in region."
