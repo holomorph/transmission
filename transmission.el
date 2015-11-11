@@ -582,7 +582,7 @@ The two are spliced together with indices for each file, sorted by file name."
   "String showing a torrent's seed ratio limit."
   (pcase mode
     (0 "Session limit")
-    (1 (format "%d (torrent-specific limit)" tlimit))
+    (1 (format "%.2f (torrent-specific limit)" tlimit))
     (2 "Unlimited")))
 
 (defun transmission-group-digits (n)
