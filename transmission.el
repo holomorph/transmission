@@ -869,7 +869,9 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-format-trackers (trackers)
   "Format tracker information into a string.
 TRACKERS should be the \"trackerStats\" array."
-  (mapconcat #'transmission-format-tracker trackers "\n"))
+  (if (zerop (length trackers))
+      "Trackers: none\n"
+    (concat (mapconcat #'transmission-format-tracker trackers "\n") "\n")))
 
 (defmacro transmission-do-entries (seq &rest body)
   "Map over SEQ, pushing each element to `tabulated-list-entries'.
@@ -939,7 +941,7 @@ Each form in BODY is a column descriptor."
       (concat "Date added:      " (transmission-time .addedDate))
       (concat "Date finished:   " (transmission-time .doneDate))
       (concat "Latest Activity: " (transmission-time .activityDate) "\n")
-      (concat (transmission-format-trackers .trackerStats) "\n")
+      (transmission-format-trackers .trackerStats)
       (let ((wanted (apply #'+ (cl-mapcar (lambda (w f)
                                             (if (not (zerop w))
                                                 (cdr (assq 'length f)) 0))
