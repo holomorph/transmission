@@ -860,9 +860,15 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (let-alist tracker
     (let* ((label (format "Tracker %d" .id))
            (col (length label))
-           (fill (concat (make-string col ? ) ": ")))
+           (fill (concat (make-string col ? ) ": "))
+           (result (pcase .lastAnnounceResult
+                     ((or "Success" (pred string-empty-p)) nil)
+                     (_ (concat "\n" fill
+                                (propertize .lastAnnounceResult
+                                            'font-lock-face 'warning))))))
       (format (concat label ": %s (Tier %d)\n"
-                      fill "%d peers, %d seeders, %d leechers, %d downloads")
+                      fill "%d peers, %d seeders, %d leechers, %d downloads"
+                      result)
               .announce .tier
               (if (= -1 .lastAnnouncePeerCount) 0 .lastAnnouncePeerCount)
               (if (= -1 .seederCount) 0 .seederCount)
