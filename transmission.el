@@ -857,10 +857,13 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
       (string-join (string-partition (substring bits 0 count) 72) "\n"))))
 
 (defun transmission-format-tracker (tracker)
-  (let ((fmt (concat "Tracker %d: %s (Tier %d)\n"
-                     "\t : %d peers, %d seeders, %d leechers, %d downloads")))
-    (let-alist tracker
-      (format fmt .id .announce .tier
+  (let-alist tracker
+    (let* ((label (format "Tracker %d" .id))
+           (col (length label))
+           (fill (concat (make-string col ? ) ": ")))
+      (format (concat label ": %s (Tier %d)\n"
+                      fill "%d peers, %d seeders, %d leechers, %d downloads")
+              .announce .tier
               (if (= -1 .lastAnnouncePeerCount) 0 .lastAnnouncePeerCount)
               (if (= -1 .seederCount) 0 .seederCount)
               (if (= -1 .leecherCount) 0 .leecherCount)
