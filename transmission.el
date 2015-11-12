@@ -856,17 +856,20 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                   (nreverse res))))
       (string-join (string-partition (substring bits 0 count) 72) "\n"))))
 
-(defun transmission-format-trackers (trackers)
+(defun transmission-format-tracker (tracker)
   (let ((fmt (concat "Tracker %d: %s (Tier %d)\n"
                      "\t : %d peers, %d seeders, %d leechers, %d downloads")))
-    (mapconcat (lambda (e)
-                 (let-alist e
-                   (format fmt .id .announce .tier
-                           (if (= -1 .lastAnnouncePeerCount) 0 .lastAnnouncePeerCount)
-                           (if (= -1 .seederCount) 0 .seederCount)
-                           (if (= -1 .leecherCount) 0 .leecherCount)
-                           (if (= -1 .downloadCount) 0 .downloadCount))))
-               trackers "\n")))
+    (let-alist tracker
+      (format fmt .id .announce .tier
+              (if (= -1 .lastAnnouncePeerCount) 0 .lastAnnouncePeerCount)
+              (if (= -1 .seederCount) 0 .seederCount)
+              (if (= -1 .leecherCount) 0 .leecherCount)
+              (if (= -1 .downloadCount) 0 .downloadCount)))))
+
+(defun transmission-format-trackers (trackers)
+  "Format tracker information into a string.
+TRACKERS should be the \"trackerStats\" array."
+  (mapconcat #'transmission-format-tracker trackers "\n"))
 
 (defmacro transmission-do-entries (seq &rest body)
   "Map over SEQ, pushing each element to `tabulated-list-entries'.
