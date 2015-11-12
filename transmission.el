@@ -444,7 +444,7 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
            (day (float 86400))
            (month (* 29.53 day))
            (year (* 365.25 day)))
-      (apply #'format "%3.0f%s"
+      (apply #'format "%.0f%s"
              (pcase seconds
                ((pred (> minute)) (list seconds "s"))
                ((pred (> hour)) (list (/ seconds minute) "m"))
