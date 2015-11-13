@@ -750,7 +750,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
      "torrent-set" arguments)))
 
 (defun transmission-trackers-remove ()
-  "Prompt for trackers to remove by ID from torrent at point."
+  "Remove trackers from torrent at point by ID or announce URL."
   (interactive)
   (let ((id transmission-torrent-id))
     (if id
@@ -762,11 +762,10 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                (trackers (mapcar (lambda (x) (cdr (assq 'announce x))) array))
                (urls (or (transmission-prompt-read-repeatedly prompt trackers)
                          (user-error "No trackers selected for removal")))
-               (tids (mapcar (lambda (x) (cdr (assq 'id x)))
-                             (cl-loop for alist across array
-                                      if (member (cdr (assq 'announce alist))
-                                                 urls)
-                                      collect alist)))
+               (tids (cl-loop for alist across array
+                              if (or (member (cdr (assq 'announce alist)) urls)
+                                     (member (number-to-string (cdr (assq 'id alist))) urls))
+                              collect (cdr (assq 'id alist))))
                (arguments (list :ids id :trackerRemove tids)))
           (transmission-request-async
            (lambda (content)

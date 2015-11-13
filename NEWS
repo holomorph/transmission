@@ -2,7 +2,8 @@
 
 ** Features
 
-*** Removing trackers is now (finally) done by announce URL
+*** Removing trackers can now (finally) be done by announce URL
+in addition to removal by tracker ID.
 
 *** Numbers in the *info* buffer now have comma separators
 
