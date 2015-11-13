@@ -453,6 +453,14 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
                ((pred (> year)) (list (/ seconds month) "M"))
                (_ (list (/ seconds year) "y")))))))
 
+(defun transmission-when (seconds)
+  "The `transmission-eta' of time between `current-time' and SECONDS."
+  (if (<= seconds 0)
+      "never"
+    (let ((secs (- seconds (time-to-seconds (current-time)))))
+      (format (if (< secs 0) "%s ago" "in %s")
+              (transmission-eta (abs secs) nil)))))
+
 (defun transmission-rate (bytes)
   "Return a rate in units kilobytes per second.
 The rate is calculated from BYTES according to `transmission-units'."
@@ -867,13 +875,18 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                                 (propertize .lastAnnounceResult
                                             'font-lock-face 'warning))))))
       (format (concat label ": %s (Tier %d)\n"
-                      fill "%d peers, %d seeders, %d leechers, %d downloads"
+                      fill "%d peers %s. Announcing %s\n"
+                      fill "%d seeders, %d leechers, %d downloads %s. Scraping %s"
                       result)
               .announce .tier
               (if (= -1 .lastAnnouncePeerCount) 0 .lastAnnouncePeerCount)
+              (transmission-when .lastAnnounceTime)
+              (transmission-when .nextAnnounceTime)
               (if (= -1 .seederCount) 0 .seederCount)
               (if (= -1 .leecherCount) 0 .leecherCount)
-              (if (= -1 .downloadCount) 0 .downloadCount)))))
+              (if (= -1 .downloadCount) 0 .downloadCount)
+              (transmission-when .lastScrapeTime)
+              (transmission-when .nextScrapeTime)))))
 
 (defun transmission-format-trackers (trackers)
   "Format tracker information into a string.
