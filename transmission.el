@@ -1025,7 +1025,7 @@ Also run the timer for timer object `transmission-timer'."
              (unless (eq major-mode ',mode)
                (funcall #',mode))
              (if (and old-id (eq old-id id))
-                 (transmission-refresh)
+                 (revert-buffer)
                (setq transmission-torrent-id id)
                (transmission-draw transmission-refresh-function)
                (goto-char (point-min)))))
