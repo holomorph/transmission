@@ -8,6 +8,7 @@ datarootdir := $(PREFIX)/share
 emacsdir := $(datarootdir)/emacs/site-lisp
 
 EMACS = emacs
+# EMACSFLAGS = -f package-initialize
 
 all: $(SRC:.el=.elc)
 
@@ -25,7 +26,7 @@ install:
 	install -m644 $(SRC:=.gz) $(SRC:.el=.elc) -t $(DESTDIR)$(emacsdir)
 
 .el.elc:
-	$(EMACS) -batch -f batch-byte-compile $<
+	$(EMACS) -batch $(EMACSFLAGS) -f batch-byte-compile $<
 
 %.gz: %
 	gzip -k $<
