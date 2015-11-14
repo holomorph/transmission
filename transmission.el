@@ -93,6 +93,11 @@
                                   (:password string))))
   :group 'transmission)
 
+(defcustom transmission-trackers '()
+  "List of tracker URLs."
+  :type '(repeat (string :tag "URL"))
+  :group 'transmission)
+
 (defcustom transmission-units nil
   "The flavor of units used to display file sizes.
 
@@ -737,7 +742,9 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                          (transmission-list-trackers ids)))
        (urls (or (transmission-prompt-read-repeatedly
                   "Add announce URLs: "
-                  (cl-loop for url in (transmission-list-unique-announce-urls)
+                  (cl-loop for url in
+                           (append transmission-trackers
+                                   (transmission-list-unique-announce-urls))
                            unless (member url trackers) collect url))
                  (user-error "No trackers to add")))
        (arguments (list :ids ids :trackerAdd

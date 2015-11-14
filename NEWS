@@ -7,6 +7,10 @@ in addition to removal by tracker ID.
 
 *** Numbers in the *info* buffer now have comma separators
 
+*** New custom variable `transmission-trackers'.
+This is used to store trackers which are added to the completion
+candidates when adding a tracker to a torrent.
+
 * Changes in 0.6
 
 ** Features
