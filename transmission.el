@@ -752,24 +752,23 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-trackers-remove ()
   "Remove trackers from torrent at point by ID or announce URL."
   (interactive)
-  (let ((id transmission-torrent-id))
-    (if id
-        (let* ((array (or (transmission-list-trackers id)
-                          (user-error "No trackers to remove")))
-               (prompt (format "Remove tracker (%d trackers): " (length array)))
-               (trackers (mapcar (lambda (x) (cdr (assq 'announce x))) array))
-               (urls (or (transmission-prompt-read-repeatedly prompt trackers)
-                         (user-error "No trackers selected for removal")))
-               (tids (cl-loop for alist across array
-                              if (or (member (cdr (assq 'announce alist)) urls)
-                                     (member (number-to-string (cdr (assq 'id alist))) urls))
-                              collect (cdr (assq 'id alist))))
-               (arguments (list :ids id :trackerRemove tids)))
-          (transmission-request-async
-           (lambda (content)
-             (let-alist (json-read-from-string content) (message .result)))
-           "torrent-set" arguments))
-      (user-error "No torrent selected"))))
+  (let* ((id (or transmission-torrent-id
+                 (user-error "No torrent selected")))
+         (array (or (transmission-list-trackers id)
+                    (user-error "No trackers to remove")))
+         (prompt (format "Remove tracker (%d trackers): " (length array)))
+         (trackers (mapcar (lambda (x) (cdr (assq 'announce x))) array))
+         (urls (or (transmission-prompt-read-repeatedly prompt trackers)
+                   (user-error "No trackers selected for removal")))
+         (tids (cl-loop for alist across array
+                        if (or (member (cdr (assq 'announce alist)) urls)
+                               (member (number-to-string (cdr (assq 'id alist))) urls))
+                        collect (cdr (assq 'id alist))))
+         (arguments (list :ids id :trackerRemove tids)))
+    (transmission-request-async
+     (lambda (content)
+       (let-alist (json-read-from-string content) (message .result)))
+     "torrent-set" arguments)))
 
 (defun transmission-verify ()
   "Verify torrent at point or in region."
