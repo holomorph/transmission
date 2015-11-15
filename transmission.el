@@ -764,7 +764,13 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
          (array (or (transmission-list-trackers id)
                     (user-error "No trackers to remove")))
          (prompt (format "Remove tracker (%d trackers): " (length array)))
-         (trackers (mapcar (lambda (x) (cdr (assq 'announce x))) array))
+         (trackers (mapcar (lambda (x) (cons (cdr (assq 'announce x))
+                                             (cdr (assq 'id x))))
+                           array))
+         (completion-extra-properties
+          `(:annotation-function
+            (lambda (x)
+              (format " ID# %d" (cdr (assoc x ',trackers))))))
          (urls (or (transmission-prompt-read-repeatedly prompt trackers)
                    (user-error "No trackers selected for removal")))
          (tids (cl-loop for alist across array
@@ -788,7 +794,11 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                                (transmission-list-trackers id))
                        (user-error "No trackers to replace")))
          (prompt (format "Replace tracker (%d trackers): " (length trackers)))
-         (tid (or (let* ((tracker (completing-read prompt trackers)))
+         (tid (or (let* ((completion-extra-properties
+                          `(:annotation-function
+                            (lambda (x)
+                              (format " ID# %d" (cdr (assoc x ',trackers))))))
+                         (tracker (completing-read prompt trackers)))
                     (cl-loop for cell in trackers
                              if (member tracker (list (car cell)
                                                       (number-to-string (cdr cell))))
