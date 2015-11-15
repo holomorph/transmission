@@ -513,8 +513,8 @@ Returns a list of non-blank inputs."
 
 (defun transmission-list-trackers (id)
   "Return the \"trackers\" array for torrent id ID."
-  (let ((torrent (transmission-torrents `(:ids ,id :fields ("trackers")))))
-    (transmission-torrent-value torrent 'trackers)))
+  (let ((torrent (transmission-torrents `(:ids ,id :fields ("trackerStats")))))
+    (transmission-torrent-value torrent 'trackerStats)))
 
 (defun transmission-list-unique-announce-urls ()
   "Return a list of unique announce URLs from all current torrents."
