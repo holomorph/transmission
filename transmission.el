@@ -157,7 +157,7 @@ See `format-time-string'."
 (defconst transmission-info-fields
   '("name" "hashString" "magnetLink" "activityDate" "addedDate"
     "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
-    "pieceSize" "trackers" "trackerStats" "peersConnected" "peersGettingFromUs"
+    "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs"
     "peersSendingToUs" "sizeWhenDone" "error" "errorString" "wanted" "files"
     "downloadedEver" "corruptEver" "haveValid" "totalSize" "percentDone"
     "seedRatioLimit" "seedRatioMode" "bandwidthPriority"))
