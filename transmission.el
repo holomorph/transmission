@@ -777,6 +777,33 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
        (let-alist (json-read-from-string content) (message .result)))
      "torrent-set" arguments)))
 
+(defun transmission-trackers-replace ()
+  "Replace tracker by ID or announce URL."
+  (interactive)
+  (let* ((id (or transmission-torrent-id
+                 (user-error "No torrent selected")))
+         (trackers (or (mapcar (lambda (x)
+                                 (cons (cdr (assq 'announce x))
+                                       (cdr (assq 'id x))))
+                               (transmission-list-trackers id))
+                       (user-error "No trackers to replace")))
+         (prompt (format "Replace tracker (%d trackers): " (length trackers)))
+         (tid (or (let* ((tracker (completing-read prompt trackers)))
+                    (cl-loop for cell in trackers
+                             if (member tracker (list (car cell)
+                                                      (number-to-string (cdr cell))))
+                             return (cdr cell)))
+                  (user-error "No tracker selected for substitution")))
+         (replacement
+          (completing-read "Replacement tracker? "
+                           (append transmission-trackers
+                                   (transmission-list-unique-announce-urls))))
+         (arguments (list :ids id :trackerReplace (vector tid replacement))))
+    (transmission-request-async
+     (lambda (content)
+       (let-alist (json-read-from-string content) (message .result)))
+     "torrent-set" arguments)))
+
 (defun transmission-verify ()
   "Verify torrent at point or in region."
   (interactive)
@@ -1059,6 +1086,7 @@ Also run the timer for timer object `transmission-timer'."
   '("Transmission-Info"
     ["Add Tracker URLs" transmission-trackers-add]
     ["Remove Trackers" transmission-trackers-remove]
+    ["Replace Tracker" transmission-trackers-replace]
     ["Move Torrent" transmission-move]
     ["Reannounce Torrent" transmission-reannounce]
     ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
