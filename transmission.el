@@ -554,16 +554,14 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
              (concat full ".part")))))
 
 (defun transmission-files-sort (torrent)
-  "Return the .files and .fileStats vectors in TORRENT.
+  "Return a list derived from the \"files\" and \"fileStats\" arrays in TORRENT.
 The two are spliced together with indices for each file, sorted by file name."
-  (let* ((files (cl-map 'vector #'append
-                        (transmission-torrent-value torrent 'files)
-                        (transmission-torrent-value torrent 'fileStats)))
-         (len (length files))
-         (indices (cl-map 'vector (lambda (a b) (list (cons a b)))
-                          (make-vector len 'index)
-                          (number-sequence 0 len))))
-    (sort (cl-mapcar #'append files indices)
+  (let ((files (transmission-torrent-value torrent 'files))
+        (stats (transmission-torrent-value torrent 'fileStats)))
+    (sort (cl-loop for f across files
+                   for s across stats
+                   for i below (length files)
+                   collect (append f s (list (cons 'index i))))
           (lambda (a b)
             (string< (cdr (assq 'name a))
                      (cdr (assq 'name b)))))))
