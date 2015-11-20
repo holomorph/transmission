@@ -390,12 +390,15 @@ TORRENT is the \"torrents\" vector returned by `transmission-torrents'."
 STATUS is a key of `transmission-status-plist'.  UP and DOWN are
 transmission rates."
   (let ((state (plist-get transmission-status-plist status))
-        (idle (propertize "idle" 'font-lock-face 'shadow)))
+        (idle (propertize "idle" 'font-lock-face 'shadow))
+        (uploading
+         (propertize "uploading" 'font-lock-face 'font-lock-constant-face)))
     (pcase status
       (0 (propertize state 'font-lock-face 'warning))
       ((or 1 3 5) (propertize state 'font-lock-face '(bold shadow)))
       (2 (propertize state 'font-lock-face 'font-lock-function-name-face))
-      (4 (if (> down 0) (propertize state 'font-lock-face 'highlight) idle))
+      (4 (if (> down 0) (propertize state 'font-lock-face 'highlight)
+           (if (> up 0) uploading idle)))
       (6 (if (> up 0) (propertize state 'font-lock-face 'success) idle))
       (_ state))))
 
