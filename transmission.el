@@ -157,7 +157,7 @@ See `format-time-string'."
 (defconst transmission-info-fields
   '("name" "hashString" "magnetLink" "activityDate" "addedDate"
     "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
-    "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs"
+    "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs" "peersFrom"
     "peersSendingToUs" "sizeWhenDone" "error" "errorString" "wanted" "files"
     "downloadedEver" "corruptEver" "haveValid" "totalSize" "percentDone"
     "seedRatioLimit" "seedRatioMode" "bandwidthPriority"))
@@ -905,6 +905,25 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                   (nreverse res))))
       (string-join (string-partition (substring bits 0 count) 72) "\n"))))
 
+(defun transmission-format-peers (peers origins connected sending receiving)
+  "Format peer information into a string.
+PEERS is an array of peer-specific data.
+ORIGINS is an alist giving counts of peers from different swarms.
+CONNECTED, SENDING, RECEIVING are numbers."
+  (cl-macrolet ((accumulate (array key)
+                  `(cl-loop for alist across ,array with x = 0
+                            if (eq t (cdr (assq ,key alist))) do (cl-incf x)
+                            finally return x)))
+    (concat
+     (format "Peers: %d connected, uploading to %d, downloading from %d"
+             connected sending receiving)
+     (format " (%d unchoked, %d interested)\n"
+             (- connected (accumulate peers 'clientIsChoked))
+             (accumulate peers 'peerIsInterested))
+     (pcase-let ((`(_ ,dht _ _ _ ,pex ,tracker) (mapcar #'cdr origins)))
+       (format "Peer origins: %d from DHT, %d from PEX, %d from trackers\n"
+               dht pex tracker)))))
+
 (defun transmission-format-tracker (tracker)
   (let-alist tracker
     (let* ((label (format "Tracker %d" .id))
@@ -998,8 +1017,8 @@ Each form in BODY is a column descriptor."
       (unless (zerop .error)
         (format "Error: %d %s\n" .error
                 (propertize .errorString 'font-lock-face 'error)))
-      (format "Peers: connected to %d, uploading to %d, downloading from %d\n"
-              .peersConnected .peersGettingFromUs .peersSendingToUs)
+      (transmission-format-peers .peers .peersFrom .peersConnected
+                                 .peersGettingFromUs .peersSendingToUs)
       (concat "Date created:    " (transmission-time .dateCreated))
       (concat "Date added:      " (transmission-time .addedDate))
       (concat "Date finished:   " (transmission-time .doneDate))
