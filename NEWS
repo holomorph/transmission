@@ -7,6 +7,17 @@ in addition to removal by tracker ID.
 
 *** Numbers in the *info* buffer now have comma separators
 
+*** `transmission-request-async' has a new argument CALLBACK.
+
+*** More information is shown for trackers.
+This includes announce/scrape times and the error string for failed
+announces.
+
+*** More information is shown for peers.
+Peers "interested" in receiving and with "unchoked" bandwidth are
+shown. Additionally shown are numbers of peers coming from either DHT,
+PEX, etc.
+
 *** New custom variable `transmission-trackers'.
 This is used to store trackers which are added to the completion
 candidates when adding a tracker to a torrent.
