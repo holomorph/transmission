@@ -552,9 +552,11 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
                (transmission-torrent-value transmission-torrent-vector 'downloadDir)))
          (base (cdr (assq 'name (tabulated-list-get-id))))
          (full (and dir base (concat dir base))))
-    (or (and (file-exists-p full) full)
-        (and (file-exists-p (concat full ".part"))
-             (concat full ".part")))))
+    (if full
+        (or (and (file-exists-p full) full)
+            (and (file-exists-p (concat full ".part"))
+                 (concat full ".part")))
+      (user-error "No file at point"))))
 
 (defun transmission-files-sort (torrent)
   "Return a list derived from the \"files\" and \"fileStats\" arrays in TORRENT.
