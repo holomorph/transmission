@@ -321,14 +321,11 @@ Details regarding the Transmission RPC can be found here:
   (when (buffer-live-p (process-buffer process))
     (unwind-protect
         (let* ((callback (process-get process :callback))
-               (buffer (and callback (process-get process :buffer)))
                (content (and callback
                              (with-current-buffer (process-buffer process)
                                (transmission--move-to-content)
                                (buffer-substring (point) (point-max))))))
-          (when (and callback (buffer-live-p buffer))
-            (with-current-buffer buffer
-              (funcall callback content))))
+          (if callback (run-at-time 0 nil callback content)))
       (kill-buffer (process-buffer process)))))
 
 (defun transmission-request-async (callback method &optional arguments tag)
@@ -341,7 +338,6 @@ METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
     (set-process-sentinel process #'transmission-process-sentinel)
     (add-function :after (process-filter process) 'transmission-process-filter)
     (process-put process :request content)
-    (process-put process :buffer (current-buffer))
     (process-put process :callback callback)
     (transmission-http-post process content)
     process))
