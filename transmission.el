@@ -727,11 +727,15 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-toggle ()
   "Toggle torrent between started and stopped."
   (interactive)
-  (transmission-let-ids
-      ((torrent (transmission-torrents (list :ids ids :fields '("status"))))
-       (status (transmission-torrent-value torrent 'status))
-       (method (pcase status (0 "torrent-start") (_ "torrent-stop"))))
-    (transmission-request-async nil method (list :ids ids))))
+  (transmission-let-ids nil
+    (transmission-request-async
+     (lambda (content)
+       (let* ((response (json-read-from-string content))
+              (torrents (cdr (cadr (assq 'arguments response))))
+              (status (cdr (assq 'status (elt torrents 0))))
+              (method (pcase status (0 "torrent-start") (_ "torrent-stop"))))
+         (transmission-request-async nil method (list :ids ids))))
+     "torrent-get" (list :ids ids :fields '("status")))))
 
 (defun transmission-trackers-add ()
   "Add announce URLs to torrent or torrents."
