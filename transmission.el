@@ -923,9 +923,15 @@ CONNECTED, SENDING, RECEIVING are numbers."
      (format " (%d unchoked, %d interested)\n"
              (- connected (accumulate peers 'clientIsChoked))
              (accumulate peers 'peerIsInterested))
-     (pcase-let ((`(_ ,dht _ _ _ ,pex ,tracker) (mapcar #'cdr origins)))
-       (format "Peer origins: %d from DHT, %d from PEX, %d from trackers\n"
-               dht pex tracker)))))
+     (when (not (zerop connected))
+       (format
+        "Peer origins: %s\n"
+        (string-join
+         (cl-loop with x = 0 for cell in origins for src across
+                  ["cache" "DHT" "incoming" "LPD" "LTEP" "PEX" "tracker(s)"]
+                  if (not (zerop (setq x (cdr cell))))
+                  collect (format "%d from %s" x src))
+         ", "))))))
 
 (defun transmission-format-tracker (tracker)
   (let-alist tracker
