@@ -917,13 +917,13 @@ CONNECTED, SENDING, RECEIVING are numbers."
                   `(cl-loop for alist across ,array with x = 0
                             if (eq t (cdr (assq ,key alist))) do (cl-incf x)
                             finally return x)))
-    (concat
-     (format "Peers: %d connected, uploading to %d, downloading from %d"
-             connected sending receiving)
-     (format " (%d unchoked, %d interested)\n"
-             (- connected (accumulate peers 'clientIsChoked))
-             (accumulate peers 'peerIsInterested))
-     (when (not (zerop connected))
+    (if (zerop connected) "Peers: none\n"
+      (concat
+       (format "Peers: %d connected, uploading to %d, downloading from %d"
+               connected sending receiving)
+       (format " (%d unchoked, %d interested)\n"
+               (- connected (accumulate peers 'clientIsChoked))
+               (accumulate peers 'peerIsInterested))
        (format
         "Peer origins: %s\n"
         (string-join
