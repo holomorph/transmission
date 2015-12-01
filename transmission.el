@@ -526,7 +526,7 @@ Returns a list of non-blank inputs."
                                    (cdr (assq 'announce alist)))
                                  vector))
                        trackers)))
-    (delete-dups (apply #'append urls))))
+    (delete-dups (apply #'append (delq nil urls)))))
 
 (defun transmission-files-do (action)
   "Apply ACTION to files in `transmission-files-mode' buffers."
