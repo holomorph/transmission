@@ -591,8 +591,9 @@ The two are spliced together with indices for each file, sorted by file name."
          (string (math-format-binary byte)))
     (concat (make-string (- 8 (length string)) ?0) string)))
 
-(defun transmission-torrent-seed-ratio (tlimit mode)
-  "String showing a torrent's seed ratio limit."
+(defun transmission-torrent-seed-ratio (mode tlimit)
+  "String showing a torrent's seed ratio limit.
+MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
   (pcase mode
     (0 "Session limit")
     (1 (format "%.2f (torrent-specific limit)" tlimit))
@@ -935,6 +936,7 @@ CONNECTED, SENDING, RECEIVING are numbers."
          ", "))))))
 
 (defun transmission-format-tracker (tracker)
+  "Format alist TRACKER into a string of tracker info."
   (let-alist tracker
     (let* ((label (format "Tracker %d" .id))
            (col (length label))
