@@ -366,15 +366,14 @@ TORRENT is the \"torrents\" vector returned by `transmission-torrents'."
       (cancel-timer transmission-timer))))
 
 (defun transmission-timer-run ()
-  (when transmission-timer-p
-    (when transmission-timer (cancel-timer transmission-timer))
-    (setq
-     transmission-timer
-     (run-at-time t transmission-timer-interval #'transmission-timer-revert))))
+  (when transmission-timer (cancel-timer transmission-timer))
+  (setq
+   transmission-timer
+   (run-at-time t transmission-timer-interval #'transmission-timer-revert)))
 
 (defun transmission-timer-check ()
   "Check if current buffer should run a refresh timer."
-  (let ((buffer (get-buffer "*transmission*")))
+  (let ((buffer (and transmission-timer-p (get-buffer "*transmission*"))))
     (when (and buffer (eq buffer (current-buffer)))
       (transmission-timer-run))))
 
@@ -1075,7 +1074,7 @@ Also run the timer for timer object `transmission-timer'."
     (move-to-column old-column)
     (setf (window-start) old-window-start)
     (and old-mark (set-mark old-mark)))
-  (transmission-timer-run))
+  (transmission-timer-check))
 
 (defmacro transmission-context (mode)
   "Switch to a context buffer of mode MODE."
