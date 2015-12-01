@@ -360,12 +360,14 @@ TORRENT is the \"torrents\" vector returned by `transmission-torrents'."
 ;; Timer management
 
 (defun transmission-timer-revert ()
+  "Revert the buffer or cancel `transmission-timer'."
   (let ((buffer (get-buffer "*transmission*")))
     (if (and buffer (eq buffer (current-buffer)))
         (revert-buffer)
       (cancel-timer transmission-timer))))
 
 (defun transmission-timer-run ()
+  "Run the timer `transmission-timer'."
   (when transmission-timer (cancel-timer transmission-timer))
   (setq
    transmission-timer
