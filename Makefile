@@ -13,7 +13,7 @@ EMACS = emacs
 all: $(SRC:.el=.elc)
 
 clean:
-	$(RM) $(SRC:=.gz) $(SRC:.el=.elc)
+	$(RM) $(SRC:.el=.elc)
 
 dist: clean
 	mkdir transmission-$(VERSION)
