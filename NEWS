@@ -24,6 +24,10 @@ candidates when adding a tracker to a torrent.
 
 *** New command `transmission-trackers-replace'
 
+** Fixes
+
+*** The file list header line updates correctly when units change.
+
 * Changes in 0.6
 
 ** Features
