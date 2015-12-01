@@ -1025,7 +1025,7 @@ Each form in BODY is a column descriptor."
       (format "Bandwidth priority: %s"
               (car (rassoc .bandwidthPriority transmission-priority-alist)))
       (concat "Ratio limit: "
-              (transmission-torrent-seed-ratio .seedRatioLimit .seedRatioMode))
+              (transmission-torrent-seed-ratio .seedRatioMode .seedRatioLimit))
       (unless (zerop .error)
         (format "Error: %d %s\n" .error
                 (propertize .errorString 'font-lock-face 'error)))
