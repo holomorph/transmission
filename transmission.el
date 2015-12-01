@@ -359,11 +359,11 @@ TORRENT is the \"torrents\" vector returned by `transmission-torrents'."
 
 ;; Timer management
 
-(defun transmission-timer-check ()
-  "Check if current buffer should run a refresh timer."
+(defun transmission-timer-revert ()
   (let ((buffer (get-buffer "*transmission*")))
-    (when (and buffer (eq buffer (current-buffer)))
-      (transmission-timer-run))))
+    (if (and buffer (eq buffer (current-buffer)))
+        (revert-buffer)
+      (cancel-timer transmission-timer))))
 
 (defun transmission-timer-run ()
   (when transmission-timer-p
@@ -372,11 +372,11 @@ TORRENT is the \"torrents\" vector returned by `transmission-torrents'."
      transmission-timer
      (run-at-time t transmission-timer-interval #'transmission-timer-revert))))
 
-(defun transmission-timer-revert ()
+(defun transmission-timer-check ()
+  "Check if current buffer should run a refresh timer."
   (let ((buffer (get-buffer "*transmission*")))
-    (if (and buffer (eq buffer (current-buffer)))
-        (revert-buffer)
-      (cancel-timer transmission-timer))))
+    (when (and buffer (eq buffer (current-buffer)))
+      (transmission-timer-run))))
 
 
 ;; Other
