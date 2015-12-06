@@ -603,7 +603,7 @@ MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
   "Group digits of natural number N with delimiter \",\"."
   (if (< n 1000)
       (format "%s" n)
-    (let ((regexp (eval-when-compile (rx (group (= 3 digit))))))
+    (let ((regexp (eval-when-compile (rx (= 3 digit)))))
       ;; Good place for `thread-last' and `reverse'
       ;; (thread-last (reverse (number-to-string n))
       ;;     (replace-regexp-in-string regexp "\\1,")
@@ -615,7 +615,7 @@ MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
          (string-remove-suffix
           ","
           (replace-regexp-in-string
-           regexp "\\1," (reverse-string (number-to-string n)))))))))
+           regexp "\\&," (reverse-string (number-to-string n)))))))))
 
 (defmacro transmission-tabulated-list-pred (key)
   "Return a sorting predicate comparing values of KEY.
