@@ -1055,11 +1055,10 @@ Each form in BODY is a column descriptor."
            (format "\nPieces:\n\n%s"
                    (transmission-format-pieces .pieces .pieceCount)))))))))
 
-(defun transmission-draw (fun)
-  "Draw the buffer with new contents.
-FUN should update the buffer contents."
+(defun transmission-draw ()
+  "Draw the buffer with new contents via `transmission-refresh-function'."
   (with-silent-modifications
-    (funcall fun)))
+    (funcall transmission-refresh-function)))
 
 (defun transmission-refresh (&optional _arg _noconfirm)
   "Refresh the current buffer, restoring window position, point, and mark.
@@ -1070,7 +1069,7 @@ Also run the timer for timer object `transmission-timer'."
          (old-mark (when (region-active-p)
                      (let ((beg (region-beginning)))
                        (if (= (window-point) beg) (region-end) beg)))))
-    (transmission-draw transmission-refresh-function)
+    (transmission-draw)
     (goto-char (save-excursion
                  (goto-char (point-min))
                  (forward-line (1- old-line))
@@ -1098,7 +1097,7 @@ Also run the timer for timer object `transmission-timer'."
              (if (and old-id (eq old-id id))
                  (revert-buffer)
                (setq transmission-torrent-id id)
-               (transmission-draw transmission-refresh-function)
+               (transmission-draw)
                (goto-char (point-min)))))
          (switch-to-buffer buffer)))))
 
@@ -1297,7 +1296,7 @@ Key bindings:
         (if (eq major-mode 'transmission-mode)
             (transmission-refresh)
           (transmission-mode)
-          (transmission-draw transmission-refresh-function)
+          (transmission-draw)
           (goto-char (point-min))))
       (switch-to-buffer-other-window buffer))))
 
