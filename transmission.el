@@ -983,7 +983,7 @@ Each form in BODY is a column descriptor."
   (transmission-do-entries transmission-torrent-vector
     (transmission-eta .eta .percentDone)
     (transmission-size .sizeWhenDone)
-    (format "%3d%%" (* 100 .percentDone))
+    (format "%d%%" (* 100 .percentDone))
     (format "%d" (transmission-rate .rateDownload))
     (format "%d" (transmission-rate .rateUpload))
     (format "%.1f" (if (> .uploadRatio 0) .uploadRatio 0))
@@ -1001,7 +1001,7 @@ Each form in BODY is a column descriptor."
          (truncate (if directory (transmission-every-prefix-p directory names))))
     (setq tabulated-list-entries nil)
     (transmission-do-entries files
-      (format "%3d%%" (transmission-percent .bytesCompleted .length))
+      (format "%d%%" (transmission-percent .bytesCompleted .length))
       (symbol-name (car (rassoc .priority transmission-priority-alist)))
       (pcase .wanted (:json-false "no") (_ "yes"))
       (transmission-size .length)
