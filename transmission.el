@@ -722,7 +722,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-set-ratio (limit)
   "Set global seed ratio LIMIT."
   (interactive (transmission-prompt-ratio-limit))
-  (let ((arguments (if (<= limit 0) '(:seedRatioLimited :json-false)
+  (let ((arguments (if (< limit 0) '(:seedRatioLimited :json-false)
                      `(:seedRatioLimited t :seedRatioLimit ,limit))))
     (transmission-request-async nil "session-set" arguments)))
 
