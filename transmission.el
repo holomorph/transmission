@@ -606,7 +606,7 @@ MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
     (let ((regexp (eval-when-compile (rx (= 3 digit)))))
       ;; Good place for `thread-last' and `reverse'
       ;; (thread-last (reverse (number-to-string n))
-      ;;     (replace-regexp-in-string regexp "\\1,")
+      ;;     (replace-regexp-in-string regexp "\\&,")
       ;;     (string-remove-suffix ",")
       ;;     (reverse))
       (cl-macrolet ((reverse-string (str)
