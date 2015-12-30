@@ -916,9 +916,8 @@ PEERS is an array of peer-specific data.
 ORIGINS is an alist giving counts of peers from different swarms.
 CONNECTED, SENDING, RECEIVING are numbers."
   (cl-macrolet ((accumulate (array key)
-                  `(cl-loop for alist across ,array with x = 0
-                            if (eq t (cdr (assq ,key alist))) do (cl-incf x)
-                            finally return x)))
+                  `(cl-loop for alist across ,array
+                            if (eq t (cdr (assq ,key alist))) sum 1)))
     (if (zerop connected) "Peers: none\n"
       (concat
        (format "Peers: %d connected, uploading to %d, downloading from %d"
@@ -1036,9 +1035,8 @@ Each form in BODY is a column descriptor."
       (concat "Date finished:   " (transmission-time .doneDate))
       (concat "Latest Activity: " (transmission-time .activityDate) "\n")
       (transmission-format-trackers .trackerStats)
-      (let ((wanted (cl-loop for w across .wanted for f across .files with x = 0
-                             if (not (zerop w)) do (cl-incf x (cdr (assq 'length f)))
-                             finally return x)))
+      (let ((wanted (cl-loop for w across .wanted for f across .files
+                             if (not (zerop w)) sum (cdr (assq 'length f)))))
         (concat "Wanted: " (transmission-format-size wanted)))
       (concat "Downloaded: " (transmission-format-size .downloadedEver))
       (concat "Verified: " (transmission-format-size .haveValid))
