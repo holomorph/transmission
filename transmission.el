@@ -103,8 +103,8 @@
 
 See `file-size-human-readable'."
   :type '(choice (const :tag "Default" nil)
-                 (symbol :tag "SI" si)
-                 (symbol :tag "IEC" iec))
+                 (const :tag "SI" si)
+                 (const :tag "IEC" iec))
   :link '(function-link file-size-human-readable)
   :group 'transmission)
 
