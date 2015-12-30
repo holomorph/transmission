@@ -619,7 +619,7 @@ The two are spliced together with indices for each file, sorted by file name."
     (concat (make-string (- 8 (length string)) ?0) string)))
 
 (defun transmission-ratio->glyph (ratio)
-  "Return a string RATIO."
+  "Return a single-char string representing RATIO."
   (string
    (cond
     ((= 0 ratio) #x20)
