@@ -93,6 +93,13 @@
                                   (:password string))))
   :group 'transmission)
 
+(defcustom transmission-pieces-display t
+  "How to show pieces of incomplete torrents."
+  :type '(choice (const :tag "Never" nil)
+                 (const :tag "Brief" brief)
+                 (const :tag "Full" t))
+  :group 'transmission)
+
 (defcustom transmission-trackers '()
   "List of tracker URLs."
   :type '(repeat (string :tag "URL"))
@@ -420,6 +427,26 @@ transmission rates."
   (not (cl-loop for string in list
                 if (not (string-prefix-p prefix string)) return t)))
 
+(defun transmission-slice (list k)
+  "Slice LIST into K lists of somewhat equal size.
+The result can have no more elements than LIST."
+  (let* ((size (length list))
+         (quotient (/ size k))
+         (remainder (% size k)))
+    (cl-flet ((take (list n)
+                (let (result)
+                  (while (and list (>= (cl-decf n) 0))
+                    (push (pop list) result))
+                  (nreverse result))))
+      (let ((i 0)
+            slice result)
+        (while (and list (< i k))
+          (setq slice (if (< i remainder) (1+ quotient) quotient))
+          (push (take list slice) result)
+          (setq list (nthcdr slice list))
+          (cl-incf i))
+        (nreverse result)))))
+
 (defun transmission-prop-values-in-region (prop)
   "Return a list of truthy values of text property PROP in region or at point.
 If none are found, return nil."
@@ -590,6 +617,16 @@ The two are spliced together with indices for each file, sorted by file name."
   (let* ((calc-number-radix 2)
          (string (math-format-binary byte)))
     (concat (make-string (- 8 (length string)) ?0) string)))
+
+(defun transmission-ratio->glyph (ratio)
+  "Return a string RATIO."
+  (string
+   (cond
+    ((= 0 ratio) #x20)
+    ((< ratio 33) #x2591)
+    ((< ratio 66) #x2592)
+    ((< ratio 100) #x2593)
+    ((= 100 ratio) #x2588))))
 
 (defun transmission-torrent-seed-ratio (mode tlimit)
   "String showing a torrent's seed ratio limit.
@@ -910,6 +947,18 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                   (nreverse res))))
       (string-join (string-partition (substring bits 0 count) 72) "\n"))))
 
+(defun transmission-format-pieces-brief (pieces count)
+  "Format pieces into a one-line representation.
+PIECES and COUNT are the same as in `transmission-format-pieces'."
+  (let* ((bytes (base64-decode-string pieces))
+         (slices
+          (transmission-slice (mapcar #'transmission-hamming-weight bytes) 72))
+         (ratios
+          (cl-loop for slice in slices with n = count and m = nil
+                   do (cl-decf n (setq m (min n (* 8 (length slice)))))
+                   collect (/ (* 100 (apply #'+ slice)) m))))
+    (mapconcat #'transmission-ratio->glyph ratios "")))
+
 (defun transmission-format-peers (peers origins connected sending receiving)
   "Format peer information into a string.
 PEERS is an array of peer-specific data.
@@ -1049,9 +1098,11 @@ Each form in BODY is a column descriptor."
         (concat
          (format "Piece count: %d / %d (%d%%)" have .pieceCount
                  (transmission-percent have .pieceCount))
-         (when (and (/= have 0) (< have .pieceCount))
+         (when (and transmission-pieces-display (/= have 0) (< have .pieceCount))
            (format "\nPieces:\n\n%s"
-                   (transmission-format-pieces .pieces .pieceCount)))))))))
+                   (if (eq transmission-pieces-display 'brief)
+                       (transmission-format-pieces-brief .pieces .pieceCount)
+                     (transmission-format-pieces .pieces .pieceCount))))))))))
 
 (defun transmission-draw ()
   "Draw the buffer with new contents via `transmission-refresh-function'."
