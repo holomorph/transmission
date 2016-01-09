@@ -563,9 +563,10 @@ Returns a list of non-blank inputs."
   "Return a file name, URL, or info hash at point, otherwise nil."
   (or (get-text-property (point) 'shr-url)
       (get-text-property (point) :nt-link)
-      (ffap-guess-file-name-at-point)
-      (if (fboundp 'dired-file-name-at-point)
-          (dired-file-name-at-point))
+      (let ((fn (or (ffap-guess-file-name-at-point)
+                    (if (fboundp 'dired-file-name-at-point)
+                        (dired-file-name-at-point)))))
+        (unless (directory-name-p fn) fn))
       (transmission-btih-p (thing-at-point 'word))))
 
 (defun transmission-files-do (action)
