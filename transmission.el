@@ -555,6 +555,17 @@ Returns a list of non-blank inputs."
                        trackers)))
     (delete-dups (apply #'append (delq nil urls)))))
 
+(defun transmission-ffap ()
+  "Return a file name, URL, or info hash at point, otherwise nil."
+  (or (get-text-property (point) 'shr-url)
+      (get-text-property (point) :nt-link)
+      (ffap-guess-file-name-at-point)
+      (if (fboundp 'dired-file-name-at-point)
+          (dired-file-name-at-point))
+      (let ((word (thing-at-point 'word)))
+        (if (string-match-p "\\`[[:xdigit:]]\\{40\\}\\'" word)
+            word))))
+
 (defun transmission-files-do (action)
   "Apply ACTION to files in `transmission-files-mode' buffers."
   (unless (memq action (list :files-wanted :files-unwanted
@@ -681,9 +692,13 @@ Execute BODY, binding list `ids' of torrent IDs at point or in region."
 (defun transmission-add (torrent &optional directory)
   "Add TORRENT by filename, URL, magnet link, or info hash.
 When called with a prefix, prompt for DIRECTORY."
-  (interactive (list (read-file-name "Add torrent: ")
-                     (if current-prefix-arg
-                         (read-directory-name "Target directory: "))))
+  (interactive
+   (let* ((fap (transmission-ffap))
+          (prompt (concat "Add torrent" (if fap (format " [%s]" fap)) ": "))
+          (input (read-file-name prompt)))
+     (list (if (string-empty-p input) fap input)
+           (if current-prefix-arg
+               (read-directory-name "Target directory: ")))))
   (let ((arguments
          (append (if (file-readable-p torrent)
                      `(:metainfo ,(with-temp-buffer
