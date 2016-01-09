@@ -555,6 +555,10 @@ Returns a list of non-blank inputs."
                        trackers)))
     (delete-dups (apply #'append (delq nil urls)))))
 
+(defun transmission-btih-p (string)
+  "Return non-nil if STRING is a BitTorrent info hash, otherwise nil."
+  (if (and string (string-match-p "\\`[[:xdigit:]]\\{40\\}\\'" string)) string))
+
 (defun transmission-ffap ()
   "Return a file name, URL, or info hash at point, otherwise nil."
   (or (get-text-property (point) 'shr-url)
@@ -562,9 +566,7 @@ Returns a list of non-blank inputs."
       (ffap-guess-file-name-at-point)
       (if (fboundp 'dired-file-name-at-point)
           (dired-file-name-at-point))
-      (let ((word (thing-at-point 'word)))
-        (if (and word (string-match-p "\\`[[:xdigit:]]\\{40\\}\\'" word))
-            word))))
+      (transmission-btih-p (thing-at-point 'word))))
 
 (defun transmission-files-do (action)
   "Apply ACTION to files in `transmission-files-mode' buffers."
@@ -704,7 +706,7 @@ When called with a prefix, prompt for DIRECTORY."
                      `(:metainfo ,(with-temp-buffer
                                     (insert-file-contents torrent)
                                     (base64-encode-string (buffer-string))))
-                   `(:filename ,(if (string-match "\\`[[:xdigit:]]\\{40\\}\\'" torrent)
+                   `(:filename ,(if (transmission-btih-p torrent)
                                     (format "magnet:?xt=urn:btih:%s" torrent)
                                   torrent)))
                  (list :download-dir directory))))
