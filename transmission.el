@@ -563,7 +563,7 @@ Returns a list of non-blank inputs."
       (if (fboundp 'dired-file-name-at-point)
           (dired-file-name-at-point))
       (let ((word (thing-at-point 'word)))
-        (if (string-match-p "\\`[[:xdigit:]]\\{40\\}\\'" word)
+        (if (and word (string-match-p "\\`[[:xdigit:]]\\{40\\}\\'" word))
             word))))
 
 (defun transmission-files-do (action)
