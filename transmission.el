@@ -138,7 +138,9 @@ See `format-time-string'."
 
 (defcustom transmission-torrent-functions '(transmission-ffap)
   "List of functions to use for guessing torrents for `transmission-add'.
-Each function should accept no arguments, and return a string or nil."
+Each function should accept no arguments, and return a string or nil.
+Examples of useful functions are `transmission-ffap-last-killed' or
+`x-get-selection'."
   :type '(repeat (function :tag "Function"))
   :group 'transmission)
 
@@ -574,6 +576,14 @@ Returns a list of non-blank inputs."
                         (dired-file-name-at-point)))))
         (unless (directory-name-p fn) fn))
       (transmission-btih-p (thing-at-point 'word))))
+
+(defun transmission-ffap-last-killed ()
+  "Apply `transmission-ffap' to the most recent `kill-ring' entry."
+  (with-temp-buffer
+    (let ((text (car kill-ring)))
+      (if text (insert text)))
+    (goto-char (point-min))
+    (transmission-ffap)))
 
 (defun transmission-default-torrent (functions)
   "Return the first non-nil evaluation of a function in FUNCTIONS."
