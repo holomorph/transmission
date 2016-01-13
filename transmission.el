@@ -702,26 +702,25 @@ When called with a prefix, prompt for DIRECTORY."
      (list (if (string-empty-p input) fap input)
            (if current-prefix-arg
                (read-directory-name "Target directory: ")))))
-  (let ((arguments
-         (append (if (file-readable-p torrent)
-                     `(:metainfo ,(with-temp-buffer
-                                    (insert-file-contents torrent)
-                                    (base64-encode-string (buffer-string))))
-                   `(:filename ,(if (transmission-btih-p torrent)
-                                    (format "magnet:?xt=urn:btih:%s" torrent)
-                                  torrent)))
-                 (list :download-dir directory))))
-    (transmission-request-async
-     (lambda (content)
-       (let-alist (json-read-from-string content)
-         (pcase .result
-           ("success"
-            (or (and .arguments.torrent-added.name
-                     (message "Added %s" .arguments.torrent-added.name))
-                (and .arguments.torrent-duplicate.name
-                     (message "Already added %s" .arguments.torrent-duplicate.name))))
-           (_ (message .result)))))
-     "torrent-add" arguments)))
+  (transmission-request-async
+   (lambda (content)
+     (let-alist (json-read-from-string content)
+       (pcase .result
+         ("success"
+          (or (and .arguments.torrent-added.name
+                   (message "Added %s" .arguments.torrent-added.name))
+              (and .arguments.torrent-duplicate.name
+                   (message "Already added %s" .arguments.torrent-duplicate.name))))
+         (_ (message .result)))))
+   "torrent-add"
+   (append (if (file-readable-p torrent)
+               `(:metainfo ,(with-temp-buffer
+                              (insert-file-contents torrent)
+                              (base64-encode-string (buffer-string))))
+             `(:filename ,(if (transmission-btih-p torrent)
+                              (format "magnet:?xt=urn:btih:%s" torrent)
+                            torrent)))
+           (list :download-dir directory))))
 
 (defun transmission-move (location)
   "Move torrent at point or in region to a new LOCATION."
