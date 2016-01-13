@@ -136,6 +136,12 @@ See `format-time-string'."
   :link '(function-link format-time-string)
   :group 'transmission)
 
+(defcustom transmission-torrent-functions '(transmission-ffap)
+  "List of functions to use for guessing torrents for `transmission-add'.
+Each function should accept no arguments, and return a string or nil."
+  :type '(repeat (function :tag "Function"))
+  :group 'transmission)
+
 (defconst transmission-priority-alist
   '((low . -1)
     (normal . 0)
@@ -569,6 +575,15 @@ Returns a list of non-blank inputs."
         (unless (directory-name-p fn) fn))
       (transmission-btih-p (thing-at-point 'word))))
 
+(defun transmission-default-torrent (functions)
+  "Return the first non-nil evaluation of a function in FUNCTIONS."
+  (catch :result
+    (mapc (lambda (fun)
+            (let ((res (funcall fun)))
+              (if res (throw :result res))))
+          functions)
+    nil))
+
 (defun transmission-files-do (action)
   "Apply ACTION to files in `transmission-files-mode' buffers."
   (unless (memq action (list :files-wanted :files-unwanted
@@ -696,10 +711,10 @@ Execute BODY, binding list `ids' of torrent IDs at point or in region."
   "Add TORRENT by filename, URL, magnet link, or info hash.
 When called with a prefix, prompt for DIRECTORY."
   (interactive
-   (let* ((fap (transmission-ffap))
-          (prompt (concat "Add torrent" (if fap (format " [%s]" fap)) ": "))
+   (let* ((def (transmission-default-torrent transmission-torrent-functions))
+          (prompt (concat "Add torrent" (if def (format " [%s]" def)) ": "))
           (input (read-file-name prompt)))
-     (list (if (string-empty-p input) fap input)
+     (list (if (string-empty-p input) def input)
            (if current-prefix-arg
                (read-directory-name "Target directory: ")))))
   (transmission-request-async
