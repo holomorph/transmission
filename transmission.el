@@ -582,11 +582,12 @@ Returns a list of non-blank inputs."
 
 (defun transmission-ffap-last-killed ()
   "Apply `transmission-ffap' to the most recent `kill-ring' entry."
-  (with-temp-buffer
-    (let ((text (car kill-ring)))
-      (if text (insert text)))
-    (goto-char (point-min))
-    (transmission-ffap)))
+  (let ((text (car kill-ring)))
+    (when text
+      (with-temp-buffer
+        (insert text)
+        (goto-char (point-min))
+        (transmission-ffap)))))
 
 (defun transmission-default-torrent (functions)
   "Return the first non-nil evaluation of a function in FUNCTIONS."
