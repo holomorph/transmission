@@ -139,12 +139,9 @@ See `format-time-string'."
 (defcustom transmission-torrent-functions '(transmission-ffap)
   "List of functions to use for guessing torrents for `transmission-add'.
 Each function should accept no arguments, and return a string or nil.
-Examples of useful functions are `transmission-ffap-last-killed' or
-`x-get-selection'."
+One example of such a function is `transmission-ffap-last-killed'."
   :type 'hook
-  :options `(transmission-ffap transmission-ffap-last-killed
-             ,(if (fboundp 'gui-get-selection)
-                  'gui-get-selection 'x-get-selection))
+  :options '(transmission-ffap transmission-ffap-last-killed)
   :group 'transmission)
 
 (defconst transmission-priority-alist
