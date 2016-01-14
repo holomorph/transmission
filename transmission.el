@@ -478,10 +478,10 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
   (if (<= seconds 0)
       (pcase percent
         (1 "Done")
-        (_ (if (char-displayable-p ?∞) (string ?∞) "Inf")))
-    (let* ((minute (float 60))
-           (hour (float 3600))
-           (day (float 86400))
+        (_ (if (char-displayable-p ?∞) (eval-when-compile (string ?∞)) "Inf")))
+    (let* ((minute 60.0)
+           (hour 3600.0)
+           (day 86400.0)
            (month (* 29.53 day))
            (year (* 365.25 day)))
       (apply #'format "%.0f%s"
