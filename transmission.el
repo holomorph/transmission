@@ -495,8 +495,7 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
 
 (defun transmission-when (seconds)
   "The `transmission-eta' of time between `current-time' and SECONDS."
-  (if (<= seconds 0)
-      "never"
+  (if (<= seconds 0) "never"
     (let ((secs (- seconds (time-to-seconds (current-time)))))
       (format (if (< secs 0) "%s ago" "in %s")
               (transmission-eta (abs secs) nil)))))
@@ -504,8 +503,7 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
 (defun transmission-rate (bytes)
   "Return a rate in units kilobytes per second.
 The rate is calculated from BYTES according to `transmission-units'."
-  (/ bytes
-     (if (eq 'iec transmission-units) 1024 1000)))
+  (/ bytes (if (eq 'iec transmission-units) 1024 1000)))
 
 (defun transmission-prompt-speed-limit (upload)
   "Make a prompt to set transfer speed limit.
@@ -637,8 +635,7 @@ The two are spliced together with indices for each file, sorted by file name."
 
 (defun transmission-time (seconds)
   "Format a time string, given SECONDS from the epoch."
-  (if (= 0 seconds)
-      (format "Never")
+  (if (= 0 seconds) "Never"
     (format-time-string transmission-time-format (seconds-to-time seconds))))
 
 (defun transmission-hamming-weight (x)
