@@ -792,7 +792,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-set-upload (limit)
   "Set global upload speed LIMIT in KB/s."
   (interactive (transmission-prompt-speed-limit t))
-  (let ((arguments (if (<= limit 0) '(:speed-limit-up-enabled :json-false)
+  (let ((arguments (if (< limit 0) '(:speed-limit-up-enabled :json-false)
                      `(:speed-limit-up-enabled t :speed-limit-up ,limit))))
     (transmission-request-async nil "session-set" arguments)))
 
