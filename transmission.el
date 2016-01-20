@@ -566,6 +566,15 @@ Returns a list of non-blank inputs."
   "Return non-nil if STRING is a BitTorrent info hash, otherwise nil."
   (if (and string (string-match-p "\\`[[:xdigit:]]\\{40\\}\\'" string)) string))
 
+(defun transmission-directory-name-p (name)
+  "Return non-nil if NAME ends with a directory separator character."
+  (let ((len (length name))
+        (last ?.))
+    (if (> len 0) (setq last (aref name (1- len))))
+    (or (= last ?/)
+        (and (memq system-type '(windows-nt ms-dos))
+             (= last ?\\)))))
+
 (defun transmission-ffap ()
   "Return a file name, URL, or info hash at point, otherwise nil."
   (or (get-text-property (point) 'shr-url)
@@ -573,7 +582,7 @@ Returns a list of non-blank inputs."
       (let ((fn (or (ffap-guess-file-name-at-point)
                     (if (fboundp 'dired-file-name-at-point)
                         (dired-file-name-at-point)))))
-        (unless (directory-name-p fn) fn))
+        (unless (transmission-directory-name-p fn) fn))
       (url-get-url-at-point)
       (transmission-btih-p (thing-at-point 'word))))
 
