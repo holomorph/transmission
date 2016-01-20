@@ -1,3 +1,20 @@
+* Changes in 0.8
+
+** Features
+
+*** `transmission-add` now has a conditional default argument.
+The default argument is a guess of a valid torrent at point, either as
+a URL, file name, magnet link, or info hash. The behavior can be
+customized with the new variable `transmission-torrent-functions`.
+
+*** New one-line pieces display.
+Visible when new custom variable `transmission-pieces-display' is set
+to 'brief.
+
+** Changes
+
+*** Global upload limit and seed ratio limit can be set to zero.
+
 * Changes in 0.7
 
 ** Features
