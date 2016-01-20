@@ -56,6 +56,7 @@
 (require 'calc-bin)
 (require 'json)
 (require 'tabulated-list)
+(require 'url-util)
 
 (eval-when-compile
   (require 'cl-lib)
@@ -573,6 +574,7 @@ Returns a list of non-blank inputs."
                     (if (fboundp 'dired-file-name-at-point)
                         (dired-file-name-at-point)))))
         (unless (directory-name-p fn) fn))
+      (url-get-url-at-point)
       (transmission-btih-p (thing-at-point 'word))))
 
 (defun transmission-ffap-last-killed ()
