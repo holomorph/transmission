@@ -491,7 +491,7 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
                ((pred (> hour)) (list (/ seconds minute) "m"))
                ((pred (> day)) (list (/ seconds hour) "h"))
                ((pred (> month)) (list (/ seconds day) "d"))
-               ((pred (> year)) (list (/ seconds month) "M"))
+               ((pred (> year)) (list (/ seconds month) "mo"))
                (_ (list (/ seconds year) "y")))))))
 
 (defun transmission-when (seconds)
