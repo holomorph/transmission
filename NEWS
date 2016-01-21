@@ -13,7 +13,7 @@ to 'brief.
 
 ** Changes
 
-*** Global upload limit and seed ratio limit can be set to zero.
+*** Global upload speed limit and seed ratio limit can be set to zero.
 
 * Changes in 0.7
 
