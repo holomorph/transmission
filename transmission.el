@@ -1290,6 +1290,7 @@ Key bindings:
     ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
     ["Verify Torrent" transmission-verify]
     "--"
+    ["View Torrent Files" transmission-files]
     ["View Torrent Peers" transmission-peers]
     "--"
     ["Refresh" revert-buffer]
