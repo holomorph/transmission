@@ -1018,7 +1018,7 @@ CONNECTED, SENDING, RECEIVING are numbers."
   (cl-macrolet ((accumulate (array key)
                   `(cl-loop for alist across ,array
                             if (eq t (cdr (assq ,key alist))) sum 1)))
-    (if (zerop connected) "Peers: none\n"
+    (if (zerop connected) "Peers: none connected\n"
       (concat
        (format "Peers: %d connected, uploading to %d, downloading from %d"
                connected sending receiving)
