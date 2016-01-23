@@ -543,7 +543,7 @@ Returns a list of non-blank inputs."
                 (not (string-blank-p entry)))
            (progn (push entry list)
                   (setq collection (delete entry collection)))
-         (throw :finished list))))))
+         (throw :finished (nreverse list)))))))
 
 (defun transmission-list-trackers (id)
   "Return the \"trackers\" array for torrent id ID."
