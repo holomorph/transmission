@@ -966,6 +966,15 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
         (find-file-read-only file)
       (user-error "File does not exist"))))
 
+(defun transmission-copy-magnet ()
+  "Copy magnet link of current torrent."
+  (interactive)
+  (let ((magnet
+         (transmission-torrent-value transmission-torrent-vector 'magnetLink)))
+    (when magnet
+      (kill-new magnet)
+      (message "Copied %s" magnet))))
+
 
 ;; Drawing
 
@@ -1271,6 +1280,7 @@ Key bindings:
   (let ((map (copy-keymap special-mode-map)))
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
+    (define-key map "c" 'transmission-copy-magnet)
     (define-key map "e" 'transmission-peers)
     (define-key map "m" 'transmission-move)
     (define-key map "t" 'transmission-trackers-add)
@@ -1285,6 +1295,7 @@ Key bindings:
     ["Add Tracker URLs" transmission-trackers-add]
     ["Remove Trackers" transmission-trackers-remove]
     ["Replace Tracker" transmission-trackers-replace]
+    ["Copy Magnet Link" transmission-copy-magnet]
     ["Move Torrent" transmission-move]
     ["Reannounce Torrent" transmission-reannounce]
     ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
