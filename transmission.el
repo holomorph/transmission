@@ -1244,6 +1244,8 @@ Also run the timer for timer object `transmission-timer'."
 
 (define-derived-mode transmission-peers-mode tabulated-list-mode "Transmission-Peers"
   "Major mode for viewing peer information in Transmission.
+See https://trac.transmissionbt.com/wiki/PeerStatusText
+for explanation of the peer flags.
 
 In addition to any hooks its parent mode might have run, this
 mode runs the hook `transmission-peers-mode-hook' at mode
@@ -1429,8 +1431,8 @@ Key bindings:
     ["Quit" transmission-quit]))
 
 (define-derived-mode transmission-mode tabulated-list-mode "Transmission"
-  "Major mode for interfacing with a Transmission daemon. See
-https://trac.transmissionbt.com/ for more information about
+  "Major mode for interfacing with a Transmission daemon.
+See https://trac.transmissionbt.com/ for more information about
 Transmission.
 
 In addition to any hooks its parent mode might have run, this
