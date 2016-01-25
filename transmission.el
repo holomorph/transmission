@@ -1252,7 +1252,7 @@ mode runs the hook `transmission-peers-mode-hook' at mode
 initialization.
 
 Key bindings:
-\\{transmission-peer-mode-map}"
+\\{transmission-peers-mode-map}"
   :group 'transmission
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
