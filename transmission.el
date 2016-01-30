@@ -151,15 +151,15 @@ One example of such a function is `transmission-ffap-last-killed'."
     (high . 1))
   "Alist of names to priority values.")
 
-(defconst transmission-status-plist
-  '(0 "stopped"
-    1 "verifywait"
-    2 "verifying"
-    3 "downwait"
-    4 "downloading"
-    5 "seedwait"
-    6 "seeding")
-  "Plist of possible Transmission torrent statuses.")
+(defconst transmission-status-alist
+  '((0 . "stopped")
+    (1 . "verifywait")
+    (2 . "verifying")
+    (3 . "downwait")
+    (4 . "downloading")
+    (5 . "seedwait")
+    (6 . "seeding"))
+  "Alist of possible Transmission torrent statuses.")
 
 (defconst transmission-torrent-get-fields
   '("id" "name" "status" "eta"
@@ -400,9 +400,9 @@ TORRENT is the \"torrents\" vector returned by `transmission-torrents'."
 
 (defun transmission-status (status up down)
   "Return a propertized string describing torrent status.
-STATUS is a key of `transmission-status-plist'.  UP and DOWN are
+STATUS is a key of `transmission-status-alist'.  UP and DOWN are
 transmission rates."
-  (let ((state (plist-get transmission-status-plist status))
+  (let ((state (cdr (assq status transmission-status-alist)))
         (idle (propertize "idle" 'font-lock-face 'shadow))
         (uploading
          (propertize "uploading" 'font-lock-face 'font-lock-constant-face)))
