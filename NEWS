@@ -2,6 +2,11 @@
 
 ** Features
 
+*** New context with peer information.
+
+*** New command for copying the current torrent's magnet link
+into the kill ring.
+
 *** `transmission-add` now has a conditional default argument.
 The default argument is a guess of a valid torrent at point, either as
 a URL, file name, magnet link, or info hash. The behavior can be
@@ -14,6 +19,10 @@ to 'brief.
 ** Changes
 
 *** Global upload speed limit and seed ratio limit can be set to zero.
+
+** Fixes
+
+*** Trackers are no longer added in reverse order
 
 * Changes in 0.7
 
