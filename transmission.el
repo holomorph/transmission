@@ -1259,8 +1259,10 @@ Key bindings:
         `[("Address" 15 nil)
           ("Flags" 6 t)
           ("Has" 4 nil :right-align t)
-          ("Down" 4 nil :right-align t)
-          ("Up" 3 nil :right-align t :pad-right 2)
+          ("Down" 4 ,(transmission-tabulated-list-pred 'rateToClient)
+           :right-align t)
+          ("Up" 3 ,(transmission-tabulated-list-pred 'rateToPeer)
+           :right-align t :pad-right 2)
           ("Client" 20 t)])
   (tabulated-list-init-header)
   (setq transmission-refresh-function
