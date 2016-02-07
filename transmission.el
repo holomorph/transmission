@@ -589,14 +589,17 @@ Returns a list of non-blank inputs."
       (url-get-url-at-point)
       (transmission-btih-p (thing-at-point 'word))))
 
+(defun transmission-ffap-string (string)
+  "Apply `transmission-ffap' to the beginning of STRING."
+  (when string
+    (with-temp-buffer
+      (insert string)
+      (goto-char (point-min))
+      (transmission-ffap))))
+
 (defun transmission-ffap-last-killed ()
   "Apply `transmission-ffap' to the most recent `kill-ring' entry."
-  (let ((text (car kill-ring)))
-    (when text
-      (with-temp-buffer
-        (insert text)
-        (goto-char (point-min))
-        (transmission-ffap)))))
+  (transmission-ffap-string (car kill-ring)))
 
 (defun transmission-default-torrent (functions)
   "Return the first non-nil evaluation of a function in FUNCTIONS."
