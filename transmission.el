@@ -1228,7 +1228,7 @@ Also run the timer for timer object `transmission-timer'."
                (setq transmission-torrent-id id)
                (transmission-draw)
                (goto-char (point-min)))))
-         (switch-to-buffer buffer)))))
+         (pop-to-buffer-same-window buffer)))))
 
 
 ;; Major mode definitions
