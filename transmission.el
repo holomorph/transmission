@@ -142,10 +142,11 @@ See `format-time-string'."
 
 (defcustom transmission-torrent-functions '(transmission-ffap)
   "List of functions to use for guessing torrents for `transmission-add'.
-Each function should accept no arguments, and return a string or nil.
-One example of such a function is `transmission-ffap-last-killed'."
+Each function should accept no arguments, and return a string or nil."
   :type 'hook
-  :options '(transmission-ffap transmission-ffap-last-killed)
+  :options '(transmission-ffap
+             transmission-ffap-selection
+             transmission-ffap-last-killed)
   :group 'transmission)
 
 (defconst transmission-priority-alist
@@ -600,6 +601,10 @@ Returns a list of non-blank inputs."
 (defun transmission-ffap-last-killed ()
   "Apply `transmission-ffap' to the most recent `kill-ring' entry."
   (transmission-ffap-string (car kill-ring)))
+
+(defun transmission-ffap-selection ()
+  "Apply `transmission-ffap' to the graphical selection."
+  (transmission-ffap-string (with-no-warnings (x-get-selection))))
 
 (defun transmission-default-torrent (functions)
   "Return the first non-nil evaluation of a function in FUNCTIONS."
