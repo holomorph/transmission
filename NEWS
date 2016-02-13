@@ -1,3 +1,11 @@
+** Changes
+
+*** Pieces display customization has changed.
+Custom variable `transmission-pieces-display' is replaced by
+`transmission-pieces-function'.  This more easily permits extension of
+pieces display.  For instance, using some other function to output
+pieces as an image, or with a different color map.
+
 * Changes in 0.8
 
 ** Features

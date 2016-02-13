@@ -97,11 +97,14 @@
                                   (:password string))))
   :group 'transmission)
 
-(defcustom transmission-pieces-display t
-  "How to show pieces of incomplete torrents."
-  :type '(choice (const :tag "Never" nil)
-                 (const :tag "Brief" brief)
-                 (const :tag "Full" t))
+(defcustom transmission-pieces-function #'transmission-format-pieces-brief
+  "Function used to show pieces of incomplete torrents.
+The function takes a string (bitfield) representing the torrent
+pieces and the number of pieces as arguments, and should return a string."
+  :type '(radio (const :tag "None" #'ignore)
+                (function-item transmission-format-pieces)
+                (function-item transmission-format-pieces-brief)
+                (function :tag "Function"))
   :group 'transmission)
 
 (defcustom transmission-trackers '()
@@ -1185,11 +1188,9 @@ Each form in BODY is a column descriptor."
         (concat
          (format "Piece count: %d / %d (%d%%)" have .pieceCount
                  (transmission-percent have .pieceCount))
-         (when (and transmission-pieces-display (/= have 0) (< have .pieceCount))
+         (when (and (/= have 0) (< have .pieceCount))
            (format "\nPieces:\n\n%s"
-                   (if (eq transmission-pieces-display 'brief)
-                       (transmission-format-pieces-brief .pieces .pieceCount)
-                     (transmission-format-pieces .pieces .pieceCount))))))))))
+                   (funcall transmission-pieces-function .pieces .pieceCount)))))))))
 
 (defun transmission-draw-peers (id)
   (setq transmission-torrent-vector
