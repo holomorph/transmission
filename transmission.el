@@ -682,10 +682,10 @@ The two are spliced together with indices for each file, sorted by file name."
   (string
    (cond
     ((= 0 ratio) #x20)
-    ((< ratio 33) #x2591)
-    ((< ratio 66) #x2592)
-    ((< ratio 100) #x2593)
-    ((= 100 ratio) #x2588))))
+    ((< ratio 0.333) #x2591)
+    ((< ratio 0.667) #x2592)
+    ((< ratio 1) #x2593)
+    ((= 1 ratio) #x2588))))
 
 (defun transmission-torrent-seed-ratio (mode tlimit)
   "String showing a torrent's seed ratio limit.
@@ -1027,7 +1027,7 @@ PIECES and COUNT are the same as in `transmission-format-pieces'."
          (ratios
           (cl-loop for slice in slices with n = count and m = nil
                    do (cl-decf n (setq m (min n (* 8 (length slice)))))
-                   collect (/ (* 100 (apply #'+ slice)) m))))
+                   collect (/ (apply #'+ slice) (float m)))))
     (mapconcat #'transmission-ratio->glyph ratios "")))
 
 (defun transmission-format-peers (peers origins connected sending receiving)
