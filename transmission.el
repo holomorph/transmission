@@ -97,7 +97,7 @@
                                   (:password string))))
   :group 'transmission)
 
-(defcustom transmission-pieces-function #'transmission-format-pieces-brief
+(defcustom transmission-pieces-function #'transmission-format-pieces
   "Function used to show pieces of incomplete torrents.
 The function takes a string (bitfield) representing the torrent
 pieces and the number of pieces as arguments, and should return a string."
@@ -1034,7 +1034,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
       (string-join (string-partition (substring bits 0 count) 72) "\n"))))
 
 (defun transmission-format-pieces-brief (pieces count)
-  "Format pieces into a one-line representation.
+  "Format pieces into a one-line greyscale representation.
 PIECES and COUNT are the same as in `transmission-format-pieces'."
   (let* ((bytes (base64-decode-string pieces))
          (slices
