@@ -687,6 +687,18 @@ The two are spliced together with indices for each file, sorted by file name."
     ((< ratio 1) #x2593)
     ((= 1 ratio) #x2588))))
 
+(defun transmission-ratio->256 (ratio)
+  "Return a grey font-locked single-space string according to RATIO.
+Uses color names for the 256 color palette."
+  (let* ((n (if (= 1 ratio) 231 (+ 236 (* 19 ratio)))))
+    (propertize " " 'font-lock-face `(:background ,(format "color-%d" n)))))
+
+(defun transmission-ratio->grey (ratio)
+  "Return a grey font-locked single-space string according to RATIO."
+  (let* ((lightness (+ 0.2 (* 0.8 ratio)))
+         (n (* 100 lightness)))
+    (propertize " " 'font-lock-face `(:background ,(format "grey%d" n)))))
+
 (defun transmission-torrent-seed-ratio (mode tlimit)
   "String showing a torrent's seed ratio limit.
 MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
@@ -1028,7 +1040,11 @@ PIECES and COUNT are the same as in `transmission-format-pieces'."
           (cl-loop for slice in slices with n = count and m = nil
                    do (cl-decf n (setq m (min n (* 8 (length slice)))))
                    collect (/ (apply #'+ slice) (float m)))))
-    (mapconcat #'transmission-ratio->glyph ratios "")))
+    (mapconcat (pcase (display-color-cells)
+                 ((pred (< 256)) #'transmission-ratio->grey)
+                 (256 #'transmission-ratio->256)
+                 (_ #'transmission-ratio->glyph))
+               ratios "")))
 
 (defun transmission-format-peers (peers origins connected sending receiving)
   "Format peer information into a string.
