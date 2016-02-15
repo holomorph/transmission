@@ -435,7 +435,7 @@ transmission rates."
 (defun transmission-files-directory-base (filename)
   "Return the top-most parent directory in string FILENAME."
   (let ((index (and (stringp filename)
-                    (string-match "/" filename))))
+                    (string-match-p "/" filename))))
     (if index (substring filename 0 (1+ index)))))
 
 (defun transmission-every-prefix-p (prefix list)
