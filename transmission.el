@@ -101,7 +101,7 @@
   "Function used to show pieces of incomplete torrents.
 The function takes a string (bitfield) representing the torrent
 pieces and the number of pieces as arguments, and should return a string."
-  :type '(radio (const :tag "None" #'ignore)
+  :type '(radio (const :tag "None" nil)
                 (function-item transmission-format-pieces)
                 (function-item transmission-format-pieces-brief)
                 (function :tag "Function"))
@@ -1188,7 +1188,8 @@ Each form in BODY is a column descriptor."
         (concat
          (format "Piece count: %d / %d (%d%%)" have .pieceCount
                  (transmission-percent have .pieceCount))
-         (when (and (/= have 0) (< have .pieceCount))
+         (when (and (functionp transmission-pieces-function)
+                    (/= have 0) (< have .pieceCount))
            (format "\nPieces:\n\n%s"
                    (funcall transmission-pieces-function .pieces .pieceCount)))))))))
 
