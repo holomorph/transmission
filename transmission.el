@@ -121,12 +121,16 @@ See `file-size-human-readable'."
   :link '(function-link file-size-human-readable)
   :group 'transmission)
 
-(defcustom transmission-timer-p nil
-  "Transmission buffer refreshes automatically?"
-  :type 'boolean
+(defcustom transmission-refresh-modes '()
+  "List of major modes in which to refresh the buffer automatically."
+  :type 'hook
+  :options '(transmission-mode
+             transmission-files-mode
+             transmission-info-mode
+             transmission-peers-mode)
   :group 'transmission)
 
-(defcustom transmission-timer-interval 2
+(defcustom transmission-refresh-interval 2
   "Period in seconds of the refresh timer."
   :type '(number :validate (lambda (w)
                              (unless (> (widget-value w) 0)
@@ -392,23 +396,21 @@ TORRENT is the \"torrents\" vector returned by `transmission-torrents'."
 
 (defun transmission-timer-revert ()
   "Revert the buffer or cancel `transmission-timer'."
-  (let ((buffer (get-buffer "*transmission*")))
-    (if (and buffer (eq buffer (current-buffer)))
-        (revert-buffer)
-      (cancel-timer transmission-timer))))
+  (if (memq major-mode transmission-refresh-modes)
+      (revert-buffer)
+    (cancel-timer transmission-timer)))
 
 (defun transmission-timer-run ()
   "Run the timer `transmission-timer'."
   (when transmission-timer (cancel-timer transmission-timer))
   (setq
    transmission-timer
-   (run-at-time t transmission-timer-interval #'transmission-timer-revert)))
+   (run-at-time t transmission-refresh-interval #'transmission-timer-revert)))
 
 (defun transmission-timer-check ()
   "Check if current buffer should run a refresh timer."
-  (let ((buffer (and transmission-timer-p (get-buffer "*transmission*"))))
-    (when (and buffer (eq buffer (current-buffer)))
-      (transmission-timer-run))))
+  (when (memq major-mode transmission-refresh-modes)
+    (transmission-timer-run)))
 
 
 ;; Other

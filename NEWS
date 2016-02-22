@@ -8,6 +8,13 @@ Custom variable `transmission-pieces-display' is replaced by
 pieces display.  For instance, using some other function to output
 pieces as an image, or with a different color map.
 
+*** Option `transmission-timer-interval' renamed to
+`transmission-refresh-interval'
+
+*** Option `transmission-timer-p' replaced by new option
+`transmission-refresh-modes', a list of major modes in which to use a
+timer to refresh the associated buffer.
+
 * Changes in 0.8
 
 ** Features
