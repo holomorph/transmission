@@ -141,6 +141,16 @@ See `format-time-string'."
   :link '(function-link format-time-string)
   :group 'transmission)
 
+(defcustom transmission-time-zone nil
+  "Time zone of formatted dates.
+See `format-time-string'."
+  :type '(choice (const :tag "Local time" nil)
+                 (const :tag "Universal Time (UTC)" t)
+                 (const :tag "System Wall Clock" wall)
+                 (string :tag "Time Zone Identifier"))
+  :link '(function-link format-time-string)
+  :group 'transmission)
+
 (defcustom transmission-torrent-functions '(transmission-ffap)
   "List of functions to use for guessing torrents for `transmission-add'.
 Each function should accept no arguments, and return a string or nil."
@@ -659,7 +669,8 @@ The two are spliced together with indices for each file, sorted by file name."
 (defun transmission-time (seconds)
   "Format a time string, given SECONDS from the epoch."
   (if (= 0 seconds) "Never"
-    (format-time-string transmission-time-format (seconds-to-time seconds))))
+    (format-time-string transmission-time-format (seconds-to-time seconds)
+                        transmission-time-zone)))
 
 (defun transmission-hamming-weight (x)
   "Calculate the Hamming weight of X."
