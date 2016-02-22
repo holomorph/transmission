@@ -1280,7 +1280,7 @@ Also run the timer for timer object `transmission-timer'."
     ["Quit" quit-window]))
 
 (define-derived-mode transmission-peers-mode tabulated-list-mode "Transmission-Peers"
-  "Major mode for viewing peer information in Transmission.
+  "Major mode for viewing peer information.
 See https://trac.transmissionbt.com/wiki/PeerStatusText
 for explanation of the peer flags.
 
@@ -1307,7 +1307,7 @@ Key bindings:
   (setq-local revert-buffer-function #'transmission-refresh))
 
 (defun transmission-peers ()
-  "Open a `transmission-info-mode' buffer for torrent at point."
+  "Open a `transmission-peers-mode' buffer for torrent at point."
   (interactive)
   (transmission-context transmission-peers-mode))
 
@@ -1349,7 +1349,7 @@ Key bindings:
     ["Quit" quit-window]))
 
 (define-derived-mode transmission-info-mode special-mode "Transmission-Info"
-  "Major mode for viewing and manipulating torrent attributes in Transmission.
+  "Major mode for viewing and manipulating torrent attributes.
 
 In addition to any hooks its parent mode might have run, this
 mode runs the hook `transmission-info-mode-hook' at mode
@@ -1399,7 +1399,7 @@ Key bindings:
     ["Quit" quit-window]))
 
 (define-derived-mode transmission-files-mode tabulated-list-mode "Transmission-Files"
-  "Major mode for interacting with torrent files in Transmission.
+  "Major mode for a torrent's file list.
 
 In addition to any hooks its parent mode might have run, this
 mode runs the hook `transmission-files-mode-hook' at mode
@@ -1470,7 +1470,7 @@ Key bindings:
     ["Quit" transmission-quit]))
 
 (define-derived-mode transmission-mode tabulated-list-mode "Transmission"
-  "Major mode for interfacing with a Transmission daemon.
+  "Major mode for the list of torrents in a Transmission session.
 See https://trac.transmissionbt.com/ for more information about
 Transmission.
 
