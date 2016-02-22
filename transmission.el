@@ -114,7 +114,6 @@ pieces and the number of pieces as arguments, and should return a string."
 
 (defcustom transmission-units nil
   "The flavor of units used to display file sizes.
-
 See `file-size-human-readable'."
   :type '(choice (const :tag "Default" nil)
                  (const :tag "SI" si)
@@ -137,7 +136,6 @@ See `file-size-human-readable'."
 
 (defcustom transmission-time-format "%a %b %e %T %Y"
   "Format string used to display dates.
-
 See `format-time-string'."
   :type 'string
   :link '(function-link format-time-string)
@@ -712,8 +710,7 @@ MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
 
 (defun transmission-group-digits (n)
   "Group digits of natural number N with delimiter \",\"."
-  (if (< n 1000)
-      (format "%s" n)
+  (if (< n 1000) (format "%s" n)
     (let ((regexp (eval-when-compile (rx (= 3 digit)))))
       ;; Good place for `thread-last' and `reverse'
       ;; (thread-last (reverse (number-to-string n))
