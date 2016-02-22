@@ -138,7 +138,7 @@ See `file-size-human-readable'."
                                w)))
   :group 'transmission)
 
-(defcustom transmission-time-format "%a %b %e %T %Y"
+(defcustom transmission-time-format "%a %b %e %T %Y %z"
   "Format string used to display dates.
 See `format-time-string'."
   :type 'string
