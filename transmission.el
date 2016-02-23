@@ -1306,6 +1306,7 @@ Key bindings:
   (tabulated-list-init-header)
   (setq transmission-refresh-function
         (lambda () (transmission-draw-peers transmission-torrent-id)))
+  (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (setq-local revert-buffer-function #'transmission-refresh))
 
 (defun transmission-peers ()
@@ -1364,6 +1365,7 @@ Key bindings:
   (setq font-lock-defaults '(transmission-info-font-lock-keywords))
   (setq transmission-refresh-function
         (lambda () (transmission-draw-info transmission-torrent-id)))
+  (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (setq-local revert-buffer-function #'transmission-refresh))
 
 (defun transmission-info ()
@@ -1422,6 +1424,7 @@ Key bindings:
   (setq transmission-refresh-function
         (lambda () (transmission-draw-files transmission-torrent-id)))
   (setq-local revert-buffer-function #'transmission-refresh)
+  (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (add-function :before (local 'revert-buffer-function)
                 #'transmission-tabulated-list-format))
 
