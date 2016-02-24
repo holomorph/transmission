@@ -396,7 +396,8 @@ TORRENT is the \"torrents\" vector returned by `transmission-torrents'."
 
 (defun transmission-timer-revert ()
   "Revert the buffer or cancel `transmission-timer'."
-  (if (memq major-mode transmission-refresh-modes)
+  (if (and (memq major-mode transmission-refresh-modes)
+           (not (or isearch-mode (use-region-p))))
       (revert-buffer)
     (cancel-timer transmission-timer)))
 
