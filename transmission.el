@@ -705,7 +705,7 @@ The two are spliced together with indices for each file, sorted by file name."
 (defun transmission-ratio->256 (ratio)
   "Return a grey font-locked single-space string according to RATIO.
 Uses color names for the 256 color palette."
-  (let* ((n (if (= 1 ratio) 231 (+ 236 (* 19 ratio)))))
+  (let ((n (if (= 1 ratio) 231 (+ 236 (* 19 ratio)))))
     (propertize " " 'font-lock-face `(:background ,(format "color-%d" n)))))
 
 (defun transmission-ratio->grey (ratio)
@@ -1112,8 +1112,7 @@ CONNECTED, SENDING, RECEIVING are numbers."
 (defun transmission-format-trackers (trackers)
   "Format tracker information into a string.
 TRACKERS should be the \"trackerStats\" array."
-  (if (zerop (length trackers))
-      "Trackers: none\n"
+  (if (zerop (length trackers)) "Trackers: none\n"
     (concat (mapconcat #'transmission-format-tracker trackers "\n") "\n")))
 
 (defmacro transmission-do-entries (seq &rest body)
