@@ -195,7 +195,7 @@ Each function should accept no arguments, and return a string or nil."
     "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs" "peersFrom"
     "peersSendingToUs" "sizeWhenDone" "error" "errorString" "wanted" "files"
     "downloadedEver" "corruptEver" "haveValid" "totalSize" "percentDone"
-    "seedRatioLimit" "seedRatioMode" "bandwidthPriority"))
+    "seedRatioLimit" "seedRatioMode" "bandwidthPriority" "downloadDir"))
 
 (defconst transmission-session-header "X-Transmission-Session-Id"
   "The \"X-Transmission-Session-Id\" header key.")
@@ -1169,6 +1169,7 @@ Each form in BODY is a column descriptor."
       (concat "Name: " .name)
       (concat "Hash: " .hashString)
       (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
+      (format "Location: %s" (abbreviate-file-name .downloadDir))
       (format "Percent done: %d%%" (* 100 .percentDone))
       (format "Bandwidth priority: %s"
               (car (rassoc .bandwidthPriority transmission-priority-alist)))
