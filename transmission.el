@@ -73,29 +73,25 @@
 
 (defcustom transmission-host "localhost"
   "Host name or IP address of the Transmission session."
-  :type 'string
-  :group 'transmission)
+  :type 'string)
 
 (defcustom transmission-service 9091
   "Port or name of the service for the Transmission session."
   :type '(choice (const :tag "Default" 9091)
                  (string :tag "Service")
-                 (integer :tag "Port"))
-  :group 'transmission)
+                 (integer :tag "Port")))
 
 (defcustom transmission-rpc-path "/transmission/rpc"
   "Path to the Transmission session RPC interface."
   :type '(choice (const :tag "Default" "/transmission/rpc")
-                 (string :tag "Other path"))
-  :group 'transmission)
+                 (string :tag "Other path")))
 
 (defcustom transmission-rpc-auth nil
   "Authorization (username, password) for using the RPC interface."
   :type '(choice (const :tag "None" nil)
                  (plist :tag "Username/password"
                         :options ((:username string)
-                                  (:password string))))
-  :group 'transmission)
+                                  (:password string)))))
 
 (defcustom transmission-pieces-function #'transmission-format-pieces
   "Function used to show pieces of incomplete torrents.
@@ -104,13 +100,11 @@ pieces and the number of pieces as arguments, and should return a string."
   :type '(radio (const :tag "None" nil)
                 (function-item transmission-format-pieces)
                 (function-item transmission-format-pieces-brief)
-                (function :tag "Function"))
-  :group 'transmission)
+                (function :tag "Function")))
 
 (defcustom transmission-trackers '()
   "List of tracker URLs."
-  :type '(repeat (string :tag "URL"))
-  :group 'transmission)
+  :type '(repeat (string :tag "URL")))
 
 (defcustom transmission-units nil
   "The flavor of units used to display file sizes.
@@ -118,8 +112,7 @@ See `file-size-human-readable'."
   :type '(choice (const :tag "Default" nil)
                  (const :tag "SI" si)
                  (const :tag "IEC" iec))
-  :link '(function-link file-size-human-readable)
-  :group 'transmission)
+  :link '(function-link file-size-human-readable))
 
 (defcustom transmission-refresh-modes '()
   "List of major modes in which to refresh the buffer automatically."
@@ -127,23 +120,20 @@ See `file-size-human-readable'."
   :options '(transmission-mode
              transmission-files-mode
              transmission-info-mode
-             transmission-peers-mode)
-  :group 'transmission)
+             transmission-peers-mode))
 
 (defcustom transmission-refresh-interval 2
   "Period in seconds of the refresh timer."
   :type '(number :validate (lambda (w)
                              (unless (> (widget-value w) 0)
                                (widget-put w :error "Value must be positive")
-                               w)))
-  :group 'transmission)
+                               w))))
 
 (defcustom transmission-time-format "%a %b %e %T %Y %z"
   "Format string used to display dates.
 See `format-time-string'."
   :type 'string
-  :link '(function-link format-time-string)
-  :group 'transmission)
+  :link '(function-link format-time-string))
 
 (defcustom transmission-time-zone nil
   "Time zone of formatted dates.
@@ -152,8 +142,7 @@ See `format-time-string'."
                  (const :tag "Universal Time (UTC)" t)
                  (const :tag "System Wall Clock" wall)
                  (string :tag "Time Zone Identifier"))
-  :link '(function-link format-time-string)
-  :group 'transmission)
+  :link '(function-link format-time-string))
 
 (defcustom transmission-torrent-functions '(transmission-ffap)
   "List of functions to use for guessing torrents for `transmission-add'.
@@ -161,8 +150,7 @@ Each function should accept no arguments, and return a string or nil."
   :type 'hook
   :options '(transmission-ffap
              transmission-ffap-selection
-             transmission-ffap-last-killed)
-  :group 'transmission)
+             transmission-ffap-last-killed))
 
 (defconst transmission-priority-alist
   '((low . -1)
