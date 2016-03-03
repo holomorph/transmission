@@ -57,6 +57,7 @@
 ;;; Code:
 
 (require 'calc-bin)
+(require 'color)
 (require 'json)
 (require 'tabulated-list)
 (require 'url-util)
@@ -698,9 +699,8 @@ Uses color names for the 256 color palette."
 
 (defun transmission-ratio->grey (ratio)
   "Return a grey font-locked single-space string according to RATIO."
-  (let* ((lightness (+ 0.2 (* 0.8 ratio)))
-         (n (* 100 lightness)))
-    (propertize " " 'font-lock-face `(:background ,(format "grey%d" n)))))
+  (let ((l (+ 0.2 (* 0.8 ratio))))
+    (propertize " " 'font-lock-face `(:background ,(color-rgb-to-hex l l l)))))
 
 (defun transmission-torrent-seed-ratio (mode tlimit)
   "String showing a torrent's seed ratio limit.
