@@ -199,7 +199,8 @@ Each function should accept no arguments, and return a string or nil."
   "The Transmission torrent ID integer.")
 
 (defvar-local transmission-refresh-function nil
-  "The name of the function applied to `transmission-draw'.")
+  "The name of the function used to redraw a buffer.
+Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
 
 (define-error 'transmission-conflict
   "Wrong or missing header \"X-Transmission-Session-Id\"" 'error)
@@ -1112,7 +1113,7 @@ Each form in BODY is a column descriptor."
              (push (list x (vector ,@body)) tabulated-list-entries)))
          ,seq))
 
-(defun transmission-draw-torrents ()
+(defun transmission-draw-torrents (_id)
   (setq transmission-torrent-vector
         (transmission-torrents `(:fields ,transmission-torrent-get-fields)))
   (setq tabulated-list-entries nil)
@@ -1209,7 +1210,7 @@ Each form in BODY is a column descriptor."
 (defun transmission-draw ()
   "Draw the buffer with new contents via `transmission-refresh-function'."
   (with-silent-modifications
-    (funcall transmission-refresh-function)))
+    (funcall transmission-refresh-function transmission-torrent-id)))
 
 (defun transmission-refresh (&optional _arg _noconfirm)
   "Refresh the current buffer, restoring window position, point, and mark.
@@ -1293,8 +1294,7 @@ Key bindings:
            :right-align t :pad-right 2)
           ("Client" 20 t)])
   (tabulated-list-init-header)
-  (setq transmission-refresh-function
-        (lambda () (transmission-draw-peers transmission-torrent-id)))
+  (setq transmission-refresh-function #'transmission-draw-peers)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (setq-local revert-buffer-function #'transmission-refresh))
 
@@ -1352,8 +1352,7 @@ Key bindings:
   :group 'transmission
   (setq buffer-undo-list t)
   (setq font-lock-defaults '(transmission-info-font-lock-keywords))
-  (setq transmission-refresh-function
-        (lambda () (transmission-draw-info transmission-torrent-id)))
+  (setq transmission-refresh-function #'transmission-draw-info)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (setq-local revert-buffer-function #'transmission-refresh))
 
@@ -1410,8 +1409,7 @@ Key bindings:
            :right-align t :transmission-size t)
           ("Name" 0 t)])
   (transmission-tabulated-list-format)
-  (setq transmission-refresh-function
-        (lambda () (transmission-draw-files transmission-torrent-id)))
+  (setq transmission-refresh-function #'transmission-draw-files)
   (setq-local revert-buffer-function #'transmission-refresh)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (add-function :before (local 'revert-buffer-function)
