@@ -1503,8 +1503,7 @@ Key bindings:
                      (generate-new-buffer name))))
     (unless (eq buffer (current-buffer))
       (with-current-buffer buffer
-        (if (eq major-mode 'transmission-mode)
-            (transmission-refresh)
+        (unless (eq major-mode 'transmission-mode)
           (transmission-mode)
           (transmission-draw)
           (goto-char (point-min))))
