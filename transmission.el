@@ -153,6 +153,13 @@ Each function should accept no arguments, and return a string or nil."
              transmission-ffap-selection
              transmission-ffap-last-killed))
 
+(defcustom transmission-geoip-function nil
+  "Function used to translate an IP address into a location name.
+The function should accept an IP address and return a string or nil."
+  :type '(radio (const :tag "None" nil)
+                (function-item transmission-geoiplookup)
+                (function :tag "Function")))
+
 (defconst transmission-priority-alist
   '((low . -1)
     (normal . 0)
@@ -658,6 +665,14 @@ The two are spliced together with indices for each file, sorted by file name."
           (lambda (a b)
             (string< (cdr (assq 'name a))
                      (cdr (assq 'name b)))))))
+
+(defun transmission-geoiplookup (ip)
+  "Return country name associated with IP using geoiplookup(1)."
+  (let ((program (if (string-match-p ":" ip) "geoiplookup6" "geoiplookup")))
+    (when (executable-find program)
+      (with-temp-buffer
+        (call-process program nil t nil ip)
+        (car (last (split-string (buffer-string) ": " t "[ \t\r\n]*")))))))
 
 (defun transmission-time (seconds)
   "Format a time string, given SECONDS from the epoch."
@@ -1203,7 +1218,9 @@ Each form in BODY is a column descriptor."
     (format "%d%%" (transmission-percent .progress 1.0))
     (format "%d" (transmission-rate .rateToClient))
     (format "%d" (transmission-rate .rateToPeer))
-    .clientName)
+    .clientName
+    (or (and (functionp transmission-geoip-function)
+             (funcall transmission-geoip-function .address)) ""))
   (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
@@ -1292,7 +1309,8 @@ Key bindings:
            :right-align t)
           ("Up" 3 ,(transmission-tabulated-list-pred 'rateToPeer)
            :right-align t :pad-right 2)
-          ("Client" 20 t)])
+          ("Client" 20 t)
+          ("Location" 0 t)])
   (tabulated-list-init-header)
   (setq transmission-refresh-function #'transmission-draw-peers)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)

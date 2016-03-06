@@ -1,5 +1,11 @@
 *** New option `transmission-time-zone' for configuring timestamps
 
+*** New column "Location" in the *peers* context for translating IPs.
+The new option `transmission-geoip-function' is used to indicate which
+function to use to get a location from an IP.  The function
+`transmission-geoiplookup' is provided to call the geoiplookup(1)
+utility.
+
 ** Changes
 
 *** Pieces display customization has changed.
