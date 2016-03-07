@@ -795,7 +795,7 @@ When called with a prefix, prompt for DIRECTORY."
              `(:filename ,(if (transmission-btih-p torrent)
                               (format "magnet:?xt=urn:btih:%s" torrent)
                             torrent)))
-           (list :download-dir directory))))
+           (if directory (list :download-dir (expand-file-name directory))))))
 
 (defun transmission-move (location)
   "Move torrent at point or in region to a new LOCATION."
