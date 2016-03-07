@@ -1,3 +1,5 @@
+** Features
+
 *** New option `transmission-time-zone' for configuring timestamps
 
 *** New column "Location" in the *peers* context for translating IPs.
@@ -5,6 +7,9 @@ The new option `transmission-geoip-function' is used to indicate which
 function to use to get a location from an IP.  The function
 `transmission-geoiplookup' is provided to call the geoiplookup(1)
 utility.
+
+*** `transmission-format-pieces-brief' upgrades to finer greyscale
+in 256 color terminals and graphical frames.
 
 ** Changes
 
@@ -20,6 +25,8 @@ pieces as an image, or with a different color map.
 *** Option `transmission-timer-p' replaced by new option
 `transmission-refresh-modes', a list of major modes in which to use a
 timer to refresh the associated buffer.
+
+*** Automatic refreshing is inhibited by isearch or an active region.
 
 * Changes in 0.8
 
