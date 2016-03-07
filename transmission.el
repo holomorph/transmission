@@ -800,11 +800,10 @@ When called with a prefix, prompt for DIRECTORY."
 (defun transmission-move (location)
   "Move torrent at point or in region to a new LOCATION."
   (interactive (list (read-directory-name "New directory: ")))
-  (transmission-let-ids ((arguments (list :ids ids :move t
-                                          :location (expand-file-name location))))
-    (when (y-or-n-p (format "Move torrent%s to %s? "
-                            (if (cdr ids) "s" "")
-                            location))
+  (transmission-let-ids
+      ((arguments (list :ids ids :move t :location (expand-file-name location)))
+       (prompt (format "Move torrent%s to %s? " (if (cdr ids) "s" "") location)))
+    (when (y-or-n-p prompt)
       (transmission-request-async nil "torrent-set-location" arguments))))
 
 (defun transmission-reannounce ()
