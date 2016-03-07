@@ -548,17 +548,16 @@ for download rate."
 PROMPT is a string to prompt with.
 COLLECTION can be a list among other things.  See `completing-read'.
 Returns a list of non-blank inputs."
-  (let ((list '())
-        entry)
-   (catch :finished
-     (while t
-       (setq entry (if (not collection) (read-string prompt)
-                     (completing-read prompt collection nil)))
-       (if (and (not (string-empty-p entry))
-                (not (string-blank-p entry)))
-           (progn (push entry list)
-                  (setq collection (delete entry collection)))
-         (throw :finished (nreverse list)))))))
+  (let (res entry)
+    (catch :finished
+      (while t
+        (setq entry (if (not collection) (read-string prompt)
+                      (completing-read prompt collection nil)))
+        (if (and (not (string-empty-p entry))
+                 (not (string-blank-p entry)))
+            (progn (push entry res)
+                   (setq collection (delete entry collection)))
+          (throw :finished (nreverse res)))))))
 
 (defun transmission-list-trackers (id)
   "Return the \"trackers\" array for torrent id ID."
