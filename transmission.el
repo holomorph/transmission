@@ -57,6 +57,7 @@
 ;;; Code:
 
 (require 'calc-bin)
+(require 'calc-ext)
 (require 'color)
 (require 'json)
 (require 'tabulated-list)
@@ -728,19 +729,7 @@ MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
 (defun transmission-group-digits (n)
   "Group digits of natural number N with delimiter \",\"."
   (if (< n 10000) (number-to-string n)
-    (let ((regexp (eval-when-compile (rx (= 3 digit)))))
-      ;; Good place for `thread-last' and `reverse'
-      ;; (thread-last (reverse (number-to-string n))
-      ;;     (replace-regexp-in-string regexp "\\&,")
-      ;;     (string-remove-suffix ",")
-      ;;     (reverse))
-      (cl-macrolet ((reverse-string (str)
-                      `(apply #'string (nreverse (string-to-list ,str)))))
-        (reverse-string
-         (string-remove-suffix
-          ","
-          (replace-regexp-in-string
-           regexp "\\&," (reverse-string (number-to-string n)))))))))
+    (math-group-float (number-to-string n))))
 
 (defmacro transmission-tabulated-list-pred (key)
   "Return a sorting predicate comparing values of KEY.
