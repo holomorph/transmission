@@ -727,7 +727,7 @@ MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
 
 (defun transmission-group-digits (n)
   "Group digits of natural number N with delimiter \",\"."
-  (if (< n 10000) (format "%s" n)
+  (if (< n 10000) (number-to-string n)
     (let ((regexp (eval-when-compile (rx (= 3 digit)))))
       ;; Good place for `thread-last' and `reverse'
       ;; (thread-last (reverse (number-to-string n))
