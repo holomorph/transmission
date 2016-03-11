@@ -1096,20 +1096,23 @@ CONNECTED, SENDING, RECEIVING are numbers."
                      ((or "Success" (pred string-empty-p)) nil)
                      (_ (concat "\n" fill
                                 (propertize .lastAnnounceResult
-                                            'font-lock-face 'warning))))))
-      (format (concat label ": %s (Tier %d)\n"
-                      fill "%d peers %s. Announcing %s\n"
-                      fill "%d seeders, %d leechers, %d downloads %s. Scraping %s"
-                      result)
-              .announce .tier
-              (if (= -1 .lastAnnouncePeerCount) 0 .lastAnnouncePeerCount)
-              (transmission-when .lastAnnounceTime)
-              (transmission-when .nextAnnounceTime)
-              (if (= -1 .seederCount) 0 .seederCount)
-              (if (= -1 .leecherCount) 0 .leecherCount)
-              (if (= -1 .downloadCount) 0 .downloadCount)
-              (transmission-when .lastScrapeTime)
-              (transmission-when .nextScrapeTime)))))
+                                            'font-lock-face 'warning)))))
+           (peers (if (= -1 .lastAnnouncePeerCount) 0 .lastAnnouncePeerCount))
+           (seeders (if (= -1 .seederCount) 0 .seederCount))
+           (leechers (if (= -1 .leecherCount) 0 .leecherCount))
+           (downloads (if (= -1 .downloadCount) 0 .downloadCount)))
+      (format
+       (concat label ": %s (Tier %d)\n"
+               fill "%d peer" (unless (= peers 1) "s") " %s. Announcing %s\n"
+               fill "%d seeder" (unless (= seeders 1) "s") ", "
+               "%d leecher" (unless (= leechers 1) "s") ", "
+               "%d download" (unless (= downloads 1) "s") " %s. Scraping %s"
+               result)
+       .announce .tier
+       peers
+       (transmission-when .lastAnnounceTime) (transmission-when .nextAnnounceTime)
+       seeders leechers downloads
+       (transmission-when .lastScrapeTime) (transmission-when .nextScrapeTime)))))
 
 (defun transmission-format-trackers (trackers)
   "Format tracker information into a string.
