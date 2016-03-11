@@ -1191,7 +1191,9 @@ Each form in BODY is a column descriptor."
       (let ((have (apply #'+ (mapcar #'transmission-hamming-weight
                                      (base64-decode-string .pieces)))))
         (concat
-         (format "Piece count: %d / %d (%d%%)" have .pieceCount
+         (format "Piece count: %s / %s (%d%%)"
+                 (transmission-group-digits have)
+                 (transmission-group-digits .pieceCount)
                  (transmission-percent have .pieceCount))
          (when (and (functionp transmission-pieces-function)
                     (/= have 0) (< have .pieceCount))
