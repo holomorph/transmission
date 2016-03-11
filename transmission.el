@@ -716,7 +716,8 @@ Uses color names for the 256 color palette."
 (defun transmission-ratio->grey (ratio)
   "Return a grey font-locked single-space string according to RATIO."
   (let ((l (+ 0.2 (* 0.8 ratio))))
-    (propertize " " 'font-lock-face `(:background ,(color-rgb-to-hex l l l)))))
+    (propertize " " 'font-lock-face `(:background ,(color-rgb-to-hex l l l))
+                'help-echo (format "%.2f" ratio))))
 
 (defun transmission-torrent-seed-ratio (mode tlimit)
   "String showing a torrent's seed ratio limit.
