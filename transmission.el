@@ -733,7 +733,8 @@ MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
     (math-group-float (number-to-string n))))
 
 (defun transmission-plural (n s)
-  "Return a pluralized string expressing quantity N of thing S."
+  "Return a pluralized string expressing quantity N of thing S.
+Done in the spirit of `dired-plural-s'."
   (let ((m (if (= -1 n) 0 n)))
     (concat (transmission-group-digits m) " " s (unless (= m 1) "s"))))
 
