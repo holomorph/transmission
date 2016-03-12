@@ -95,6 +95,16 @@
                         :options ((:username string)
                                   (:password string)))))
 
+(defcustom transmission-digit-delimiter ","
+  "String used to delimit digits in numbers.
+The variable `calc-group-char' is bound to this in `transmission-group-digits'."
+  :type '(choice (const :tag "Comma" ",")
+                 (const :tag "Full Stop" ".")
+                 (const :tag "None" nil)
+                 (string :tag "Other char"))
+  :link '(variable-link calc-group-char)
+  :link '(function-link transmission-group-digits))
+
 (defcustom transmission-pieces-function #'transmission-format-pieces
   "Function used to show pieces of incomplete torrents.
 The function takes a string (bitfield) representing the torrent
@@ -728,9 +738,10 @@ MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
     (2 "Unlimited")))
 
 (defun transmission-group-digits (n)
-  "Group digits of natural number N with `math-group-float'."
+  "Group digits of natural number N with `transmission-digit-delimiter''"
   (if (< n 10000) (number-to-string n)
-    (math-group-float (number-to-string n))))
+    (let ((calc-group-char transmission-digit-delimiter))
+      (math-group-float (number-to-string n)))))
 
 (defun transmission-plural (n s)
   "Return a pluralized string expressing quantity N of thing S.

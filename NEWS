@@ -11,6 +11,9 @@ utility.
 *** `transmission-format-pieces-brief' upgrades to finer greyscale
 in 256 color terminals and graphical frames.
 
+*** Digit grouping delimiter is customizable.
+Use `transmission-digit-delimiter' to control it. Defaults to comma.
+
 ** Changes
 
 *** Pieces display customization has changed.
