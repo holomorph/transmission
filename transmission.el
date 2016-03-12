@@ -732,6 +732,11 @@ MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
   (if (< n 10000) (number-to-string n)
     (math-group-float (number-to-string n))))
 
+(defun transmission-plural (n s)
+  "Return a pluralized string expressing quantity N of thing S."
+  (let ((m (if (= -1 n) 0 n)))
+    (concat (transmission-group-digits m) " " s (unless (= m 1) "s"))))
+
 (defmacro transmission-tabulated-list-pred (key)
   "Return a sorting predicate comparing values of KEY.
 KEY should be a key in an element of `tabulated-list-entries'."
@@ -1086,22 +1091,18 @@ CONNECTED, SENDING, RECEIVING are numbers."
                      ((or "Success" (pred string-empty-p)) nil)
                      (_ (concat "\n" fill
                                 (propertize .lastAnnounceResult
-                                            'font-lock-face 'warning)))))
-           (peers (if (= -1 .lastAnnouncePeerCount) 0 .lastAnnouncePeerCount))
-           (seeders (if (= -1 .seederCount) 0 .seederCount))
-           (leechers (if (= -1 .leecherCount) 0 .leecherCount))
-           (downloads (if (= -1 .downloadCount) 0 .downloadCount)))
+                                            'font-lock-face 'warning))))))
       (format
        (concat label ": %s (Tier %d)\n"
-               fill "%d peer" (unless (= peers 1) "s") " %s. Announcing %s\n"
-               fill "%d seeder" (unless (= seeders 1) "s") ", "
-               "%d leecher" (unless (= leechers 1) "s") ", "
-               "%d download" (unless (= downloads 1) "s") " %s. Scraping %s"
+               fill "%s %s. Announcing %s\n"
+               fill "%s, %s, %s %s. Scraping %s"
                result)
        .announce .tier
-       peers
+       (transmission-plural .lastAnnouncePeerCount "peer")
        (transmission-when .lastAnnounceTime) (transmission-when .nextAnnounceTime)
-       seeders leechers downloads
+       (transmission-plural .seederCount "seeder")
+       (transmission-plural .leecherCount "leecher")
+       (transmission-plural .downloadCount "download")
        (transmission-when .lastScrapeTime) (transmission-when .nextScrapeTime)))))
 
 (defun transmission-format-trackers (trackers)
