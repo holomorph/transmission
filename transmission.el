@@ -728,7 +728,7 @@ MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
     (2 "Unlimited")))
 
 (defun transmission-group-digits (n)
-  "Group digits of natural number N with delimiter \",\"."
+  "Group digits of natural number N with `math-group-float'."
   (if (< n 10000) (number-to-string n)
     (math-group-float (number-to-string n))))
 
