@@ -311,13 +311,13 @@ Return JSON object parsed from content."
 When creating a new connection, the address is determined by the
 custom variables `transmission-host' and `transmission-service'."
   (let ((buffer (generate-new-buffer " *transmission*"))
-        (local (string-prefix-p "/" transmission-host)))
+        (local (file-name-absolute-p transmission-host)))
     ;; I believe
     ;; https://trac.transmissionbt.com/ticket/5265
     (make-network-process
      :name "transmission" :buffer buffer
-     :host transmission-host
-     :service (if local transmission-host transmission-service)
+     :host (unless local transmission-host)
+     :service (if local (expand-file-name transmission-host) transmission-service)
      :family (if local 'local))))
 
 (defun transmission-request (method &optional arguments tag)
