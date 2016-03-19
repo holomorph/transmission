@@ -505,7 +505,7 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
   (if (<= seconds 0)
       (pcase percent
         (1 "Done")
-        (_ (if (char-displayable-p ?∞) (eval-when-compile (string ?∞)) "Inf")))
+        (_ (if (char-displayable-p ?∞) (eval-when-compile (char-to-string ?∞)) "Inf")))
     (let* ((minute 60.0)
            (hour 3600.0)
            (day 86400.0)
@@ -709,7 +709,7 @@ The two are spliced together with indices for each file, sorted by file name."
 
 (defun transmission-ratio->glyph (ratio)
   "Return a single-char string representing RATIO."
-  (string
+  (char-to-string
    (cond
     ((= 0 ratio) #x20)
     ((< ratio 0.333) #x2591)
