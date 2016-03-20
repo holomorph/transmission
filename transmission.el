@@ -74,7 +74,7 @@
   :group 'external)
 
 (defcustom transmission-host "localhost"
-  "Host name or IP address of the Transmission session."
+  "Host name, IP address, or socket address of the Transmission session."
   :type 'string)
 
 (defcustom transmission-service 9091
@@ -310,15 +310,15 @@ Return JSON object parsed from content."
   "Return a network client process connected to a transmission daemon.
 When creating a new connection, the address is determined by the
 custom variables `transmission-host' and `transmission-service'."
-  (let ((buffer (generate-new-buffer " *transmission*"))
-        (local (file-name-absolute-p transmission-host)))
+  (let ((socket (if (file-name-absolute-p transmission-host)
+                    (expand-file-name transmission-host))))
     ;; I believe
     ;; https://trac.transmissionbt.com/ticket/5265
     (make-network-process
-     :name "transmission" :buffer buffer
-     :host (unless local transmission-host)
-     :service (if local (expand-file-name transmission-host) transmission-service)
-     :family (if local 'local))))
+     :name "transmission" :buffer (generate-new-buffer " *transmission*")
+     :host (unless socket transmission-host)
+     :service (or socket transmission-service)
+     :family (if socket 'local))))
 
 (defun transmission-request (method &optional arguments tag)
   "Send a request to Transmission.
