@@ -312,8 +312,6 @@ When creating a new connection, the address is determined by the
 custom variables `transmission-host' and `transmission-service'."
   (let ((socket (if (file-name-absolute-p transmission-host)
                     (expand-file-name transmission-host))))
-    ;; I believe
-    ;; https://trac.transmissionbt.com/ticket/5265
     (make-network-process
      :name "transmission" :buffer (generate-new-buffer " *transmission*")
      :host (unless socket transmission-host)
