@@ -115,7 +115,9 @@ pieces and the number of pieces as arguments, and should return a string."
                 (function :tag "Function")))
 
 (defcustom transmission-trackers '()
-  "List of tracker URLs."
+  "List of tracker URLs.
+These are used for completion in `transmission-trackers-add' and
+`transmission-trackers-replace'."
   :type '(repeat (string :tag "URL")))
 
 (defcustom transmission-units nil
