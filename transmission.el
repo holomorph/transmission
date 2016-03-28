@@ -173,6 +173,12 @@ The function should accept an IP address and return a string or nil."
                 (function-item transmission-geoiplookup)
                 (function :tag "Function")))
 
+(defconst transmission-mode-alist
+  '((session . 0)
+    (torrent . 1)
+    (unlimited . 2))
+  "Alist of threshold mode enumerations.")
+
 (defconst transmission-priority-alist
   '((low . -1)
     (normal . 0)
@@ -860,6 +866,19 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                      `(:seedRatioLimited t :seedRatioLimit ,limit))))
     (transmission-request-async nil "session-set" arguments)))
 
+(defun transmission-set-torrent-ratio ()
+  "Set seed ratio limit of torrent(s) at point."
+  (interactive)
+  (transmission-let-ids
+      ((prompt (concat "Set torrent" (if (cdr ids) "s'" "'s") " ratio mode: "))
+       (mode (completing-read prompt transmission-mode-alist nil t))
+       (n (cdr (assoc-string mode transmission-mode-alist)))
+       (arguments `(:ids ,ids :seedRatioMode ,n)))
+    (when (= n 1)
+      (let ((limit (read-number "Set torrent ratio limit: ")))
+        (setq arguments (append arguments `(:seedRatioLimit ,limit)))))
+    (transmission-request-async #'message "torrent-set" arguments)))
+
 (defun transmission-toggle ()
   "Toggle torrent between started and stopped."
   (interactive)
@@ -1356,6 +1375,7 @@ Key bindings:
     ["Move Torrent" transmission-move]
     ["Reannounce Torrent" transmission-reannounce]
     ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
+    ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio]
     ["Verify Torrent" transmission-verify]
     "--"
     ["View Torrent Files" transmission-files]
@@ -1473,7 +1493,8 @@ Key bindings:
     ("Set Limits"
      ["Set Global Download Limit" transmission-set-download]
      ["Set Global Upload Limit" transmission-set-upload]
-     ["Set Global Seed Ratio Limit" transmission-set-ratio])
+     ["Set Global Seed Ratio Limit" transmission-set-ratio]
+     ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio])
     ["Move Torrent" transmission-move]
     ["Reannounce Torrent" transmission-reannounce]
     ["Verify Torrent" transmission-verify]
