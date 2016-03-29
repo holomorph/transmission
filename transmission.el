@@ -866,6 +866,23 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                      `(:seedRatioLimited t :seedRatioLimit ,limit))))
     (transmission-request-async nil "session-set" arguments)))
 
+(defun transmission-set-torrent-upload ()
+  "Set upload limit of torrent(s) at point in KB/s."
+  (interactive)
+  (transmission-let-ids
+      ((prompt (concat "Set torrent" (if (cdr ids) "s'" "'s") " upload mode: "))
+       (mode (completing-read prompt transmission-mode-alist nil t)))
+    (transmission-request-async
+     #'message "torrent-set"
+     (append
+      `(:ids ,ids)
+      (pcase (intern mode) 
+        ('session `(:uploadLimited t :honorsSessionLimits t))
+        ('torrent
+         (let ((limit (read-number "Set torrent upload limit: ")))
+           `(:uploadLimit ,limit :uploadLimited t :honorsSessionLimits :json-false)))
+        ('unlimited `(:uploadLimited :json-false :honorsSessionLimits :json-false)))))))
+
 (defun transmission-set-torrent-ratio ()
   "Set seed ratio limit of torrent(s) at point."
   (interactive)
@@ -1375,6 +1392,7 @@ Key bindings:
     ["Move Torrent" transmission-move]
     ["Reannounce Torrent" transmission-reannounce]
     ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
+    ["Set Torrent Upload Limit" transmission-set-torrent-upload]
     ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio]
     ["Verify Torrent" transmission-verify]
     "--"
@@ -1494,6 +1512,7 @@ Key bindings:
      ["Set Global Download Limit" transmission-set-download]
      ["Set Global Upload Limit" transmission-set-upload]
      ["Set Global Seed Ratio Limit" transmission-set-ratio]
+     ["Set Torrent Upload Limit" transmission-set-torrent-upload]
      ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio])
     ["Move Torrent" transmission-move]
     ["Reannounce Torrent" transmission-reannounce]
