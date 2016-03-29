@@ -210,7 +210,9 @@ The function should accept an IP address and return a string or nil."
     "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs" "peersFrom"
     "peersSendingToUs" "sizeWhenDone" "error" "errorString" "wanted" "files"
     "downloadedEver" "corruptEver" "haveValid" "totalSize" "percentDone"
-    "seedRatioLimit" "seedRatioMode" "bandwidthPriority" "downloadDir"))
+    "seedRatioLimit" "seedRatioMode" "bandwidthPriority" "downloadDir"
+    "uploadLimit" "uploadLimited" "downloadLimit" "downloadLimited"
+    "honorsSessionLimits"))
 
 (defconst transmission-session-header "X-Transmission-Session-Id"
   "The \"X-Transmission-Session-Id\" header key.")
@@ -755,6 +757,11 @@ Done in the spirit of `dired-plural-s'."
   (let ((m (if (= -1 n) 0 n)))
     (concat (transmission-group-digits m) " " s (unless (= m 1) "s"))))
 
+(defun transmission-format-rate (bytes throttled)
+  "Format BYTES per second into a string with units."
+  (if (not (eq t throttled)) "unlimited"
+    (concat (transmission-group-digits bytes) " KB/s")))
+
 (defmacro transmission-tabulated-list-pred (key)
   "Return a sorting predicate comparing values of KEY.
 KEY should be a key in an element of `tabulated-list-entries'."
@@ -1217,6 +1224,13 @@ Each form in BODY is a column descriptor."
       (format "Percent done: %d%%" (* 100 .percentDone))
       (format "Bandwidth priority: %s"
               (car (rassoc .bandwidthPriority transmission-priority-alist)))
+      (concat "Speed limits: "
+              (pcase .honorsSessionLimits
+                (:json-false
+                 (format "%s download, %s upload"
+                         (transmission-format-rate .downloadLimit .downloadLimited)
+                         (transmission-format-rate .uploadLimit .uploadLimited)))
+                (_ "session limits")))
       (concat "Ratio limit: "
               (transmission-torrent-seed-ratio .seedRatioMode .seedRatioLimit))
       (unless (zerop .error)
