@@ -214,6 +214,10 @@ The function should accept an IP address and return a string or nil."
     "uploadLimit" "uploadLimited" "downloadLimit" "downloadLimited"
     "honorsSessionLimits"))
 
+(defconst transmission-file-symbols
+  '(:files-wanted :files-unwanted :priority-high :priority-low :priority-normal)
+  "List of \"torrent-set\" request arguments for operating on files.")
+
 (defconst transmission-session-header "X-Transmission-Session-Id"
   "The \"X-Transmission-Session-Id\" header key.")
 
@@ -657,10 +661,7 @@ Returns a list of non-blank inputs."
 
 (defun transmission-files-do (action)
   "Apply ACTION to files in `transmission-files-mode' buffers."
-  (unless (memq action (list :files-wanted :files-unwanted
-                             :priority-high :priority-low
-                             :priority-normal))
-    (error "Invalid field %s" action))
+  (cl-assert (memq action transmission-file-symbols))
   (let ((id transmission-torrent-id)
         (indices (mapcar (lambda (id) (cdr (assq 'index id)))
                          (transmission-prop-values-in-region 'tabulated-list-id))))
