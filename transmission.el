@@ -540,6 +540,17 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
 The rate is calculated from BYTES according to `transmission-units'."
   (/ bytes (if (eq 'iec transmission-units) 1024 1000)))
 
+(defun transmission-set-torrent-speed-limit (ids limit n)
+  "Set transfer speed limit for IDS.
+LIMIT is a symbol; either uploadLimit or downloadLimit.
+N is the desired threshold. A negative value of N means to disable the limit."
+  (cl-assert (memq limit '(uploadLimit downloadLimit)))
+  (let* ((limit (intern (concat ":" (symbol-name limit))))
+         (limited (intern (concat (symbol-name limit) "ed")))
+         (arguments `(:ids ,ids ,@(if (< n 0) `(,limited :json-false)
+                                    `(,limited t ,limit ,n)))))
+    (transmission-request-async #'message "torrent-set" arguments)))
+
 (defun transmission-prompt-speed-limit (upload)
   "Make a prompt to set transfer speed limit.
 If UPLOAD is non-nil, make a prompt for upload rate, otherwise
@@ -873,15 +884,21 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                      `(:seedRatioLimited t :seedRatioLimit ,limit))))
     (transmission-request-async nil "session-set" arguments)))
 
+(defun transmission-set-torrent-download ()
+  "Set download limit of torrent(s) at point in KB/s."
+  (interactive)
+  (transmission-let-ids
+      ((prompt (concat "Set torrent" (if (cdr ids) "s'" "'s") " download limit: "))
+       (limit (read-number prompt)))
+    (transmission-set-torrent-speed-limit ids 'downloadLimit limit)))
+
 (defun transmission-set-torrent-upload ()
   "Set upload limit of torrent(s) at point in KB/s."
   (interactive)
   (transmission-let-ids
       ((prompt (concat "Set torrent" (if (cdr ids) "s'" "'s") " upload limit: "))
-       (limit (read-number prompt))
-       (arguments `(:ids ,ids ,@(if (< limit 0) '(:uploadLimited :json-false)
-                                 `(:uploadLimited t :uploadLimit ,limit)))))
-    (transmission-request-async nil "torrent-set" arguments)))
+       (limit (read-number prompt)))
+    (transmission-set-torrent-speed-limit ids 'uploadLimit limit)))
 
 (defun transmission-set-torrent-ratio ()
   "Set seed ratio limit of torrent(s) at point."
