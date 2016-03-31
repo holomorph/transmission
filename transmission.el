@@ -877,18 +877,11 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Set upload limit of torrent(s) at point in KB/s."
   (interactive)
   (transmission-let-ids
-      ((prompt (concat "Set torrent" (if (cdr ids) "s'" "'s") " upload mode: "))
-       (mode (completing-read prompt transmission-mode-alist nil t)))
-    (transmission-request-async
-     #'message "torrent-set"
-     (append
-      `(:ids ,ids)
-      (pcase (intern mode) 
-        ('session `(:uploadLimited t :honorsSessionLimits t))
-        ('torrent
-         (let ((limit (read-number "Set torrent upload limit: ")))
-           `(:uploadLimit ,limit :uploadLimited t :honorsSessionLimits :json-false)))
-        ('unlimited `(:uploadLimited :json-false :honorsSessionLimits :json-false)))))))
+      ((prompt (concat "Set torrent" (if (cdr ids) "s'" "'s") " upload limit: "))
+       (limit (read-number prompt))
+       (arguments `(:ids ,ids ,@(if (< limit 0) '(:uploadLimited :json-false)
+                                 `(:uploadLimited t :uploadLimit ,limit)))))
+    (transmission-request-async nil "torrent-set" arguments)))
 
 (defun transmission-set-torrent-ratio ()
   "Set seed ratio limit of torrent(s) at point."
@@ -902,6 +895,20 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
       (let ((limit (read-number "Set torrent ratio limit: ")))
         (setq arguments (append arguments `(:seedRatioLimit ,limit)))))
     (transmission-request-async #'message "torrent-set" arguments)))
+
+(defun transmission-toggle-limits ()
+  "Toggle whether torrent(s) at point honor session speed limits."
+  (interactive)
+  (transmission-let-ids nil
+    (transmission-request-async
+     (lambda (content)
+       (let* ((response (json-read-from-string content))
+              (torrents (cdr (cadr (assq 'arguments response))))
+              (honor (pcase (cdr (assq 'honorsSessionLimits (elt torrents 0)))
+                       (:json-false t) (_ :json-false))))
+         (transmission-request-async nil "torrent-set"
+                                     `(:ids ,ids :honorsSessionLimits ,honor))))
+     "torrent-get" `(:ids ,ids :fields ("honorsSessionLimits")))))
 
 (defun transmission-toggle ()
   "Toggle torrent between started and stopped."
