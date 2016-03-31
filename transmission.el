@@ -823,6 +823,7 @@ When called with a prefix, prompt for DIRECTORY."
                `(:metainfo ,(with-temp-buffer
                               (insert-file-contents torrent)
                               (base64-encode-string (buffer-string))))
+             (setq torrent (string-trim torrent))
              `(:filename ,(if (transmission-btih-p torrent)
                               (format "magnet:?xt=urn:btih:%s" torrent)
                             torrent)))
