@@ -1431,8 +1431,12 @@ Key bindings:
     ["Move Torrent" transmission-move]
     ["Reannounce Torrent" transmission-reannounce]
     ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
-    ["Set Torrent Upload Limit" transmission-set-torrent-upload]
-    ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio]
+    ("Set Torrent Limits"
+     ["Set Torrent Download Limit" transmission-set-torrent-download]
+     ["Set Torrent Upload Limit" transmission-set-torrent-upload]
+     ["Toggle Torrent Speed Limits" transmission-toggle-limits
+      :help "Toggle whether torrent honors session limits."]
+     ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio])
     ["Verify Torrent" transmission-verify]
     "--"
     ["View Torrent Files" transmission-files]
@@ -1547,11 +1551,15 @@ Key bindings:
     ["Start/Stop Torrent" transmission-toggle
      :help "Toggle pause on torrents at point or in region"]
     ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
-    ("Set Limits"
+    ("Set Global/Session Limits"
      ["Set Global Download Limit" transmission-set-download]
      ["Set Global Upload Limit" transmission-set-upload]
-     ["Set Global Seed Ratio Limit" transmission-set-ratio]
+     ["Set Global Seed Ratio Limit" transmission-set-ratio])
+    ("Set Torrent Limits"
+     ["Set Torrent Download Limit" transmission-set-torrent-download]
      ["Set Torrent Upload Limit" transmission-set-torrent-upload]
+     ["Toggle Torrent Speed Limits" transmission-toggle-limits
+      :help "Toggle whether torrent honors session limits."]
      ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio])
     ["Move Torrent" transmission-move]
     ["Reannounce Torrent" transmission-reannounce]
