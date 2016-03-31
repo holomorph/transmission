@@ -553,7 +553,7 @@ N is the desired threshold. A negative value of N means to disable the limit."
          (limited (intern (concat (symbol-name limit) "ed")))
          (arguments `(:ids ,ids ,@(if (< n 0) `(,limited :json-false)
                                     `(,limited t ,limit ,n)))))
-    (transmission-request-async #'message "torrent-set" arguments)))
+    (transmission-request-async nil "torrent-set" arguments)))
 
 (defun transmission-prompt-speed-limit (upload)
   "Make a prompt to set transfer speed limit.
@@ -912,7 +912,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
     (when (= n 1)
       (let ((limit (read-number "Set torrent ratio limit: ")))
         (setq arguments (append arguments `(:seedRatioLimit ,limit)))))
-    (transmission-request-async #'message "torrent-set" arguments)))
+    (transmission-request-async nil "torrent-set" arguments)))
 
 (defun transmission-toggle-limits ()
   "Toggle whether torrent(s) at point honor session speed limits."
