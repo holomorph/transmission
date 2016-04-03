@@ -402,8 +402,8 @@ METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
 
 (defun transmission-torrents (arguments)
   "Return a \"torrents\" vector of objects from a \"torrent-get\" request.
-Each object is an alist containing key-value pairs matching the
-\"fields\" value in ARGUMENTS."
+Each object is an alist with keys corresponding to the elements
+of \"fields\" in ARGUMENTS."
   (cdr (cadr (assq 'arguments (transmission-request "torrent-get" arguments)))))
 
 (defun transmission-torrent-value (torrent field)
