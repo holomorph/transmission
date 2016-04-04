@@ -436,7 +436,7 @@ TORRENT is the \"torrents\" vector returned by `transmission-torrents'."
 
 ;; Other
 
-(defun transmission-status (status up down)
+(defun transmission-format-status (status up down)
   "Return a propertized string describing torrent status.
 STATUS is a key of `transmission-status-alist'.  UP and DOWN are
 transmission rates."
@@ -1212,7 +1212,7 @@ Each form in BODY is a column descriptor."
     (format "%d" (transmission-rate .rateDownload))
     (format "%d" (transmission-rate .rateUpload))
     (format "%.1f" (if (> .uploadRatio 0) .uploadRatio 0))
-    (transmission-status .status .rateUpload .rateDownload)
+    (transmission-format-status .status .rateUpload .rateDownload)
     .name)
   (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
