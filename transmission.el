@@ -404,7 +404,8 @@ METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
   "Return a \"torrents\" vector of objects from a \"torrent-get\" request.
 Each object is an alist with keys corresponding to the elements
 of \"fields\" in ARGUMENTS."
-  (cdr (cadr (assq 'arguments (transmission-request "torrent-get" arguments)))))
+  (let ((response (transmission-request "torrent-get" arguments)))
+    (cdr (assq 'torrents (cdr (assq 'arguments response))))))
 
 (defun transmission-torrent-value (torrent field)
   "Return value in vector TORRENT of key FIELD.
