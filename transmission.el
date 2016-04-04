@@ -400,12 +400,11 @@ METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
 
 ;; Response parsing
 
-(defun transmission-torrents (arguments)
-  "Return a \"torrents\" vector of objects from a \"torrent-get\" request.
-Each object is an alist with keys corresponding to the elements
-of \"fields\" in ARGUMENTS."
-  (let ((response (transmission-request "torrent-get" arguments)))
-    (cdr (assq 'torrents (cdr (assq 'arguments response))))))
+(defun transmission-torrents (response)
+  "Return the \"torrents\" array in RESPONSE.
+Each element is an alist with keys corresponding to the elements
+of \"fields\" in the arguments of the \"torrent-get\" request."
+  (cdr (assq 'torrents (cdr (assq 'arguments response)))))
 
 (defun transmission-torrent-value (torrent field)
   "Return value in vector TORRENT of key FIELD.
@@ -596,14 +595,16 @@ Returns a list of non-blank inputs."
 
 (defun transmission-list-trackers (id)
   "Return the \"trackers\" array for torrent id ID."
-  (let ((torrent (transmission-torrents `(:ids ,id :fields ("trackerStats")))))
-    (transmission-torrent-value torrent 'trackerStats)))
+  (let* ((arguments `(:ids ,id :fields ("trackerStats")))
+         (response (transmission-request "torrent-get" arguments))
+         (torrents (transmission-torrents response)))
+    (cdr (assq 'trackerStats (elt torrents 0)))))
 
 (defun transmission-list-unique-announce-urls ()
   "Return a list of unique announce URLs from all current torrents."
-  (let* ((torrents (transmission-torrents '(:fields ("trackers"))))
+  (let* ((response (transmission-request "torrent-get" '(:fields ("trackers"))))
          (trackers (mapcar (lambda (alist) (cdr (assq 'trackers alist)))
-                           torrents))
+                           (transmission-torrents response)))
          (urls (mapcar (lambda (vector)
                          (mapcar (lambda (alist)
                                    (cdr (assq 'announce alist)))
@@ -1085,8 +1086,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-copy-magnet ()
   "Copy magnet link of current torrent."
   (interactive)
-  (let ((magnet
-         (transmission-torrent-value transmission-torrent-vector 'magnetLink)))
+  (let ((magnet (cdr (assq 'magnetLink (elt transmission-torrent-vector 0)))))
     (when magnet
       (kill-new magnet)
       (message "Copied %s" magnet))))
@@ -1203,8 +1203,9 @@ Each form in BODY is a column descriptor."
          ,seq))
 
 (defun transmission-draw-torrents (_id)
-  (setq transmission-torrent-vector
-        (transmission-torrents `(:fields ,transmission-torrent-get-fields)))
+  (let* ((arguments `(:fields ,transmission-torrent-get-fields))
+         (response (transmission-request "torrent-get" arguments)))
+    (setq transmission-torrent-vector (transmission-torrents response)))
   (setq tabulated-list-entries nil)
   (transmission-do-entries transmission-torrent-vector
     (transmission-eta .eta .percentDone)
@@ -1219,8 +1220,9 @@ Each form in BODY is a column descriptor."
   (tabulated-list-print))
 
 (defun transmission-draw-files (id)
-  (setq transmission-torrent-vector
-        (transmission-torrents `(:ids ,id :fields ,transmission-files-fields)))
+  (let* ((arguments `(:ids ,id :fields ,transmission-files-fields))
+         (response (transmission-request "torrent-get" arguments)))
+    (setq transmission-torrent-vector (transmission-torrents response)))
   (let* ((files (transmission-files-sort transmission-torrent-vector))
          (names (mapcar (lambda (x) (cdr (assq 'name x))) files))
          (directory (transmission-files-directory-base (car names)))
@@ -1236,8 +1238,9 @@ Each form in BODY is a column descriptor."
   (tabulated-list-print))
 
 (defun transmission-draw-info (id)
-  (setq transmission-torrent-vector
-        (transmission-torrents `(:ids ,id :fields ,transmission-info-fields)))
+  (let* ((arguments `(:ids ,id :fields ,transmission-info-fields))
+         (response (transmission-request "torrent-get" arguments)))
+    (setq transmission-torrent-vector (transmission-torrents response)))
   (erase-buffer)
   (let-alist (elt transmission-torrent-vector 0)
     (mapc
@@ -1292,8 +1295,9 @@ Each form in BODY is a column descriptor."
                    (funcall transmission-pieces-function .pieces .pieceCount)))))))))
 
 (defun transmission-draw-peers (id)
-  (setq transmission-torrent-vector
-        (transmission-torrents `(:ids ,id :fields ("peers"))))
+  (let* ((arguments `(:ids ,id :fields ("peers")))
+         (response (transmission-request "torrent-get" arguments)))
+    (setq transmission-torrent-vector (transmission-torrents response)))
   (setq tabulated-list-entries nil)
   (transmission-do-entries (cdr (assq 'peers (elt transmission-torrent-vector 0)))
     .address
