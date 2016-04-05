@@ -406,11 +406,6 @@ Each element is an alist with keys corresponding to the elements
 of \"fields\" in the arguments of the \"torrent-get\" request."
   (cdr (assq 'torrents (cdr (assq 'arguments response)))))
 
-(defun transmission-torrent-value (torrent field)
-  "Return value in vector TORRENT of key FIELD.
-TORRENT is the \"torrents\" vector returned by `transmission-torrents'."
-  (cdr (assq field (elt torrent 0))))
-
 
 ;; Timer management
 
@@ -676,7 +671,7 @@ Returns a list of non-blank inputs."
   "Return the absolute path of the torrent file at point, or nil.
 If the file named \"foo\" does not exist, try \"foo.part\" before returning."
   (let* ((dir (file-name-as-directory
-               (transmission-torrent-value transmission-torrent-vector 'downloadDir)))
+               (cdr (assq 'downloadDir (elt transmission-torrent-vector 0)))))
          (base (cdr (assq 'name (tabulated-list-get-id))))
          (full (and dir base (concat dir base))))
     (if full
@@ -688,8 +683,9 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
 (defun transmission-files-sort (torrent)
   "Return a list derived from the \"files\" and \"fileStats\" arrays in TORRENT.
 The two are spliced together with indices for each file, sorted by file name."
-  (let ((files (transmission-torrent-value torrent 'files))
-        (stats (transmission-torrent-value torrent 'fileStats)))
+  (let* ((alist (elt torrent 0))
+         (files (cdr (assq 'files alist)))
+         (stats (cdr (assq 'fileStats alist))))
     (sort (cl-loop for f across files
                    for s across stats
                    for i below (length files)
