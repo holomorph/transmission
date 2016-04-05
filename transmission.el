@@ -186,13 +186,13 @@ The function should accept an IP address and return a string or nil."
   "Alist of names to priority values.")
 
 (defconst transmission-status-alist
-  '((0 . "stopped")
-    (1 . "verifywait")
-    (2 . "verifying")
-    (3 . "downwait")
-    (4 . "downloading")
-    (5 . "seedwait")
-    (6 . "seeding"))
+  '((stopped . 0)
+    (verifywait . 1)
+    (verifying . 2)
+    (downwait . 3)
+    (downloading . 4)
+    (seedwait . 5)
+    (seeding . 6))
   "Alist of possible Transmission torrent statuses.")
 
 (defconst transmission-torrent-get-fields
@@ -437,9 +437,9 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
 
 (defun transmission-format-status (status up down)
   "Return a propertized string describing torrent status.
-STATUS is a key of `transmission-status-alist'.  UP and DOWN are
+STATUS is a value in `transmission-status-alist'.  UP and DOWN are
 transmission rates."
-  (let ((state (cdr (assq status transmission-status-alist)))
+  (let ((state (symbol-name (car (rassq status transmission-status-alist))))
         (idle (propertize "idle" 'font-lock-face 'shadow))
         (uploading
          (propertize "uploading" 'font-lock-face 'font-lock-constant-face)))
