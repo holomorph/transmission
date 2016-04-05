@@ -962,8 +962,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-trackers-remove ()
   "Remove trackers from torrent at point by ID or announce URL."
   (interactive)
-  (let* ((id (or transmission-torrent-id
-                 (user-error "No torrent selected")))
+  (let* ((id (or transmission-torrent-id (user-error "No torrent selected")))
          (array (or (transmission-list-trackers id)
                     (user-error "No trackers to remove")))
          (prompt (format "Remove tracker (%d trackers): " (length array)))
@@ -972,8 +971,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                            array))
          (completion-extra-properties
           `(:annotation-function
-            (lambda (x)
-              (format " ID# %d" (cdr (assoc x ',trackers))))))
+            (lambda (x) (format " ID# %d" (cdr (assoc x ',trackers))))))
          (urls (or (transmission-prompt-read-repeatedly prompt trackers)
                    (user-error "No trackers selected for removal")))
          (tids (cl-loop for alist across array
@@ -989,8 +987,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-trackers-replace ()
   "Replace tracker by ID or announce URL."
   (interactive)
-  (let* ((id (or transmission-torrent-id
-                 (user-error "No torrent selected")))
+  (let* ((id (or transmission-torrent-id (user-error "No torrent selected")))
          (trackers (or (mapcar (lambda (x)
                                  (cons (cdr (assq 'announce x))
                                        (cdr (assq 'id x))))
