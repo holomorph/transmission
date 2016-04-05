@@ -431,6 +431,10 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
 
 ;; Other
 
+(defun transmission-refs (sequence key)
+  "Make a list of the values of KEY in each element of SEQUENCE."
+  (mapcar (lambda (x) (cdr (assq key x))) sequence))
+
 (defun transmission-format-status (status up down)
   "Return a propertized string describing torrent status.
 STATUS is a key of `transmission-status-alist'.  UP and DOWN are
@@ -598,12 +602,8 @@ Returns a list of non-blank inputs."
 (defun transmission-list-unique-announce-urls ()
   "Return a list of unique announce URLs from all current torrents."
   (let* ((response (transmission-request "torrent-get" '(:fields ("trackers"))))
-         (trackers (mapcar (lambda (alist) (cdr (assq 'trackers alist)))
-                           (transmission-torrents response)))
-         (urls (mapcar (lambda (vector)
-                         (mapcar (lambda (alist)
-                                   (cdr (assq 'announce alist)))
-                                 vector))
+         (trackers (transmission-refs (transmission-torrents response) 'trackers))
+         (urls (mapcar (lambda (vector) (transmission-refs vector 'announce))
                        trackers)))
     (delete-dups (apply #'append (delq nil urls)))))
 
@@ -919,8 +919,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-let-ids nil
     (transmission-request-async
      (lambda (content)
-       (let* ((response (json-read-from-string content))
-              (torrents (cdr (cadr (assq 'arguments response))))
+       (let* ((torrents (transmission-torrents (json-read-from-string content)))
               (honor (pcase (cdr (assq 'honorsSessionLimits (elt torrents 0)))
                        (:json-false t) (_ :json-false))))
          (transmission-request-async nil "torrent-set"
@@ -933,8 +932,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-let-ids nil
     (transmission-request-async
      (lambda (content)
-       (let* ((response (json-read-from-string content))
-              (torrents (cdr (cadr (assq 'arguments response))))
+       (let* ((torrents (transmission-torrents (json-read-from-string content)))
               (status (cdr (assq 'status (elt torrents 0))))
               (method (pcase status (0 "torrent-start") (_ "torrent-stop"))))
          (transmission-request-async nil method (list :ids ids))))
@@ -944,8 +942,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Add announce URLs to torrent or torrents."
   (interactive)
   (transmission-let-ids
-      ((trackers (mapcar (lambda (x) (cdr (assq 'announce x)))
-                         (transmission-list-trackers ids)))
+      ((trackers (transmission-refs (transmission-list-trackers ids) 'announce))
        (urls (or (transmission-prompt-read-repeatedly
                   "Add announce URLs: "
                   (cl-loop for url in
@@ -1220,7 +1217,7 @@ Each form in BODY is a column descriptor."
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
   (let* ((files (transmission-files-sort transmission-torrent-vector))
-         (names (mapcar (lambda (x) (cdr (assq 'name x))) files))
+         (names (transmission-refs files 'name))
          (directory (transmission-files-directory-base (car names)))
          (truncate (if directory (transmission-every-prefix-p directory names))))
     (setq tabulated-list-entries nil)
