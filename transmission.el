@@ -1023,8 +1023,8 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Quit and bury the buffer."
   (interactive)
   (let ((cur (current-buffer)))
-    (if (cl-loop for buf in (mapcar #'car (window-prev-buffers))
-                 if (not (eq cur buf)) return t)
+    (if (cl-loop for list in (window-prev-buffers)
+                 if (not (eq cur (car list))) return t)
         (quit-window)
       (if (one-window-p)
           (bury-buffer)
