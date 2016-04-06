@@ -1,4 +1,16 @@
+* Changes in 0.9
+
 ** Features
+
+*** New commands for setting torrent-specific limits.
+
+**** `transmission-set-torrent-download' and
+`transmission-set-torrent-upload' control torrent-specific speed
+limits, while `transmission-toggle-limits' toggles whether a torrent
+honors the global/session limits.
+
+**** `transmission-set-torrent-ratio' controls the mode and threshold
+for ratio.
 
 *** New option `transmission-time-zone' for configuring timestamps
 
@@ -30,6 +42,8 @@ pieces as an image, or with a different color map.
 timer to refresh the associated buffer.
 
 *** Automatic refreshing is inhibited by isearch or an active region.
+
+*** Works with absolute path requirements in Transmission 2.90+ 
 
 * Changes in 0.8
 
