@@ -1043,23 +1043,16 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-files-priority (priority)
   "Set bandwidth PRIORITY on file(s) at point or in region."
   (interactive
-   (let* ((completion-cycle-threshold t)
-          (collection '(high low normal))
-          (prompt (format "Set priority (%s): "
-                          (mapconcat #'symbol-name collection " "))))
-     (list (completing-read prompt collection nil t))))
-  (when (not (string= priority ""))
-    (transmission-files-do (intern (concat ":priority-" priority)))))
+   (list (completing-read "Set priority: " transmission-priority-alist nil t)))
+  (transmission-files-do (intern (concat ":priority-" priority))))
 
 (defun transmission-files-command (command file)
   "Run a command COMMAND on the FILE at point."
   (interactive
-   (let ((fap (transmission-files-file-at-point)))
-     (if (not fap)
-         (user-error "File does not exist")
-       (list
-        (read-shell-command (format "! on %s: " (file-name-nondirectory fap)))
-        fap))))
+   (let* ((fap (transmission-files-file-at-point))
+          (prompt (and fap (format "! on %s: " (file-name-nondirectory fap)))))
+     (if fap (list (read-shell-command prompt) fap)
+       (user-error "File does not exist"))))
   (let* ((args (nconc (split-string command) (list file)))
          (prog (car args)))
     (apply #'start-process prog nil args)))
@@ -1068,8 +1061,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Visit the file at point with `find-file-read-only'."
   (interactive)
   (let ((file (transmission-files-file-at-point)))
-    (if file
-        (find-file-read-only file)
+    (if file (find-file-read-only file)
       (user-error "File does not exist"))))
 
 (defun transmission-copy-magnet ()
