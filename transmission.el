@@ -576,10 +576,9 @@ for download rate."
                                  (if enabled (format "%.1f" limit) "disabled")
                                  "): "))))))
 
-(defun transmission-prompt-read-repeatedly (prompt &optional collection)
+(defun transmission-read-strings (prompt &optional collection)
   "Read strings until an input is blank, with optional completion.
-PROMPT is a string to prompt with.
-COLLECTION can be a list among other things.  See `completing-read'.
+PROMPT and COLLECTION are the same as in `completing-read'.
 Returns a list of non-blank inputs."
   (let (res entry)
     (catch :finished
@@ -943,7 +942,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (interactive)
   (transmission-let-ids
       ((trackers (transmission-refs (transmission-list-trackers ids) 'announce))
-       (urls (or (transmission-prompt-read-repeatedly
+       (urls (or (transmission-read-strings
                   "Add announce URLs: "
                   (cl-loop for url in
                            (append transmission-trackers
@@ -972,7 +971,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
          (completion-extra-properties
           `(:annotation-function
             (lambda (x) (format " ID# %d" (cdr (assoc x ',trackers))))))
-         (urls (or (transmission-prompt-read-repeatedly prompt trackers)
+         (urls (or (transmission-read-strings prompt trackers)
                    (user-error "No trackers selected for removal")))
          (tids (cl-loop for alist across array
                         if (or (member (cdr (assq 'announce alist)) urls)
