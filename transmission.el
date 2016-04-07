@@ -800,9 +800,8 @@ Execute BODY, binding list `ids' of torrent IDs at point or in region."
 When called with a prefix, prompt for DIRECTORY."
   (interactive
    (let* ((def (transmission-default-torrent transmission-torrent-functions))
-          (prompt (concat "Add torrent" (if def (format " [%s]" def)) ": "))
-          (input (read-file-name prompt)))
-     (list (if (string-empty-p input) def input)
+          (prompt (concat "Add torrent" (if def (format " [%s]" def)) ": ")))
+     (list (read-file-name prompt nil def)
            (if current-prefix-arg
                (read-directory-name "Target directory: ")))))
   (transmission-request-async
@@ -816,7 +815,7 @@ When called with a prefix, prompt for DIRECTORY."
                    (message "Already added %s" .arguments.torrent-duplicate.name))))
          (_ (message .result)))))
    "torrent-add"
-   (append (if (file-readable-p torrent)
+   (append (if (and (file-readable-p torrent) (not (file-directory-p torrent)))
                `(:metainfo ,(with-temp-buffer
                               (insert-file-contents torrent)
                               (base64-encode-string (buffer-string))))
