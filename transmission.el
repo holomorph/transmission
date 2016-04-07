@@ -216,7 +216,7 @@ The function should accept an IP address and return a string or nil."
 
 (defconst transmission-file-symbols
   '(:files-wanted :files-unwanted :priority-high :priority-low :priority-normal)
-  "List of \"torrent-set\" request arguments for operating on files.")
+  "List of \"torrent-set\" method arguments for operating on files.")
 
 (defconst transmission-session-header "X-Transmission-Session-Id"
   "The \"X-Transmission-Session-Id\" header key.")
@@ -592,7 +592,7 @@ Returns a list of non-blank inputs."
           (throw :finished (nreverse res)))))))
 
 (defun transmission-list-trackers (id)
-  "Return the \"trackers\" array for torrent id ID."
+  "Return the \"trackerStats\" array for torrent id ID."
   (let* ((arguments `(:ids ,id :fields ("trackerStats")))
          (response (transmission-request "torrent-get" arguments))
          (torrents (transmission-torrents response)))
