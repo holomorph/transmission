@@ -564,7 +564,7 @@ for download rate."
           (enabled (eq t (if upload .arguments.speed-limit-up-enabled
                            .arguments.speed-limit-down-enabled))))
       (list (read-number (concat "Set global " (if upload "up" "down") "load limit ("
-                                 (if enabled (format "%d KB/s" limit) "disabled")
+                                 (if enabled (format "%d kB/s" limit) "disabled")
                                  "): "))))))
 
 (defun transmission-prompt-ratio-limit ()
@@ -769,7 +769,7 @@ Done in the spirit of `dired-plural-s'."
 (defun transmission-format-rate (bytes throttled)
   "Format BYTES per second into a string with units."
   (if (not (eq t throttled)) "unlimited"
-    (concat (transmission-group-digits bytes) " KB/s")))
+    (concat (transmission-group-digits bytes) " kB/s")))
 
 (defmacro transmission-tabulated-list-pred (key)
   "Return a sorting predicate comparing values of KEY.
@@ -860,14 +860,14 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
     (transmission-request-async nil "torrent-set" arguments)))
 
 (defun transmission-set-download (limit)
-  "Set global download speed LIMIT in KB/s."
+  "Set global download speed LIMIT in kB/s."
   (interactive (transmission-prompt-speed-limit nil))
   (let ((arguments (if (<= limit 0) '(:speed-limit-down-enabled :json-false)
                      `(:speed-limit-down-enabled t :speed-limit-down ,limit))))
     (transmission-request-async nil "session-set" arguments)))
 
 (defun transmission-set-upload (limit)
-  "Set global upload speed LIMIT in KB/s."
+  "Set global upload speed LIMIT in kB/s."
   (interactive (transmission-prompt-speed-limit t))
   (let ((arguments (if (< limit 0) '(:speed-limit-up-enabled :json-false)
                      `(:speed-limit-up-enabled t :speed-limit-up ,limit))))
@@ -881,7 +881,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
     (transmission-request-async nil "session-set" arguments)))
 
 (defun transmission-set-torrent-download ()
-  "Set download limit of torrent(s) at point in KB/s."
+  "Set download limit of torrent(s) at point in kB/s."
   (interactive)
   (transmission-let-ids
       ((prompt (concat "Set torrent" (if (cdr ids) "s'" "'s") " download limit: "))
@@ -889,7 +889,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
     (transmission-set-torrent-speed-limit ids 'downloadLimit limit)))
 
 (defun transmission-set-torrent-upload ()
-  "Set upload limit of torrent(s) at point in KB/s."
+  "Set upload limit of torrent(s) at point in kB/s."
   (interactive)
   (transmission-let-ids
       ((prompt (concat "Set torrent" (if (cdr ids) "s'" "'s") " upload limit: "))
