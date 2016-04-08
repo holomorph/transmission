@@ -852,14 +852,12 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-set-bandwidth-priority ()
   "Set bandwidth priority of torrent(s) at point or in region."
   (interactive)
-  (transmission-let-ids nil
-    (let* ((completion-cycle-threshold t)
-           (prompt (format "Set bandwidth priority %s: "
-                           (mapcar #'car transmission-priority-alist)))
-           (priority (completing-read prompt transmission-priority-alist nil t))
-           (number (cdr (assoc-string priority transmission-priority-alist)))
-           (arguments `(:ids ,ids :bandwidthPriority ,number)))
-      (transmission-request-async nil "torrent-set" arguments))))
+  (transmission-let-ids
+      ((prompt "Set bandwidth priority: ")
+       (priority (completing-read prompt transmission-priority-alist nil t))
+       (number (cdr (assoc-string priority transmission-priority-alist)))
+       (arguments `(:ids ,ids :bandwidthPriority ,number)))
+    (transmission-request-async nil "torrent-set" arguments)))
 
 (defun transmission-set-download (limit)
   "Set global download speed LIMIT in KB/s."
