@@ -1242,8 +1242,7 @@ Each form in BODY is a column descriptor."
       (concat "Ratio limit: "
               (transmission-torrent-seed-ratio .seedRatioMode .seedRatioLimit))
       (unless (zerop .error)
-        (format "Error: %d %s\n" .error
-                (propertize .errorString 'font-lock-face 'error)))
+        (concat "Error: " (propertize .errorString 'font-lock-face 'error)))
       (transmission-format-peers .peers .peersFrom .peersConnected
                                  .peersGettingFromUs .peersSendingToUs)
       (concat "Date created:    " (transmission-time .dateCreated))
