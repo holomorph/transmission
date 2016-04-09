@@ -543,7 +543,7 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
 The rate is calculated from BYTES according to `transmission-units'."
   (/ bytes (if (eq 'iec transmission-units) 1024 1000)))
 
-(defun transmission-set-torrent-speed-limit (ids limit n)
+(defun transmission-throttle-torrent (ids limit n)
   "Set transfer speed limit for IDS.
 LIMIT is a symbol; either uploadLimit or downloadLimit.
 N is the desired threshold. A negative value of N means to disable the limit."
@@ -553,6 +553,27 @@ N is the desired threshold. A negative value of N means to disable the limit."
          (arguments `(:ids ,ids ,@(if (< n 0) `(,limited :json-false)
                                     `(,limited t ,limit ,n)))))
     (transmission-request-async nil "torrent-set" arguments)))
+
+(defun transmission-set-torrent-speed-limit (ids d)
+  "Set speed limit of torrents IDS.
+Direction D should be a symbol, either \"up\" or \"down\"."
+  (cl-assert (memq d '(up down)))
+  (let* ((str (concat (symbol-name d) "loadLimit"))
+         (limit (intern str))
+         (limited (intern (concat str "ed"))))
+    (if (cdr ids)
+        (let ((prompt (concat "Set torrents' " (symbol-name d) "load limit: ")))
+          (transmission-throttle-torrent ids limit (read-number prompt)))
+      (transmission-request-async
+       (lambda (content)
+         (let* ((torrents (transmission-torrents (json-read-from-string content)))
+                (torrent (elt torrents 0))
+                (n (cdr (assq limit torrent)))
+                (throttle (eq t (cdr (assq limited torrent))))
+                (prompt (concat "Set torrent's " (symbol-name d) "load limit ("
+                                (if throttle (format "%d kB/s" n) "disabled") "): ")))
+           (transmission-throttle-torrent ids limit (read-number prompt))))
+       "torrent-get" `(:ids ,ids :fields (,str ,(concat str "ed")))))))
 
 (defun transmission-prompt-speed-limit (upload)
   "Make a prompt to set transfer speed limit.
@@ -883,18 +904,14 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-set-torrent-download ()
   "Set download limit of torrent(s) at point in kB/s."
   (interactive)
-  (transmission-let-ids
-      ((prompt (concat "Set torrent" (if (cdr ids) "s'" "'s") " download limit: "))
-       (limit (read-number prompt)))
-    (transmission-set-torrent-speed-limit ids 'downloadLimit limit)))
+  (transmission-let-ids nil
+    (transmission-set-torrent-speed-limit ids 'down)))
 
 (defun transmission-set-torrent-upload ()
   "Set upload limit of torrent(s) at point in kB/s."
   (interactive)
-  (transmission-let-ids
-      ((prompt (concat "Set torrent" (if (cdr ids) "s'" "'s") " upload limit: "))
-       (limit (read-number prompt)))
-    (transmission-set-torrent-speed-limit ids 'uploadLimit limit)))
+  (transmission-let-ids nil
+    (transmission-set-torrent-speed-limit ids 'up)))
 
 (defun transmission-set-torrent-ratio ()
   "Set seed ratio limit of torrent(s) at point."
