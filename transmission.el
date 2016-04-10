@@ -771,9 +771,9 @@ Uses color names for the 256 color palette."
   "String showing a torrent's seed ratio limit.
 MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
   (pcase mode
-    (0 "Session limit")
+    (0 "session limit")
     (1 (format "%.2f (torrent-specific limit)" tlimit))
-    (2 "Unlimited")))
+    (2 "unlimited")))
 
 (defun transmission-group-digits (n)
   "Group digits of positive number N with `transmission-digit-delimiter''"
