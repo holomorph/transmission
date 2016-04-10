@@ -196,7 +196,7 @@ The function should accept an IP address and return a string or nil."
   "Alist of possible Transmission torrent statuses.")
 
 (defconst transmission-torrent-get-fields
-  '("id" "name" "status" "eta"
+  '("id" "name" "status" "eta" "error"
     "rateDownload" "rateUpload"
     "percentDone" "sizeWhenDone"
     "uploadRatio"))
@@ -1209,7 +1209,8 @@ Each form in BODY is a column descriptor."
     (format "%d" (transmission-rate .rateDownload))
     (format "%d" (transmission-rate .rateUpload))
     (format "%.1f" (if (> .uploadRatio 0) .uploadRatio 0))
-    (transmission-format-status .status .rateUpload .rateDownload)
+    (if (not (zerop .error)) (propertize "error" 'font-lock-face 'error)
+      (transmission-format-status .status .rateUpload .rateDownload))
     .name)
   (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
