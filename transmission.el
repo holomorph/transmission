@@ -56,6 +56,7 @@
 
 ;;; Code:
 
+(require 'auth-source)
 (require 'calc-bin)
 (require 'calc-ext)
 (require 'color)
@@ -89,7 +90,9 @@
                  (string :tag "Other path")))
 
 (defcustom transmission-rpc-auth nil
-  "Authorization (username, password) for using the RPC interface."
+  "Authorization (username, password) for using the RPC interface.
+If no password is set, `auth-sources' is searched using the
+username, `transmission-host', and `transmission-service'."
   :type '(choice (const :tag "None" nil)
                  (plist :tag "Username/password"
                         :options ((:username string)
@@ -281,12 +284,18 @@ update `transmission-session-id' and signal the error."
                (setq transmission-session-id (read buffer))
                (signal 'transmission-conflict status)))))))
 
+(defun transmission--auth-source-secret (user)
+  "Return the secret for USER at `transmission-host' found in `auth-sources'."
+  (auth-source-pick-first-password :host transmission-host :user user
+                                   :port transmission-service))
+
 (defun transmission--auth-string ()
   "HTTP \"Authorization\" header value if `transmission-rpc-auth' is populated."
   (when transmission-rpc-auth
-    (let ((auth (concat (plist-get transmission-rpc-auth :username) ":"
-                        (plist-get transmission-rpc-auth :password))))
-      (concat "Basic " (base64-encode-string auth)))))
+    (let* ((user (plist-get transmission-rpc-auth :username))
+           (pass (and user (or (plist-get transmission-rpc-auth :password)
+                               (transmission--auth-source-secret user)))))
+      (concat "Basic " (base64-encode-string (concat user ":" pass))))))
 
 (defun transmission-http-post (process content)
   "Send to PROCESS an HTTP POST request containing CONTENT."
