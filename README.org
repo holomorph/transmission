@@ -38,9 +38,12 @@ The customizables =transmission-host=, =transmission-service=, and
 =transmission-rpc-path= are used for the URL to communicate with a
 Transmission RPC server.  The defaults reflect the URL
 <http://localhost:9091/transmission/rpc>. Also, there is
-=transmission-rpc-auth= for setting a username and password.
+=transmission-rpc-auth= for setting a username and password.  Setting
+a password is optional; Emacs' auth-source facility can search
+=auth-sources= for an associated password.
 
-To see the rest of the customizable variables, do
+To see the rest of the customizable variables, visit the
+=transmission= customization group with
 
 #+BEGIN_SRC
 M-x customize-group RET transmission RET

@@ -1,3 +1,14 @@
+** Features
+
+*** RPC authorization can be discovered via auth-source.
+`transmission-rpc-auth' is now like an `auth-source-search' spec, so
+passwords can be stored outside of `transmission-rpc-auth'.
+
+*** GeoIP associations can be cached.
+Unless `transmission-geoip-function' already has a built-in cache,
+using cache lookups can be much more efficient.  This can be
+enabled with the option `transmission-geoip-use-cache'.
+
 * Changes in 0.9
 
 ** Features
