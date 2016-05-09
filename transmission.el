@@ -90,13 +90,16 @@
                  (string :tag "Other path")))
 
 (defcustom transmission-rpc-auth nil
-  "Authorization (username, password) for using the RPC interface.
+  "Authentication (username, password, etc.) for the RPC interface.
+Its value is a specification of the type used in `auth-source-search'.
 If no password is set, `auth-sources' is searched using the
 username, `transmission-host', and `transmission-service'."
   :type '(choice (const :tag "None" nil)
                  (plist :tag "Username/password"
                         :options ((:username string)
-                                  (:password string)))))
+                                  (:password string))))
+  :link '(info-link "(auth) Help for users")
+  :link '(function-link auth-source-search))
 
 (defcustom transmission-digit-delimiter ","
   "String used to delimit digits in numbers.
@@ -298,9 +301,14 @@ update `transmission-session-id' and signal the error."
                (signal 'transmission-conflict status)))))))
 
 (defun transmission--auth-source-secret (user)
-  "Return the secret for USER at `transmission-host' found in `auth-sources'."
-  (auth-source-pick-first-password :host transmission-host :user user
-                                   :port transmission-service))
+  "Return the secret for USER at found in `auth-sources'.
+Unless otherwise specified in `transmission-rpc-auth', the host
+and port default to `transmission-host' and
+`transmission-service', respectively."
+  (let ((spec (copy-sequence transmission-rpc-auth)))
+    (unless (plist-get spec :host) (plist-put spec :host transmission-host))
+    (unless (plist-get spec :port) (plist-put spec :port transmission-service))
+    (apply #'auth-source-pick-first-password (nconc `(:user ,user) spec))))
 
 (defun transmission--auth-string ()
   "HTTP \"Authorization\" header value if `transmission-rpc-auth' is populated."
