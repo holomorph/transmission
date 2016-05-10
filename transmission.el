@@ -1452,9 +1452,10 @@ Key bindings:
   (transmission-context transmission-peers-mode))
 
 (defvar transmission-info-font-lock-keywords
-  `(("^\\(.*?:\\)[[:blank:]]*\\(.*\\)$"
-     (1 font-lock-type-face)
-     (2 font-lock-keyword-face)))
+  (eval-when-compile
+    `((,(rx bol (group (*? nonl) ":") (* blank) (group (* nonl)) eol)
+       (1 font-lock-type-face)
+       (2 font-lock-keyword-face))))
   "Default expressions to highlight in `transmission-info-mode' buffers.")
 
 (defvar transmission-info-mode-map
