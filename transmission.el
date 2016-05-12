@@ -1379,12 +1379,12 @@ Also run the timer for timer object `transmission-timer'."
   (transmission-timer-check))
 
 (defmacro transmission-context (mode)
-  "Switch to a context buffer of mode MODE."
+  "Switch to a context buffer of major mode MODE."
   (cl-assert (string-suffix-p "-mode" (symbol-name mode)))
   (let ((name (make-symbol "name")))
     `(let ((id (or transmission-torrent-id
                    (cdr (assq 'id (tabulated-list-get-id)))))
-           (,name ,(string-remove-suffix "-mode" (symbol-name mode))))
+           (,name ,(format "*%s*" (string-remove-suffix "-mode" (symbol-name mode)))))
        (if (not id) (user-error "No torrent selected")
          (let ((buffer (or (get-buffer ,name)
                            (generate-new-buffer ,name))))
