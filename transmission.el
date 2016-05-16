@@ -1183,6 +1183,20 @@ PIECES and COUNT are the same as in `transmission-format-pieces'."
                  (_ #'transmission-ratio->glyph))
                ratios "")))
 
+(defun transmission-format-pieces-internal (pieces count)
+  "Format piece data into a string.
+PIECES and COUNT are the same as in `transmission-format-pieces'."
+  (let ((have (apply #'+ (mapcar #'transmission-hamming-weight
+                                 (base64-decode-string pieces)))))
+    (concat
+     "Piece count: " (transmission-group-digits have)
+     " / " (transmission-group-digits count)
+     " (" (number-to-string (transmission-percent have count)) "%)"
+     (when (and (functionp transmission-pieces-function)
+                (/= have 0) (< have count))
+       (let ((str (funcall transmission-pieces-function pieces count)))
+         (concat "\nPieces:\n\n" str))))))
+
 (defun transmission-format-peers (peers origins connected sending receiving)
   "Format peer information into a string.
 PEERS is an array of peer-specific data.
@@ -1326,17 +1340,7 @@ Each form in BODY is a column descriptor."
         (concat "Corrupt: " (transmission-format-size .corruptEver)))
       (concat "Total size: " (transmission-format-size .totalSize))
       (format "Piece size: %s each" (transmission-format-size .pieceSize))
-      (let ((have (apply #'+ (mapcar #'transmission-hamming-weight
-                                     (base64-decode-string .pieces)))))
-        (concat
-         (format "Piece count: %s / %s (%d%%)"
-                 (transmission-group-digits have)
-                 (transmission-group-digits .pieceCount)
-                 (transmission-percent have .pieceCount))
-         (when (and (functionp transmission-pieces-function)
-                    (/= have 0) (< have .pieceCount))
-           (format "\nPieces:\n\n%s"
-                   (funcall transmission-pieces-function .pieces .pieceCount)))))))))
+      (transmission-format-pieces-internal .pieces .pieceCount)))))
 
 (defun transmission-draw-peers (id)
   (let* ((arguments `(:ids ,id :fields ("peers")))
