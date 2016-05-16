@@ -221,7 +221,7 @@ caching built in or is otherwise slow."
   '("name" "hashString" "magnetLink" "activityDate" "addedDate"
     "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
     "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs" "peersFrom"
-    "peersSendingToUs" "sizeWhenDone" "error" "errorString" "wanted" "files"
+    "peersSendingToUs" "sizeWhenDone" "error" "errorString" "uploadRatio"
     "downloadedEver" "corruptEver" "haveValid" "totalSize" "percentDone"
     "seedRatioLimit" "seedRatioMode" "bandwidthPriority" "downloadDir"
     "uploadLimit" "uploadLimited" "downloadLimit" "downloadLimited"
@@ -1320,7 +1320,7 @@ Each form in BODY is a column descriptor."
                          (transmission-format-rate .downloadLimit .downloadLimited)
                          (transmission-format-rate .uploadLimit .uploadLimited)))
                 (_ "session limits")))
-      (concat "Ratio limit: "
+      (format "Ratio: %.3f / %s" .uploadRatio
               (transmission-torrent-seed-ratio .seedRatioMode .seedRatioLimit))
       (unless (zerop .error)
         (concat "Error: " (propertize .errorString 'font-lock-face 'error)))
@@ -1331,9 +1331,7 @@ Each form in BODY is a column descriptor."
       (concat "Date finished:   " (transmission-time .doneDate))
       (concat "Latest Activity: " (transmission-time .activityDate) "\n")
       (transmission-format-trackers .trackerStats)
-      (let ((wanted (cl-loop for w across .wanted for f across .files
-                             if (not (zerop w)) sum (cdr (assq 'length f)))))
-        (concat "Wanted: " (transmission-format-size wanted)))
+      (concat "Wanted: " (transmission-format-size .sizeWhenDone))
       (concat "Downloaded: " (transmission-format-size .downloadedEver))
       (concat "Verified: " (transmission-format-size .haveValid))
       (unless (zerop .corruptEver)
