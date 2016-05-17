@@ -1080,7 +1080,8 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Verify torrent at point or in region."
   (interactive)
   (transmission-let-ids nil
-    (transmission-request-async nil "torrent-verify" (list :ids ids))))
+    (when (y-or-n-p (concat "Verify torrent" (if (cdr ids) "s") "? "))
+      (transmission-request-async nil "torrent-verify" (list :ids ids)))))
 
 (defun transmission-quit ()
   "Quit and bury the buffer."
