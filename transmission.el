@@ -1320,7 +1320,7 @@ Each form in BODY is a column descriptor."
                          (transmission-format-rate .downloadLimit .downloadLimited)
                          (transmission-format-rate .uploadLimit .uploadLimited)))
                 (_ "session limits")))
-      (format "Ratio: %.3f / %s" .uploadRatio
+      (format "Ratio: %.3f / %s" (if (= .uploadRatio -1) 0 .uploadRatio)
               (transmission-torrent-seed-ratio .seedRatioMode .seedRatioLimit))
       (unless (zerop .error)
         (concat "Error: " (propertize .errorString 'font-lock-face 'error)))
