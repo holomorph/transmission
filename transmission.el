@@ -1671,9 +1671,14 @@ Key bindings:
     (unless (eq buffer (current-buffer))
       (with-current-buffer buffer
         (unless (eq major-mode 'transmission-mode)
-          (transmission-mode)
-          (transmission-draw)
-          (goto-char (point-min))))
+          (condition-case e
+              (progn
+                (transmission-mode)
+                (transmission-draw)
+                (goto-char (point-min)))
+            (error
+             (kill-buffer buffer)
+             (signal (car e) (cdr e))))))
       (switch-to-buffer-other-window buffer))))
 
 (provide 'transmission)
