@@ -1513,7 +1513,7 @@ Key bindings:
 \\{transmission-info-mode-map}"
   :group 'transmission
   (setq buffer-undo-list t)
-  (setq font-lock-defaults '(transmission-info-font-lock-keywords))
+  (setq font-lock-defaults '(transmission-info-font-lock-keywords t))
   (setq transmission-refresh-function #'transmission-draw-info)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (setq-local revert-buffer-function #'transmission-refresh))
