@@ -1371,6 +1371,7 @@ Also run the timer for timer object `transmission-timer'."
          (old-mark (when (region-active-p)
                      (let ((beg (region-beginning)))
                        (if (= (window-point) beg) (region-end) beg)))))
+    (run-hooks 'before-revert-hook)
     (transmission-draw)
     (goto-char (save-excursion
                  (goto-char (point-min))
@@ -1573,8 +1574,7 @@ Key bindings:
   (setq transmission-refresh-function #'transmission-draw-files)
   (setq-local revert-buffer-function #'transmission-refresh)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
-  (add-function :before (local 'revert-buffer-function)
-                #'transmission-tabulated-list-format))
+  (add-hook 'before-revert-hook #'transmission-tabulated-list-format nil t))
 
 (defun transmission-files ()
   "Open a `transmission-files-mode' buffer for torrent at point."
@@ -1658,8 +1658,7 @@ Key bindings:
   (setq transmission-refresh-function #'transmission-draw-torrents)
   (setq-local revert-buffer-function #'transmission-refresh)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
-  (add-function :before (local 'revert-buffer-function)
-                #'transmission-tabulated-list-format))
+  (add-hook 'before-revert-hook #'transmission-tabulated-list-format nil t))
 
 ;;;###autoload
 (defun transmission ()
