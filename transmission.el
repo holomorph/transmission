@@ -465,23 +465,6 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
   "Make a list of the values of KEY in each element of SEQUENCE."
   (mapcar (lambda (x) (cdr (assq key x))) sequence))
 
-(defun transmission-format-status (status up down)
-  "Return a propertized string describing torrent status.
-STATUS is a value in `transmission-status-alist'.  UP and DOWN are
-transmission rates."
-  (let ((state (symbol-name (car (rassq status transmission-status-alist))))
-        (idle (propertize "idle" 'font-lock-face 'shadow))
-        (uploading
-         (propertize "uploading" 'font-lock-face 'font-lock-constant-face)))
-    (pcase status
-      (0 (propertize state 'font-lock-face 'warning))
-      ((or 1 3 5) (propertize state 'font-lock-face '(bold shadow)))
-      (2 (propertize state 'font-lock-face 'font-lock-function-name-face))
-      (4 (if (> down 0) (propertize state 'font-lock-face 'highlight)
-           (if (> up 0) uploading idle)))
-      (6 (if (> up 0) (propertize state 'font-lock-face 'success) idle))
-      (_ state))))
-
 (defun transmission-size (bytes)
   "Return string showing size BYTES in human-readable form."
   (file-size-human-readable bytes transmission-units))
@@ -841,6 +824,11 @@ Done in the spirit of `dired-plural-s'."
   (if (not (eq t throttled)) "unlimited"
     (concat (transmission-group-digits bytes) " kB/s")))
 
+(defun transmission-format-size (bytes)
+  "Format size BYTES into a more readable string."
+  (format "%s (%s bytes)" (transmission-size bytes)
+          (transmission-group-digits bytes)))
+
 (defmacro transmission-tabulated-list-pred (key)
   "Return a sorting predicate comparing values of KEY.
 KEY should be a key in an element of `tabulated-list-entries'."
@@ -1137,22 +1125,24 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
       (message "Copied %s" magnet))))
 
 
-;; Drawing
+;; Formatting
 
-(defun transmission-tabulated-list-format (&optional _arg _noconfirm)
-  "Initialize tabulated-list header or update `tabulated-list-format'."
-  (let ((idx (cl-loop for format across tabulated-list-format
-                      if (plist-get (cdr format) :transmission-size)
-                      return format)))
-    (if (eq (cadr idx) (if (eq 'iec transmission-units) 9 7))
-        (or header-line-format (tabulated-list-init-header))
-      (setf (cadr idx) (if (eq 'iec transmission-units) 9 7))
-      (tabulated-list-init-header))))
-
-(defun transmission-format-size (bytes)
-  "Format size BYTES into a more readable string."
-  (format "%s (%s bytes)" (transmission-size bytes)
-          (transmission-group-digits bytes)))
+(defun transmission-format-status (status up down)
+  "Return a propertized string describing torrent status.
+STATUS is a value in `transmission-status-alist'.  UP and DOWN are
+transmission rates."
+  (let ((state (symbol-name (car (rassq status transmission-status-alist))))
+        (idle (propertize "idle" 'font-lock-face 'shadow))
+        (uploading
+         (propertize "uploading" 'font-lock-face 'font-lock-constant-face)))
+    (pcase status
+      (0 (propertize state 'font-lock-face 'warning))
+      ((or 1 3 5) (propertize state 'font-lock-face '(bold shadow)))
+      (2 (propertize state 'font-lock-face 'font-lock-function-name-face))
+      (4 (if (> down 0) (propertize state 'font-lock-face 'highlight)
+           (if (> up 0) uploading idle)))
+      (6 (if (> up 0) (propertize state 'font-lock-face 'success) idle))
+      (_ state))))
 
 (defun transmission-format-pieces (pieces count)
   "Format into a string the bitfield PIECES holding COUNT boolean flags."
@@ -1251,6 +1241,19 @@ CONNECTED, SENDING, RECEIVING are numbers."
 TRACKERS should be the \"trackerStats\" array."
   (if (zerop (length trackers)) "Trackers: none\n"
     (concat (mapconcat #'transmission-format-tracker trackers "\n") "\n")))
+
+
+;; Drawing
+
+(defun transmission-tabulated-list-format (&optional _arg _noconfirm)
+  "Initialize tabulated-list header or update `tabulated-list-format'."
+  (let ((idx (cl-loop for format across tabulated-list-format
+                      if (plist-get (cdr format) :transmission-size)
+                      return format)))
+    (if (eq (cadr idx) (if (eq 'iec transmission-units) 9 7))
+        (or header-line-format (tabulated-list-init-header))
+      (setf (cadr idx) (if (eq 'iec transmission-units) 9 7))
+      (tabulated-list-init-header))))
 
 (defmacro transmission-do-entries (seq &rest body)
   "Map over SEQ, pushing each element to `tabulated-list-entries'.
