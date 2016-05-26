@@ -486,25 +486,20 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
   (not (cl-loop for string in list
                 if (not (string-prefix-p prefix string)) return t)))
 
-(defun transmission-slice (list k)
-  "Slice LIST into K lists of somewhat equal size.
-The result can have no more elements than LIST."
-  (let* ((size (length list))
-         (quotient (/ size k))
-         (remainder (% size k)))
-    (cl-flet ((take (list n)
-                (let (result)
-                  (while (and list (>= (cl-decf n) 0))
-                    (push (pop list) result))
-                  (nreverse result))))
-      (let ((i 0)
-            slice result)
-        (while (and list (< i k))
-          (setq slice (if (< i remainder) (1+ quotient) quotient))
-          (push (take list slice) result)
-          (setq list (nthcdr slice list))
-          (cl-incf i))
-        (nreverse result)))))
+(defun transmission-slice (str k)
+  "Slice STRING into K strings of somewhat equal size.
+The result can have no more elements than STRING."
+  (let ((len (length str)))
+    (let ((quotient (/ len k))
+          (remainder (% len k))
+          (i 0)
+          slice result)
+      (while (and (/= 0 (setq len (length str))) (< i k))
+        (setq slice (if (< i remainder) (1+ quotient) quotient))
+        (push (substring str 0 (min slice len)) result)
+        (setq str (substring str (min slice len) len))
+        (cl-incf i))
+      (nreverse result))))
 
 (defun transmission-prop-values-in-region (prop)
   "Return a list of truthy values of text property PROP in region or at point.
@@ -770,6 +765,10 @@ from `transmission-hash-table'."
     (setq x (+ (logand x m2) (logand (lsh x -2) m2)))
     (setq x (logand (+ x (lsh x -4)) m4))
     (lsh (* x h01) -56)))
+
+(defun transmission-count-bits (bytearray)
+  "Calculate sum of Hamming weight of each byte in BYTEARRAY."
+  (cl-loop for x across bytearray sum (transmission-hamming-weight x)))
 
 (defun transmission-byte->string (byte)
   "Format integer BYTE into a string."
@@ -1162,12 +1161,11 @@ transmission rates."
   "Format pieces into a one-line greyscale representation.
 PIECES and COUNT are the same as in `transmission-format-pieces'."
   (let* ((bytes (base64-decode-string pieces))
-         (slices
-          (transmission-slice (mapcar #'transmission-hamming-weight bytes) 72))
+         (slices (transmission-slice bytes 72))
          (ratios
-          (cl-loop for slice in slices with n = count and m = nil
-                   do (cl-decf n (setq m (min n (* 8 (length slice)))))
-                   collect (/ (apply #'+ slice) (float m)))))
+          (cl-loop for bv in slices with div = nil
+                   do (cl-decf count (setq div (min count (* 8 (length bv)))))
+                   collect (/ (transmission-count-bits bv) (float div)))))
     (mapconcat (pcase (display-color-cells)
                  ((pred (< 256)) #'transmission-ratio->grey)
                  (256 #'transmission-ratio->256)
