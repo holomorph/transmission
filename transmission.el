@@ -675,15 +675,6 @@ Returns a list of non-blank inputs."
   "Apply `transmission-ffap' to the graphical selection."
   (transmission-ffap-string (with-no-warnings (x-get-selection))))
 
-(defun transmission-default-torrent (functions)
-  "Return the first non-nil evaluation of a function in FUNCTIONS."
-  (catch :result
-    (mapc (lambda (fun)
-            (let ((res (funcall fun)))
-              (if res (throw :result res))))
-          functions)
-    nil))
-
 (defun transmission-files-do (action)
   "Apply ACTION to files in `transmission-files-mode' buffers."
   (cl-assert (memq action transmission-file-symbols))
@@ -856,7 +847,7 @@ Execute BODY, binding list `ids' of torrent IDs at point or in region."
   "Add TORRENT by filename, URL, magnet link, or info hash.
 When called with a prefix, prompt for DIRECTORY."
   (interactive
-   (let* ((def (transmission-default-torrent transmission-torrent-functions))
+   (let* ((def (run-hook-with-args-until-success 'transmission-torrent-functions))
           (prompt (concat "Add torrent" (if def (format " [%s]" def)) ": ")))
      (list (read-file-name prompt nil def)
            (if current-prefix-arg
