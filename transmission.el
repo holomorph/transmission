@@ -1206,7 +1206,7 @@ CONNECTED, SENDING, RECEIVING are numbers."
   (let-alist tracker
     (let* ((label (format "Tracker %d" .id))
            (col (length label))
-           (fill (concat (make-string col ? ) ": "))
+           (fill (concat (make-string col ?\s) ": "))
            (result (pcase .lastAnnounceResult
                      ((or "Success" (pred string-empty-p)) nil)
                      (_ (concat "\n" fill
