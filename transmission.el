@@ -470,9 +470,9 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
   (file-size-human-readable bytes transmission-units))
 
 (defun transmission-percent (have total)
-  "Return floor of the percentage of HAVE by TOTAL."
+  "Return the percentage of HAVE by TOTAL."
   (condition-case nil
-      (/ (* 100 have) total)
+      (/ (* 100.0 have) total)
     (arith-error 0)))
 
 (defun transmission-files-directory-base (filename)
@@ -1171,7 +1171,7 @@ PIECES and COUNT are the same as in `transmission-format-pieces'."
     (concat
      "Piece count: " (transmission-group-digits have)
      " / " (transmission-group-digits count)
-     " (" (number-to-string (transmission-percent have count)) "%)"
+     " (" (format "%.1f" (transmission-percent have count)) "%)"
      (when (and (functionp transmission-pieces-function)
                 (/= have 0) (< have count))
        (let ((str (funcall transmission-pieces-function pieces count)))
@@ -1303,7 +1303,7 @@ Each form in BODY is a column descriptor."
       (concat "Hash: " .hashString)
       (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
       (format "Location: %s" (abbreviate-file-name .downloadDir))
-      (format "Percent done: %d%%" (* 100 .percentDone))
+      (format "Percent done: %.1f%%" (* 100 .percentDone))
       (format "Bandwidth priority: %s"
               (car (rassoc .bandwidthPriority transmission-priority-alist)))
       (concat "Speed limits: "
