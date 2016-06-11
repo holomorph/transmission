@@ -1239,7 +1239,7 @@ TRACKERS should be the \"trackerStats\" array."
 (defun transmission-tabulated-list-format (&optional _arg _noconfirm)
   "Initialize tabulated-list header or update `tabulated-list-format'."
   (let ((idx (cl-loop for format across tabulated-list-format
-                      if (plist-get (cdr format) :transmission-size)
+                      if (plist-get (nthcdr 3 format) :transmission-size)
                       return format)))
     (if (eq (cadr idx) (if (eq 'iec transmission-units) 9 7))
         (or header-line-format (tabulated-list-init-header))
