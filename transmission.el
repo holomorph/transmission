@@ -1208,16 +1208,16 @@ CONNECTED, SENDING, RECEIVING are numbers."
   (let-alist tracker
     (let* ((label (format "Tracker %d" .id))
            (col (length label))
-           (fill (concat (make-string col ?\s) ": "))
+           (fill (propertize (make-string col ?\s) 'display `(space :align-to ,col)))
            (result (pcase .lastAnnounceResult
                      ((or "Success" (pred string-empty-p)) nil)
-                     (_ (concat "\n" fill
+                     (_ (concat "\n" fill ": "
                                 (propertize .lastAnnounceResult
                                             'font-lock-face 'warning))))))
       (format
        (concat label ": %s (Tier %d)\n"
-               fill "%s %s. Announcing %s\n"
-               fill "%s, %s, %s %s. Scraping %s"
+               fill ": %s %s. Announcing %s\n"
+               fill ": %s, %s, %s %s. Scraping %s"
                result)
        .announce .tier
        (transmission-plural .lastAnnouncePeerCount "peer")
