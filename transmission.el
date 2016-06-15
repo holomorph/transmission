@@ -1402,7 +1402,7 @@ Also run the timer for timer object `transmission-timer'."
 ;; Major mode definitions
 
 (defvar transmission-peers-mode-map
-  (let ((map (copy-keymap tabulated-list-mode-map)))
+  (let ((map (make-sparse-keymap)))
     (define-key map "i" 'transmission-info)
     map)
   "Keymap used in `transmission-peers-mode' buffers.")
@@ -1457,7 +1457,7 @@ Key bindings:
   "Default expressions to highlight in `transmission-info-mode' buffers.")
 
 (defvar transmission-info-mode-map
-  (let ((map (copy-keymap special-mode-map)))
+  (let ((map (make-sparse-keymap)))
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
     (define-key map "c" 'transmission-copy-magnet)
@@ -1518,7 +1518,7 @@ Key bindings:
   (transmission-context transmission-info-mode))
 
 (defvar transmission-files-mode-map
-  (let ((map (copy-keymap tabulated-list-mode-map)))
+  (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'transmission-find-file)
     (define-key map "!" 'transmission-files-command)
     (define-key map "e" 'transmission-peers)
@@ -1576,7 +1576,7 @@ Key bindings:
   (transmission-context transmission-files-mode))
 
 (defvar transmission-mode-map
-  (let ((map (copy-keymap tabulated-list-mode-map)))
+  (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'transmission-files)
     (define-key map "a" 'transmission-add)
     (define-key map "d" 'transmission-set-download)
