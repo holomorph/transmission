@@ -248,13 +248,13 @@ caching built in or is otherwise slow."
 Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
 
 (define-error 'transmission-conflict
-  "Wrong or missing header \"X-Transmission-Session-Id\"" 'error)
+  "Wrong or missing header \"X-Transmission-Session-Id\"")
 
 (define-error 'transmission-unauthorized
-  "Unauthorized user.  Check `transmission-rpc-auth'" 'error)
+  "Unauthorized user.  Check `transmission-rpc-auth'")
 
 (define-error 'transmission-wrong-rpc-path
-  "Bad RPC path.  Check `transmission-rpc-path'" 'error)
+  "Bad RPC path.  Check `transmission-rpc-path'")
 
 (defvar transmission-timer nil
   "Timer for repeating `revert-buffer' in a visible Transmission buffer.")
