@@ -9,6 +9,20 @@ Unless `transmission-geoip-function' already has a built-in cache,
 using cache lookups can be much more efficient.  This can be
 enabled with the option `transmission-geoip-use-cache'.
 
+** Changes
+
+*** Torrent-specific limit commands are bound to d,l,u in info context.
+
+*** Verify command now guarded with y-or-n prompt.
+Accidentally invoking this on a large torrent is a waste.
+
+*** Wanted field in info context now uses "sizeWhenDone".
+Parsing the file data in order to compute actual wanted byte count
+gets expensive with more files in a torrent, as Emacs' json parsing is
+slow.  Further, it isn't necessarily a useful measurement, as
+Transmission downloads the pieces containing wanted bytes, a superset
+of what was being computed before.
+
 * Changes in 0.9
 
 ** Features
