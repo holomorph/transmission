@@ -355,12 +355,20 @@ Return JSON object parsed from content."
 When creating a new connection, the address is determined by the
 custom variables `transmission-host' and `transmission-service'."
   (let ((socket (if (file-name-absolute-p transmission-host)
-                    (expand-file-name transmission-host))))
-    (make-network-process
-     :name "transmission" :buffer (generate-new-buffer " *transmission*")
-     :host (unless socket transmission-host)
-     :service (or socket transmission-service)
-     :family (if socket 'local))))
+                    (expand-file-name transmission-host)))
+        buffer process)
+    (unwind-protect
+        (prog1
+            (setq buffer (generate-new-buffer " *transmission*")
+                  process
+                  (make-network-process
+                   :name "transmission" :buffer buffer
+                   :host (unless socket transmission-host)
+                   :service (or socket transmission-service)
+                   :family (if socket 'local) :noquery t))
+          (setq buffer nil process nil))
+      (if (process-live-p process) (kill-process process))
+      (if (buffer-live-p buffer) (kill-buffer buffer)))))
 
 (defun transmission-request (method &optional arguments tag)
   "Send a request to Transmission.
