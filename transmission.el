@@ -225,7 +225,7 @@ caching built in or is otherwise slow."
     "downloadedEver" "corruptEver" "haveValid" "totalSize" "percentDone"
     "seedRatioLimit" "seedRatioMode" "bandwidthPriority" "downloadDir"
     "uploadLimit" "uploadLimited" "downloadLimit" "downloadLimited"
-    "honorsSessionLimits"))
+    "honorsSessionLimits"  "rateDownload" "rateUpload"))
 
 (defconst transmission-file-symbols
   '(:files-wanted :files-unwanted :priority-high :priority-low :priority-normal)
@@ -1239,6 +1239,18 @@ TRACKERS should be the \"trackerStats\" array."
   (if (zerop (length trackers)) "Trackers: none\n"
     (concat (mapconcat #'transmission-format-tracker trackers "\n") "\n")))
 
+(defun transmission-format-speed-limit (speed limit limited)
+  "Format speed limit data into a string"
+  (cond
+   ((not (eq limited t)) (format "%d kB/s" (transmission-rate speed)))
+   (t (format "%d / %d kB/s" (transmission-rate speed) limit))))
+
+(defun transmission-format-limits (session rx tx rx-lim tx-lim rx-thr tx-thr)
+  "Format download and upload rate and limits into a string."
+  (concat (transmission-format-speed-limit rx rx-lim rx-thr) " down, "
+          (transmission-format-speed-limit tx tx-lim tx-thr) " up"
+          (if (eq session t) ", session limited")))
+
 
 ;; Drawing
 
@@ -1314,13 +1326,10 @@ Each form in BODY is a column descriptor."
       (format "Percent done: %.1f%%" (* 100 .percentDone))
       (format "Bandwidth priority: %s"
               (car (rassoc .bandwidthPriority transmission-priority-alist)))
-      (concat "Speed limits: "
-              (pcase .honorsSessionLimits
-                (:json-false
-                 (format "%s download, %s upload"
-                         (transmission-format-rate .downloadLimit .downloadLimited)
-                         (transmission-format-rate .uploadLimit .uploadLimited)))
-                (_ "session limits")))
+      (concat "Speed: "
+              (transmission-format-limits
+               .honorsSessionLimits .rateDownload .rateUpload
+               .downloadLimit .uploadLimit .downloadLimited .uploadLimited))
       (format "Ratio: %.3f / %s" (if (= .uploadRatio -1) 0 .uploadRatio)
               (transmission-torrent-seed-ratio .seedRatioMode .seedRatioLimit))
       (unless (zerop .error)
