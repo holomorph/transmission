@@ -695,15 +695,15 @@ Returns a list of non-blank inputs."
 (defun transmission-files-file-at-point ()
   "Return the absolute path of the torrent file at point, or nil.
 If the file named \"foo\" does not exist, try \"foo.part\" before returning."
-  (let* ((dir (file-name-as-directory
-               (cdr (assq 'downloadDir (elt transmission-torrent-vector 0)))))
-         (base (cdr (assq 'name (tabulated-list-get-id))))
-         (full (and dir base (concat dir base))))
-    (if full
-        (or (and (file-exists-p full) full)
-            (and (file-exists-p (concat full ".part"))
-                 (concat full ".part")))
-      (user-error "No file at point"))))
+  (let* ((dir (cdr (assq 'downloadDir (elt transmission-torrent-vector 0))))
+         (base (or (and dir (cdr (assq 'name (tabulated-list-get-id))))
+                   (user-error "No file at point")))
+         (filename (and base (expand-file-name base dir))))
+    (setq filename (or (and (file-exists-p filename) filename)
+                       (let ((part (concat filename ".part")))
+                         (and (file-exists-p part) part))))
+    (if filename (abbreviate-file-name filename)
+      (user-error "File does not exist"))))
 
 (defun transmission-files-sort (torrent)
   "Return a list derived from the \"files\" and \"fileStats\" arrays in TORRENT.
@@ -1099,18 +1099,18 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-files-command (command file)
   "Run a command COMMAND on the FILE at point."
   (interactive
-   (let* ((fap (transmission-files-file-at-point))
+   (let* ((fap (run-hook-with-args-until-success 'file-name-at-point-functions))
           (prompt (and fap (format "! on %s: " (file-name-nondirectory fap)))))
      (if fap (list (read-shell-command prompt) fap)
        (user-error "File does not exist"))))
-  (let* ((args (nconc (split-string command) (list file)))
+  (let* ((args (nconc (split-string command) (list (expand-file-name file))))
          (prog (car args)))
     (apply #'start-process prog nil args)))
 
 (defun transmission-find-file ()
   "Visit the file at point with `find-file-read-only'."
   (interactive)
-  (let ((file (transmission-files-file-at-point)))
+  (let ((file (run-hook-with-args-until-success 'file-name-at-point-functions)))
     (if file (find-file-read-only file)
       (user-error "File does not exist"))))
 
@@ -1580,6 +1580,7 @@ Key bindings:
            :right-align t :transmission-size t)
           ("Name" 0 t)])
   (transmission-tabulated-list-format)
+  (setq-local file-name-at-point-functions #'transmission-files-file-at-point)
   (setq transmission-refresh-function #'transmission-draw-files)
   (setq-local revert-buffer-function #'transmission-refresh)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
