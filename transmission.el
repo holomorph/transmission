@@ -853,7 +853,8 @@ point or in region--is non-nil, then BINDINGS and BODY are fed to
   "Add TORRENT by filename, URL, magnet link, or info hash.
 When called with a prefix, prompt for DIRECTORY."
   (interactive
-   (let* ((def (run-hook-with-args-until-success 'transmission-torrent-functions))
+   (let* ((f (run-hook-with-args-until-success 'transmission-torrent-functions))
+          (def (and f (file-relative-name f)))
           (prompt (concat "Add torrent" (if def (format " [%s]" def)) ": ")))
      (list (read-file-name prompt nil def)
            (if current-prefix-arg
