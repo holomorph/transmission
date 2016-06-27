@@ -479,9 +479,7 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
 
 (defun transmission-percent (have total)
   "Return the percentage of HAVE by TOTAL."
-  (condition-case nil
-      (/ (* 100.0 have) total)
-    (arith-error 0)))
+  (if (zerop total) 0 (/ (* 100.0 have) total)))
 
 (defun transmission-files-directory-base (filename)
   "Return the top-most parent directory in string FILENAME."
