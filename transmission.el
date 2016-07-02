@@ -208,16 +208,16 @@ caching built in or is otherwise slow."
     (seeding . 6))
   "Alist of possible Transmission torrent statuses.")
 
-(defconst transmission-torrent-get-fields
+(defconst transmission-draw-torrents-keys
   '("id" "name" "status" "eta" "error"
     "rateDownload" "rateUpload"
     "percentDone" "sizeWhenDone"
     "uploadRatio"))
 
-(defconst transmission-files-fields
+(defconst transmission-draw-files-keys
   '("name" "files" "fileStats" "downloadDir"))
 
-(defconst transmission-info-fields
+(defconst transmission-draw-info-keys
   '("name" "hashString" "magnetLink" "activityDate" "addedDate"
     "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
     "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs" "peersFrom"
@@ -1273,7 +1273,7 @@ Each form in BODY is a column descriptor."
          ,seq))
 
 (defun transmission-draw-torrents (_id)
-  (let* ((arguments `(:fields ,transmission-torrent-get-fields))
+  (let* ((arguments `(:fields ,transmission-draw-torrents-keys))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
   (setq tabulated-list-entries nil)
@@ -1291,7 +1291,7 @@ Each form in BODY is a column descriptor."
   (tabulated-list-print))
 
 (defun transmission-draw-files (id)
-  (let* ((arguments `(:ids ,id :fields ,transmission-files-fields))
+  (let* ((arguments `(:ids ,id :fields ,transmission-draw-files-keys))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
   (let* ((files (transmission-files-sort transmission-torrent-vector))
@@ -1309,7 +1309,7 @@ Each form in BODY is a column descriptor."
   (tabulated-list-print))
 
 (defun transmission-draw-info (id)
-  (let* ((arguments `(:ids ,id :fields ,transmission-info-fields))
+  (let* ((arguments `(:ids ,id :fields ,transmission-draw-info-keys))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
   (erase-buffer)
