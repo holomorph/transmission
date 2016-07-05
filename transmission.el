@@ -1381,6 +1381,7 @@ Also run the timer for timer object `transmission-timer'."
                        (if (= (window-point) beg) (region-end) beg)))))
     (run-hooks 'before-revert-hook)
     (transmission-draw)
+    (run-hooks 'after-revert-hook)
     (goto-char (save-excursion
                  (goto-char (point-min))
                  (forward-line (1- old-line))
