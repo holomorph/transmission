@@ -1382,10 +1382,8 @@ Also run the timer for timer object `transmission-timer'."
     (run-hooks 'before-revert-hook)
     (transmission-draw)
     (run-hooks 'after-revert-hook)
-    (goto-char (save-excursion
-                 (goto-char (point-min))
-                 (forward-line (1- old-line))
-                 (point)))
+    (goto-char (point-min))
+    (goto-char (point-at-bol old-line))
     (move-to-column old-column)
     (setf (window-start) old-window-start)
     (and old-mark (set-mark old-mark)))
