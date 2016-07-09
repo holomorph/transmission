@@ -845,6 +845,30 @@ point or in region--is non-nil, then BINDINGS and BODY are fed to
            ,@body)
        (user-error "No torrent selected"))))
 
+(defmacro transmission-with-window-maybe (window &rest body)
+  "If WINDOW is non-nil, execute BODY with WINDOW current.
+Otherwise, just execute BODY."
+  (declare (indent 1) (debug t))
+  `(if (null ,window) (progn ,@body)
+     (with-selected-window ,window
+       ,@body)))
+
+(defun transmission-window->state (window)
+  "Return a list containing some state of WINDOW.
+A simplification of `window-state-get', the list associates
+WINDOW with `window-start' and the line/column coordinates of `point'."
+  (transmission-with-window-maybe window
+    (list window (window-start) (line-number-at-pos) (current-column))))
+
+(defun transmission-restore-state (state)
+  "Set `window-start' and `window-point' according to STATE."
+  (pcase-let ((`(,window ,start ,line ,column) state))
+    (transmission-with-window-maybe window
+      (goto-char (point-min))
+      (goto-char (point-at-bol line))
+      (move-to-column column)
+      (setf (window-start) start))))
+
 
 ;; Interactive
 
@@ -1373,19 +1397,16 @@ Each form in BODY is a column descriptor."
 (defun transmission-refresh (&optional _arg _noconfirm)
   "Refresh the current buffer, restoring window position, point, and mark.
 Also run the timer for timer object `transmission-timer'."
-  (let* ((old-window-start (window-start))
-         (old-column (current-column))
-         (old-line (line-number-at-pos))
+  (let* ((old-states (or (mapcar #'transmission-window->state
+                                 (get-buffer-window-list nil nil t))
+                         (list (transmission-window->state nil))))
          (old-mark (when (region-active-p)
                      (let ((beg (region-beginning)))
                        (if (= (window-point) beg) (region-end) beg)))))
     (run-hooks 'before-revert-hook)
     (transmission-draw)
     (run-hooks 'after-revert-hook)
-    (goto-char (point-min))
-    (goto-char (point-at-bol old-line))
-    (move-to-column old-column)
-    (setf (window-start) old-window-start)
+    (mapc #'transmission-restore-state old-states)
     (and old-mark (set-mark old-mark)))
   (transmission-timer-check))
 
