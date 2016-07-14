@@ -911,12 +911,14 @@ When called with a prefix, prompt for DIRECTORY."
       ((arguments (list :ids ids :move t :location (expand-file-name location)))
        (prompt (format "Move torrent%s to %s? " (if (cdr ids) "s" "") location)))
     (when (y-or-n-p prompt)
+      (setq deactivate-mark t)
       (transmission-request-async nil "torrent-set-location" arguments))))
 
 (defun transmission-reannounce ()
   "Reannounce torrent at point or in region."
   (interactive)
   (transmission-let*-ids nil
+    (setq deactivate-mark t)
     (transmission-request-async nil "torrent-reannounce" (list :ids ids))))
 
 (defun transmission-remove (&optional unlink)
@@ -926,6 +928,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-let*-ids ((arguments `(:ids ,ids :delete-local-data ,(and unlink t))))
     (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
                                "torrent" (and (< 1 (length ids)) "s") "? "))
+      (setq deactivate-mark t)
       (transmission-request-async nil "torrent-remove" arguments))))
 
 (defun transmission-set-bandwidth-priority ()
@@ -1001,6 +1004,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Toggle torrent between started and stopped."
   (interactive)
   (transmission-let*-ids nil
+    (setq deactivate-mark t)
     (transmission-request-async
      (lambda (content)
        (let* ((torrents (transmission-torrents (json-read-from-string content)))
@@ -1090,6 +1094,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (interactive)
   (transmission-let*-ids nil
     (when (y-or-n-p (concat "Verify torrent" (if (cdr ids) "s") "? "))
+      (setq deactivate-mark t)
       (transmission-request-async nil "torrent-verify" (list :ids ids)))))
 
 (defun transmission-quit ()
