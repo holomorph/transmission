@@ -450,7 +450,7 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
 (defun transmission-timer-revert ()
   "Revert the buffer or cancel `transmission-timer'."
   (if (and (memq major-mode transmission-refresh-modes)
-           (not (or isearch-mode (use-region-p))))
+           (not (or isearch-mode (buffer-narrowed-p) (use-region-p))))
       (revert-buffer)
     (cancel-timer transmission-timer)))
 
@@ -858,7 +858,9 @@ Otherwise, just execute BODY."
 A simplification of `window-state-get', the list associates
 WINDOW with `window-start' and the line/column coordinates of `point'."
   (transmission-with-window-maybe window
-    (list window (window-start) (line-number-at-pos) (current-column))))
+    (save-restriction
+      (widen)
+      (list window (window-start) (line-number-at-pos) (current-column)))))
 
 (defun transmission-restore-state (state)
   "Set `window-start' and `window-point' according to STATE."
