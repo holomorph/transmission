@@ -1201,7 +1201,7 @@ PIECES and COUNT are the same as in `transmission-format-pieces'."
                  (_ #'transmission-ratio->glyph))
                ratios "")))
 
-(defun transmission-format-pieces-internal (pieces count)
+(defun transmission-format-pieces-internal (pieces count size)
   "Format piece data into a string.
 PIECES and COUNT are the same as in `transmission-format-pieces'."
   (let ((have (apply #'+ (mapcar #'transmission-hamming-weight
@@ -1209,7 +1209,8 @@ PIECES and COUNT are the same as in `transmission-format-pieces'."
     (concat
      "Piece count: " (transmission-group-digits have)
      " / " (transmission-group-digits count)
-     " (" (format "%.1f" (transmission-percent have count)) "%)"
+     " (" (format "%.1f" (transmission-percent have count)) "%) * "
+     (transmission-format-size size) " each"
      (when (and (functionp transmission-pieces-function)
                 (/= have 0) (< have count))
        (let ((str (funcall transmission-pieces-function pieces count)))
@@ -1377,8 +1378,7 @@ Each form in BODY is a column descriptor."
       (unless (zerop .corruptEver)
         (concat "Corrupt: " (transmission-format-size .corruptEver)))
       (concat "Total size: " (transmission-format-size .totalSize))
-      (format "Piece size: %s each" (transmission-format-size .pieceSize))
-      (transmission-format-pieces-internal .pieces .pieceCount)))))
+      (transmission-format-pieces-internal .pieces .pieceCount .pieceSize)))))
 
 (defun transmission-draw-peers (id)
   (let* ((arguments `(:ids ,id :fields ("peers")))
