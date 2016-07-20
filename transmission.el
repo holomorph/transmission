@@ -494,7 +494,8 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
 
 (defun transmission-slice (str k)
   "Slice STRING into K strings of somewhat equal size.
-The result can have no more elements than STRING."
+The result can have no more elements than STRING.
+\n(fn STRING K)"
   (let ((len (length str)))
     (let ((quotient (/ len k))
           (remainder (% len k))
@@ -560,7 +561,7 @@ The rate is calculated from BYTES according to `transmission-units'."
 (defun transmission-throttle-torrent (ids limit n)
   "Set transfer speed limit for IDS.
 LIMIT is a symbol; either uploadLimit or downloadLimit.
-N is the desired threshold. A negative value of N means to disable the limit."
+N is the desired threshold.  A negative value of N means to disable the limit."
   (cl-assert (memq limit '(uploadLimit downloadLimit)))
   (let* ((limit (intern (concat ":" (symbol-name limit))))
          (limited (intern (concat (symbol-name limit) "ed")))
@@ -802,7 +803,7 @@ MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
     (2 "unlimited")))
 
 (defun transmission-group-digits (n)
-  "Group digits of positive number N with `transmission-digit-delimiter''"
+  "Group digits of positive number N with `transmission-digit-delimiter'."
   (if (< n 10000) (number-to-string n)
     (let ((calc-group-char transmission-digit-delimiter))
       (math-group-float (number-to-string n)))))
@@ -1203,7 +1204,8 @@ PIECES and COUNT are the same as in `transmission-format-pieces'."
 
 (defun transmission-format-pieces-internal (pieces count size)
   "Format piece data into a string.
-PIECES and COUNT are the same as in `transmission-format-pieces'."
+PIECES and COUNT are the same as in `transmission-format-pieces'.
+SIZE is the file size in bytes of a single piece."
   (let ((have (apply #'+ (mapcar #'transmission-hamming-weight
                                  (base64-decode-string pieces)))))
     (concat
@@ -1271,7 +1273,9 @@ TRACKERS should be the \"trackerStats\" array."
     (concat (mapconcat #'transmission-format-tracker trackers "\n") "\n")))
 
 (defun transmission-format-speed-limit (speed limit limited)
-  "Format speed limit data into a string"
+  "Format speed limit data into a string.
+SPEED and LIMIT are rates in bytes per second.  LIMITED, if t,
+indicates that the speed limit is enabled."
   (cond
    ((not (eq limited t)) (format "%d kB/s" (transmission-rate speed)))
    (t (format "%d / %d kB/s" (transmission-rate speed) limit))))
