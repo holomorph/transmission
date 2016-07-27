@@ -529,22 +529,21 @@ If none are found, return nil."
   "Return a string showing SECONDS in human-readable form;
 otherwise some other estimate indicated by SECONDS and PERCENT."
   (if (<= seconds 0)
-      (pcase percent
-        (1 "Done")
-        (_ (if (char-displayable-p ?∞) (eval-when-compile (char-to-string ?∞)) "Inf")))
+      (if (eql percent 1) "Done"
+        (if (char-displayable-p ?∞) (eval-when-compile (char-to-string ?∞)) "Inf"))
     (let* ((minute 60.0)
            (hour 3600.0)
            (day 86400.0)
            (month (* 29.53 day))
            (year (* 365.25 day)))
       (apply #'format "%.0f%s"
-             (pcase seconds
-               ((pred (> minute)) (list seconds "s"))
-               ((pred (> hour)) (list (/ seconds minute) "m"))
-               ((pred (> day)) (list (/ seconds hour) "h"))
-               ((pred (> month)) (list (/ seconds day) "d"))
-               ((pred (> year)) (list (/ seconds month) "mo"))
-               (_ (list (/ seconds year) "y")))))))
+             (cond
+              ((> minute seconds) (list seconds "s"))
+              ((> hour seconds) (list (/ seconds minute) "m"))
+              ((> day seconds) (list (/ seconds hour) "h"))
+              ((> month seconds) (list (/ seconds day) "d"))
+              ((> year seconds) (list (/ seconds month) "mo"))
+              (t (list (/ seconds year) "y")))))))
 
 (defun transmission-when (seconds)
   "The `transmission-eta' of time between `current-time' and SECONDS."
@@ -1012,7 +1011,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
      (lambda (content)
        (let* ((torrents (transmission-torrents (json-read-from-string content)))
               (status (cdr (assq 'status (elt torrents 0))))
-              (method (pcase status (0 "torrent-start") (_ "torrent-stop"))))
+              (method (if (zerop status) "torrent-start" "torrent-stop")))
          (transmission-request-async nil method (list :ids ids))))
      "torrent-get" (list :ids ids :fields '("status")))))
 
@@ -1338,7 +1337,7 @@ Each form in BODY is a column descriptor."
     (transmission-do-entries files
       (format "%d%%" (transmission-percent .bytesCompleted .length))
       (symbol-name (car (rassoc .priority transmission-priority-alist)))
-      (pcase .wanted (:json-false "no") (_ "yes"))
+      (if (eq .wanted :json-false) "no" "yes")
       (transmission-size .length)
       (if truncate (string-remove-prefix directory .name) .name)))
   (setq tabulated-list-entries (reverse tabulated-list-entries))
