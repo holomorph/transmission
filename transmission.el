@@ -836,7 +836,7 @@ KEY should be a key in an element of `tabulated-list-entries'."
 If anaphoric binding of \"ids\"--to the list of torrent IDs at
 point or in region--is non-nil, then BINDINGS and BODY are fed to
 `let*'.  Else, a `user-error' is signalled."
-  (declare (indent 1) (debug t))
+  (declare (indent 1) (debug let*))
   `(let ((ids (or (and transmission-torrent-id (list transmission-torrent-id))
                   (mapcar (lambda (id) (cdr (assq 'id id)))
                           (transmission-prop-values-in-region 'tabulated-list-id)))))
