@@ -188,6 +188,19 @@ Useful if `transmission-geoip-function' does not have its own
 caching built in or is otherwise slow."
   :type 'boolean)
 
+(defgroup transmission-faces nil
+  "Faces used by Transmission buffers."
+  :group 'transmission
+  :group 'faces)
+
+(defface transmission-mark
+  '((t (:inherit font-lock-constant-face)))
+  "Face used by Transmission marks."
+  :group 'transmission-faces)
+
+(defvar transmission-mark-face 'transmission-mark
+  "Face name used for marked torrents.")
+
 (defconst transmission-schedules
   (eval-when-compile
     (pcase-let*
@@ -286,6 +299,9 @@ Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
 
 (defvar transmission-geoip-hash (copy-hash-table transmission-hash-table)
   "Hash table storing associations between IP addresses and location names.")
+
+(defvar-local transmission-marked-torrent-ids nil
+  "IDs of the currently marked torrents.")
 
 
 ;; JSON RPC
@@ -877,6 +893,7 @@ point or in region--is non-nil, then BINDINGS and BODY are fed to
 `let*'.  Else, a `user-error' is signalled."
   (declare (indent 1) (debug let*))
   `(let ((ids (or (and transmission-torrent-id (list transmission-torrent-id))
+                  transmission-marked-torrent-ids
                   (mapcar (lambda (id) (cdr (assq 'id id)))
                           (transmission-prop-values-in-region 'tabulated-list-id)))))
      (if ids
@@ -990,6 +1007,7 @@ When called with a prefix, prompt for DIRECTORY."
        (prompt (format "Move torrent%s to %s? " (if (cdr ids) "s" "") location)))
     (when (y-or-n-p prompt)
       (setq deactivate-mark t)
+      (setq transmission-marked-torrent-ids nil)
       (transmission-request-async nil "torrent-set-location" arguments))))
 
 (defun transmission-reannounce ()
@@ -997,6 +1015,7 @@ When called with a prefix, prompt for DIRECTORY."
   (interactive)
   (transmission-let*-ids nil
     (setq deactivate-mark t)
+    (setq transmission-marked-torrent-ids nil)
     (transmission-request-async nil "torrent-reannounce" (list :ids ids))))
 
 (defun transmission-remove (&optional unlink)
@@ -1007,6 +1026,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
     (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
                                "torrent" (and (< 1 (length ids)) "s") "? "))
       (setq deactivate-mark t)
+      (setq transmission-marked-torrent-ids nil)
       (transmission-request-async nil "torrent-remove" arguments))))
 
 (defun transmission-set-bandwidth-priority ()
@@ -1083,6 +1103,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (interactive)
   (transmission-let*-ids nil
     (setq deactivate-mark t)
+    (setq transmission-marked-torrent-ids nil)
     (transmission-request-async
      (lambda (content)
        (let* ((torrents (transmission-torrents (json-read-from-string content)))
@@ -1300,6 +1321,24 @@ See `transmission-read-time' for details on time input."
     (when magnet
       (kill-new magnet)
       (message "Copied %s" magnet))))
+
+(defun transmission-toggle-mark ()
+  "Toggle mark of the current torrent."
+  (interactive)
+  (let ((id (cdr (assq 'id (tabulated-list-get-id)))))
+    (if (member id transmission-marked-torrent-ids)
+        (progn
+          (setf transmission-marked-torrent-ids (delete id transmission-marked-torrent-ids))
+          (tabulated-list-put-tag " " t))
+      (push id transmission-marked-torrent-ids)
+      (tabulated-list-put-tag (propertize "*" 'font-lock-face transmission-mark-face) t))))
+
+(defun transmission-unmark-all ()
+  "Remove mark from all torrents."
+  (interactive)
+  (when transmission-marked-torrent-ids
+    (setf transmission-marked-torrent-ids nil)
+    (transmission-refresh)))
 
 
 ;; Formatting
@@ -1595,6 +1634,19 @@ Also run the timer for timer object `transmission-timer'."
                  (goto-char (point-min)))))
            (pop-to-buffer-same-window buffer))))))
 
+(defun transmission-print-torrent (id cols)
+  "Insert a torrent entry at point using `tabulated-list-print-entry'.
+Put the mark tag in the padding area of the current line if the current
+torrent is marked.
+ID is a Lisp object identifying the entry to print, and COLS is a vector
+of column descriptors."
+  (tabulated-list-print-entry id cols)
+  (let* ((torrent-id (cdr (assq 'id id))))
+    (when (member torrent-id transmission-marked-torrent-ids)
+      (save-excursion
+        (forward-line -1)
+        (tabulated-list-put-tag (propertize "*" 'font-lock-face transmission-mark-face))))))
+
 
 ;; Major mode definitions
 
@@ -1789,6 +1841,8 @@ Key bindings:
     (define-key map "v" 'transmission-verify)
     (define-key map "q" 'transmission-quit)
     (define-key map "y" 'transmission-set-bandwidth-priority)
+    (define-key map "x" 'transmission-toggle-mark)
+    (define-key map "U" 'transmission-unmark-all)
     map)
   "Keymap used in `transmission-mode' buffers.")
 
@@ -1812,6 +1866,8 @@ Key bindings:
     ["Move Torrent" transmission-move]
     ["Reannounce Torrent" transmission-reannounce]
     ["Verify Torrent" transmission-verify]
+    ["Toggle mark" transmission-toggle-mark]
+    ["Unmark all" transmission-unmark-all]
     "--"
     ["Query Free Space" transmission-free]
     ["Session Statistics" transmission-stats]
@@ -1854,8 +1910,10 @@ Key bindings:
            :right-align t)
           ("Status" 11 t)
           ("Name" 0 t)])
+  (setq tabulated-list-padding 2)
   (transmission-tabulated-list-format)
   (setq transmission-refresh-function #'transmission-draw-torrents)
+  (setq tabulated-list-printer #'transmission-print-torrent)
   (setq-local revert-buffer-function #'transmission-refresh)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (add-hook 'before-revert-hook #'transmission-tabulated-list-format nil t))
