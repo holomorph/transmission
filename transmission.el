@@ -188,19 +188,6 @@ Useful if `transmission-geoip-function' does not have its own
 caching built in or is otherwise slow."
   :type 'boolean)
 
-(defgroup transmission-faces nil
-  "Faces used by Transmission buffers."
-  :group 'transmission
-  :group 'faces)
-
-(defface transmission-mark
-  '((t (:inherit font-lock-constant-face)))
-  "Face used by Transmission marks."
-  :group 'transmission-faces)
-
-(defvar transmission-mark-face 'transmission-mark
-  "Face name used for marked torrents.")
-
 (defconst transmission-schedules
   (eval-when-compile
     (pcase-let*
@@ -1331,7 +1318,7 @@ See `transmission-read-time' for details on time input."
           (setf transmission-marked-torrent-ids (delete id transmission-marked-torrent-ids))
           (tabulated-list-put-tag " " t))
       (push id transmission-marked-torrent-ids)
-      (tabulated-list-put-tag (propertize "*" 'font-lock-face transmission-mark-face) t))))
+      (tabulated-list-put-tag (propertize "*" 'font-lock-face 'font-lock-constant-face) t))))
 
 (defun transmission-unmark-all ()
   "Remove mark from all torrents."
@@ -1641,11 +1628,11 @@ torrent is marked.
 ID is a Lisp object identifying the entry to print, and COLS is a vector
 of column descriptors."
   (tabulated-list-print-entry id cols)
-  (let* ((torrent-id (cdr (assq 'id id))))
+  (let ((torrent-id (cdr (assq 'id id))))
     (when (member torrent-id transmission-marked-torrent-ids)
       (save-excursion
         (forward-line -1)
-        (tabulated-list-put-tag (propertize "*" 'font-lock-face transmission-mark-face))))))
+        (tabulated-list-put-tag (propertize "*" 'font-lock-face 'font-lock-constant-face))))))
 
 
 ;; Major mode definitions
@@ -1866,8 +1853,9 @@ Key bindings:
     ["Move Torrent" transmission-move]
     ["Reannounce Torrent" transmission-reannounce]
     ["Verify Torrent" transmission-verify]
-    ["Toggle mark" transmission-toggle-mark]
-    ["Unmark all" transmission-unmark-all]
+    "--"
+    ["Toggle Mark" transmission-toggle-mark]
+    ["Unmark All" transmission-unmark-all]
     "--"
     ["Query Free Space" transmission-free]
     ["Session Statistics" transmission-stats]
