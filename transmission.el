@@ -823,13 +823,12 @@ Done in the spirit of `dired-plural-s'."
   (format "%s (%s bytes)" (transmission-size bytes)
           (transmission-group-digits bytes)))
 
-(defmacro transmission-tabulated-list-pred (key)
+(defun transmission-tabulated-list-pred (key)
   "Return a sorting predicate comparing values of KEY.
 KEY should be a key in an element of `tabulated-list-entries'."
-  (declare (debug t))
-  `(lambda (a b)
-     (> (cdr (assq ,key (car a)))
-        (cdr (assq ,key (car b))))))
+  (lambda (a b)
+    (> (cdr (assq key (car a)))
+       (cdr (assq key (car b))))))
 
 (defmacro transmission-let*-ids (bindings &rest body)
   "Conditionally bind variables according to BINDINGS and eval BODY.
