@@ -814,11 +814,6 @@ Done in the spirit of `dired-plural-s'."
   (let ((m (if (= -1 n) 0 n)))
     (concat (transmission-group-digits m) " " s (unless (= m 1) "s"))))
 
-(defun transmission-format-rate (bytes throttled)
-  "Format BYTES per second into a string with units."
-  (if (not (eq t throttled)) "unlimited"
-    (concat (transmission-group-digits bytes) " kB/s")))
-
 (defun transmission-format-size (bytes)
   "Format size BYTES into a more readable string."
   (format "%s (%s bytes)" (transmission-size bytes)
