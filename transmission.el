@@ -61,6 +61,7 @@
 (require 'calc-ext)
 (require 'color)
 (require 'json)
+(require 'mailcap)
 (require 'tabulated-list)
 (require 'url-util)
 
@@ -1129,8 +1130,12 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Run a command COMMAND on the FILE at point."
   (interactive
    (let* ((fap (run-hook-with-args-until-success 'file-name-at-point-functions))
-          (prompt (and fap (format "! on %s: " (file-name-nondirectory fap)))))
-     (if fap (list (read-shell-command prompt) fap)
+          (def (mailcap-file-default-commands (list fap)))
+          (prompt (and fap (concat "! on " (file-name-nondirectory fap)
+                                   (if def (format " (default %s)" (car def)))
+                                   ": ")))
+          (input (read-shell-command prompt nil nil def t)))
+     (if fap (list (if (string-empty-p input) (or (car def) "") input) fap)
        (user-error "File does not exist"))))
   (let* ((args (nconc (split-string command) (list (expand-file-name file))))
          (prog (car args)))
