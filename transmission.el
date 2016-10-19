@@ -906,6 +906,16 @@ When called with a prefix, prompt for DIRECTORY."
                             torrent)))
            (if directory (list :download-dir (expand-file-name directory))))))
 
+(defun transmission-free (location)
+  "Show in the echo area how much free space is in the directory LOCATION."
+  (interactive (list (read-directory-name "Directory: " nil nil t)))
+  (transmission-request-async
+   (lambda (content)
+     (let-alist (cdr (assq 'arguments (json-read-from-string content)))
+       (message "%s free in %s" (transmission-format-size .size-bytes)
+                (abbreviate-file-name .path))))
+   "free-space" (list :path (expand-file-name location))))
+
 (defun transmission-move (location)
   "Move torrent at point or in region to a new LOCATION."
   (interactive (list (read-directory-name "New directory: ")))
