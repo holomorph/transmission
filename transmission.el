@@ -594,20 +594,19 @@ Direction D should be a symbol, either \"up\" or \"down\"."
   "Make a prompt to set transfer speed limit.
 If UPLOAD is non-nil, make a prompt for upload rate, otherwise
 for download rate."
-  (let-alist (transmission-request "session-get")
-    (let ((limit (if upload .arguments.speed-limit-up
-                   .arguments.speed-limit-down))
-          (enabled (eq t (if upload .arguments.speed-limit-up-enabled
-                           .arguments.speed-limit-down-enabled))))
+  (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+    (let ((limit (if upload .speed-limit-up .speed-limit-down))
+          (enabled (eq t (if upload .speed-limit-up-enabled
+                           .speed-limit-down-enabled))))
       (list (read-number (concat "Set global " (if upload "up" "down") "load limit ("
                                  (if enabled (format "%d kB/s" limit) "disabled")
                                  "): "))))))
 
 (defun transmission-prompt-ratio-limit ()
   "Make a prompt to set global seed ratio limit."
-  (let-alist (transmission-request "session-get")
-    (let ((limit .arguments.seedRatioLimit)
-          (enabled (eq t .arguments.seedRatioLimited)))
+  (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+    (let ((limit .seedRatioLimit)
+          (enabled (eq t .seedRatioLimited)))
       (list (read-number (concat "Set global seed ratio limit ("
                                  (if enabled (format "%.1f" limit) "disabled")
                                  "): "))))))
