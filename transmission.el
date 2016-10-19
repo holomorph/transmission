@@ -902,7 +902,7 @@ When called with a prefix, prompt for DIRECTORY."
                               (base64-encode-string (buffer-string))))
              (setq torrent (string-trim torrent))
              `(:filename ,(if (transmission-btih-p torrent)
-                              (format "magnet:?xt=urn:btih:%s" torrent)
+                              (concat "magnet:?xt=urn:btih:" torrent)
                             torrent)))
            (if directory (list :download-dir (expand-file-name directory))))))
 
@@ -1370,7 +1370,7 @@ Each form in BODY is a column descriptor."
       (concat "Name: " .name)
       (concat "Hash: " .hashString)
       (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
-      (format "Location: %s" (abbreviate-file-name .downloadDir))
+      (concat "Location: " (abbreviate-file-name .downloadDir))
       (format "Percent done: %.1f%%" (* 100 .percentDone))
       (format "Bandwidth priority: %s"
               (car (rassoc .bandwidthPriority transmission-priority-alist)))
