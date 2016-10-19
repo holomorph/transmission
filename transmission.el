@@ -916,6 +916,22 @@ When called with a prefix, prompt for DIRECTORY."
                 (abbreviate-file-name .path))))
    "free-space" (list :path (expand-file-name location))))
 
+(defun transmission-status ()
+  "Message some information about the session."
+  (interactive)
+  (transmission-request-async
+   (lambda (content)
+     (let-alist (cdr (assq 'arguments (json-read-from-string content)))
+       (message (concat "%d kB/s down, %d kB/s up; %d/%d torrents active; "
+                        "%s received, %s sent; uptime %s")
+                (transmission-rate .downloadSpeed)
+                (transmission-rate .uploadSpeed)
+                .activeTorrentCount .torrentCount
+                (transmission-size .current-stats.downloadedBytes)
+                (transmission-size .current-stats.uploadedBytes)
+                (transmission-eta .current-stats.secondsActive nil))))
+   "session-stats"))
+
 (defun transmission-move (location)
   "Move torrent at point or in region to a new LOCATION."
   (interactive (list (read-directory-name "New directory: ")))
