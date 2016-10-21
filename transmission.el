@@ -60,6 +60,7 @@
 (require 'calc-bin)
 (require 'calc-ext)
 (require 'color)
+(require 'diary-lib)
 (require 'json)
 (require 'mailcap)
 (require 'tabulated-list)
@@ -186,6 +187,26 @@ If non-nil, associations are stored in `transmission-geoip-hash'.
 Useful if `transmission-geoip-function' does not have its own
 caching built in or is otherwise slow."
   :type 'boolean)
+
+(defconst transmission-schedules
+  (eval-when-compile
+    (pcase-let*
+        ((`(,sun ,mon ,tues ,wed ,thurs ,fri ,sat)
+          (mapcar (lambda (x) (lsh 1 x)) (number-sequence 0 6)))
+         (weekday (logior mon tues wed thurs fri))
+         (weekend (logior sat sun))
+         (all (logior weekday weekend)))
+      `((sun . ,sun)
+        (mon . ,mon)
+        (tues . ,tues)
+        (wed . ,wed)
+        (thurs . ,thurs)
+        (fri . ,fri)
+        (sat . ,sat)
+        (weekday . ,weekday)
+        (weekend . ,weekend)
+        (all . ,all))))
+  "Alist of Transmission turtle mode schedules.")
 
 (defconst transmission-mode-alist
   '((session . 0)
@@ -625,6 +646,27 @@ Returns a list of non-blank inputs."
             (progn (push entry res)
                    (setq collection (delete entry collection)))
           (throw :finished (nreverse res)))))))
+
+(defun transmission-read-time (prompt)
+  "Read an expression for time, prompting with string PROMPT.
+Uses `diary-entry-time' to parse user input.
+Returns minutes from midnight, otherwise nil."
+  (let ((hhmm (diary-entry-time (read-string prompt))))
+    (if (>= hhmm 0) (+ (% hhmm 100) (* 60 (/ hhmm 100))))))
+
+(defun transmission-format-minutes (minutes)
+  "Return a formatted string from MINUTES from midnight."
+  (format-time-string "%H:%M" (seconds-to-time (* 60 (+ 300 minutes)))))
+
+(defun transmission-n->days (n)
+  "Return days corresponding to bitfield N.
+Days are the keys of `transmission-schedules'."
+  (let (res)
+    (pcase-dolist (`(,k . ,v) transmission-schedules)
+      (unless (zerop (logand n v))
+        (push k res)
+        (cl-decf n v)))
+    (nreverse res)))
 
 (defun transmission-list-trackers (id)
   "Return the \"trackerStats\" array for torrent id ID."
@@ -1110,6 +1152,74 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
      (lambda (content)
        (let-alist (json-read-from-string content) (message .result)))
      "torrent-set" arguments)))
+
+(defun transmission-turtle-set-days (days)
+  "Set DAYS on which turtle mode will be active.
+DAYS is a bitfield, the associations of which are in `transmission-schedules'.
+If DAYS is nil, disable turtle mode schedule."
+  (interactive
+   (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+     (let* ((prompt
+             (format "Days %s: "
+                     (if (not (eq t .alt-speed-time-enabled)) "(disabled)"
+                       (or (transmission-n->days .alt-speed-time-day) "(none)"))))
+            (names (transmission-read-strings prompt transmission-schedules))
+            (bits (mapcar (lambda (x) (cdr (assoc-string x transmission-schedules)))
+                          names)))
+       (list (apply #'logior bits)))))
+  (let ((arguments
+         (append `(:alt-speed-time-enabled ,(if (zerop days) json-false t))
+                 (unless (zerop days) `(:alt-speed-time-day ,days)))))
+    (transmission-request-async nil "session-set" arguments)))
+
+(defun transmission-turtle-set-times (begin end)
+  "Set BEGIN and END times for turtle mode.
+See `transmission-read-time' for details on time input."
+  (interactive
+   (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+     (let* ((begs (transmission-format-minutes .alt-speed-time-begin))
+            (ends (transmission-format-minutes .alt-speed-time-end))
+            (start (or (transmission-read-time (format "Begin (%s): " begs))
+                       .alt-speed-time-begin))
+            (stop (or (transmission-read-time (format "End (%s): " ends))
+                      .alt-speed-time-end)))
+       (when (and (= start .alt-speed-time-begin) (= stop .alt-speed-time-end))
+         (user-error "No change in schedule"))
+       (if (y-or-n-p (format "Set active time from %s to %s? "
+                             (transmission-format-minutes start)
+                             (transmission-format-minutes stop)))
+           (list start stop) '(nil nil)))))
+  (when (or begin end)
+    (let ((arguments
+           (append (if begin (list :alt-speed-time-begin begin))
+                   (if end (list :alt-speed-time-end end)))))
+      (transmission-request-async nil "session-set" arguments))))
+
+(defun transmission-turtle-set-speeds (up down)
+  "Set shawty goin UP DOWN."
+  (interactive
+   (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+     (let ((p1 (format "Set turtle upload limit (%d kB/s): " .alt-speed-up))
+           (p2 (format "Set turtle download limit (%d kB/s): " .alt-speed-down)))
+       (list (read-number p1) (read-number p2)))))
+  (let ((arguments
+         (append (if down (list :alt-speed-down down))
+                 (if up (list :alt-speed-up up)))))
+    (transmission-request-async nil "session-set" arguments)))
+
+(defun transmission-turtle-toggle ()
+  "Toggle turtle mode."
+  (interactive)
+  (transmission-request-async
+   (lambda (content)
+     (let* ((arguments (cdr (assq 'arguments (json-read-from-string content))))
+            (enable (equal json-false (cdr (assq 'alt-speed-enabled arguments)))))
+       (when (y-or-n-p (concat (if enable "En" "Dis") "able turtle mode? "))
+         (transmission-request-async
+          (lambda (content)
+            (message (cdr (assq 'result (json-read-from-string content)))))
+          "session-set" `(:alt-speed-enabled ,(or enable json-false))))))
+   "session-get"))
 
 (defun transmission-verify ()
   "Verify torrent at point or in region."
