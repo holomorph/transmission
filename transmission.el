@@ -661,12 +661,15 @@ Returns minutes from midnight, otherwise nil."
 (defun transmission-n->days (n)
   "Return days corresponding to bitfield N.
 Days are the keys of `transmission-schedules'."
-  (let (res)
-    (pcase-dolist (`(,k . ,v) transmission-schedules)
-      (unless (zerop (logand n v))
-        (push k res)
-        (cl-decf n v)))
-    (nreverse res)))
+  (cond
+   ((let ((cell (rassq n transmission-schedules)))
+      (when cell (list (car cell)))))
+   ((let (res)
+      (pcase-dolist (`(,k . ,v) transmission-schedules)
+        (unless (zerop (logand n v))
+          (push k res)
+          (cl-decf n v)))
+      (nreverse res)))))
 
 (defun transmission-list-trackers (id)
   "Return the \"trackerStats\" array for torrent id ID."
