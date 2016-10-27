@@ -1811,6 +1811,14 @@ Key bindings:
     ["Reannounce Torrent" transmission-reannounce]
     ["Verify Torrent" transmission-verify]
     "--"
+    ["Query Free Space" transmission-free]
+    ["Session Statistics" transmission-stats]
+    ("Turtle Mode" :help "Set and schedule alternative speed limits"
+     ["Toggle Turtle Mode" transmission-turtle-toggle]
+     ["Set Active Days" transmission-turtle-set-days]
+     ["Set Active Time Span" transmission-turtle-set-times]
+     ["Set Turtle Speed Limits" transmission-turtle-set-speeds])
+    "--"
     ["View Torrent Files" transmission-files]
     ["View Torrent Info" transmission-info]
     ["View Torrent Peers" transmission-peers]
