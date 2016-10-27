@@ -884,6 +884,17 @@ point or in region--is non-nil, then BINDINGS and BODY are fed to
            ,@body)
        (user-error "No torrent selected"))))
 
+(defun transmission-collect-hook (hook)
+  "Run HOOK and return a list of non-nil results from calling its elements."
+  (let (res)
+    (run-hook-wrapped
+     hook
+     (lambda (fun)
+       (let ((val (funcall fun)))
+         (when val (push val res)))
+       nil))
+    (nreverse res)))
+
 (defmacro transmission-with-window-maybe (window &rest body)
   "If WINDOW is non-nil, execute BODY with WINDOW current.
 Otherwise, just execute BODY."
@@ -918,9 +929,9 @@ WINDOW with `window-start' and the line/column coordinates of `point'."
   "Add TORRENT by filename, URL, magnet link, or info hash.
 When called with a prefix, prompt for DIRECTORY."
   (interactive
-   (let* ((f (run-hook-with-args-until-success 'transmission-torrent-functions))
-          (def (and f (file-relative-name f)))
-          (prompt (concat "Add torrent" (if def (format " [%s]" def)) ": ")))
+   (let* ((f (transmission-collect-hook 'transmission-torrent-functions))
+          (def (mapcar #'file-relative-name f))
+          (prompt (concat "Add torrent" (if def (format " [%s]" (car def))) ": ")))
      (list (read-file-name prompt nil def)
            (if current-prefix-arg
                (read-directory-name "Target directory: ")))))
