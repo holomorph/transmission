@@ -966,7 +966,7 @@ When called with a prefix, prompt for DIRECTORY."
                 (abbreviate-file-name .path))))
    "free-space" (list :path (expand-file-name location))))
 
-(defun transmission-status ()
+(defun transmission-stats ()
   "Message some information about the session."
   (interactive)
   (transmission-request-async

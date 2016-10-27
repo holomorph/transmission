@@ -19,7 +19,7 @@ possible default commands.  These can be navigated with M-n in the
 
 *** New command `transmission-free` to report free disk space
 
-*** New command `transmission-status` to report session statistics
+*** New command `transmission-stats` to report session statistics
 
 *** Torrent specific limits are shown in info context.
 Specifically, ratio, download rate, and upload rate information.
