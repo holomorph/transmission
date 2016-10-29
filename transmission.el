@@ -1506,7 +1506,9 @@ Each form in BODY is a column descriptor."
       (concat "Hash: " .hashString)
       (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
       (concat "Location: " (abbreviate-file-name .downloadDir))
-      (format "Percent done: %.1f%%" (* 100 .percentDone))
+      (let* ((percent (* 100 .percentDone))
+             (fmt (if (zerop (mod percent 1)) "%d" "%.2f")))
+        (concat "Percent done: " (format fmt percent) "%"))
       (format "Bandwidth priority: %s"
               (car (rassoc .bandwidthPriority transmission-priority-alist)))
       (concat "Speed: "
