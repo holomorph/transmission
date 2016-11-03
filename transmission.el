@@ -956,15 +956,15 @@ When called with a prefix, prompt for DIRECTORY."
                             torrent)))
            (if directory (list :download-dir (expand-file-name directory))))))
 
-(defun transmission-free (location)
-  "Show in the echo area how much free space is in the directory LOCATION."
+(defun transmission-free (directory)
+  "Show in the echo area how much free space is in DIRECTORY."
   (interactive (list (read-directory-name "Directory: " nil nil t)))
   (transmission-request-async
    (lambda (content)
      (let-alist (cdr (assq 'arguments (json-read-from-string content)))
        (message "%s free in %s" (transmission-format-size .size-bytes)
                 (abbreviate-file-name .path))))
-   "free-space" (list :path (expand-file-name location))))
+   "free-space" (list :path (expand-file-name directory))))
 
 (defun transmission-stats ()
   "Message some information about the session."
@@ -1210,7 +1210,7 @@ See `transmission-read-time' for details on time input."
       (transmission-request-async nil "session-set" arguments))))
 
 (defun transmission-turtle-set-speeds (up down)
-  "Set shawty goin UP DOWN."
+  "Set UP and DOWN speed limits (kB/s) for turtle mode."
   (interactive
    (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
      (let ((p1 (format "Set turtle upload limit (%d kB/s): " .alt-speed-up))
