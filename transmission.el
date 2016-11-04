@@ -287,7 +287,7 @@ Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
 (defvar transmission-geoip-hash (copy-hash-table transmission-hash-table)
   "Hash table storing associations between IP addresses and location names.")
 
-(defvar-local transmission-marked-torrent-ids nil
+(defvar-local transmission-marked-ids nil
   "IDs of the currently marked torrents.")
 
 
@@ -731,10 +731,12 @@ Days are the keys of `transmission-schedules'."
   "Apply ACTION to files in `transmission-files-mode' buffers."
   (cl-assert (memq action transmission-file-symbols))
   (let ((id transmission-torrent-id)
-        (indices (mapcar (lambda (id) (cdr (assq 'index id)))
-                         (transmission-prop-values-in-region 'tabulated-list-id))))
+        (indices (or transmission-marked-ids
+                     (mapcar (lambda (id) (cdr (assq 'index id)))
+                             (transmission-prop-values-in-region 'tabulated-list-id)))))
     (if (and id indices)
         (let ((arguments (list :ids id action indices)))
+          (setq transmission-marked-ids nil)
           (transmission-request-async nil "torrent-set" arguments))
       (user-error "No files selected or at point"))))
 
@@ -880,7 +882,7 @@ point or in region--is non-nil, then BINDINGS and BODY are fed to
 `let*'.  Else, a `user-error' is signalled."
   (declare (indent 1) (debug let*))
   `(let ((ids (or (and transmission-torrent-id (list transmission-torrent-id))
-                  transmission-marked-torrent-ids
+                  transmission-marked-ids
                   (mapcar (lambda (id) (cdr (assq 'id id)))
                           (transmission-prop-values-in-region 'tabulated-list-id)))))
      (if ids
@@ -994,7 +996,7 @@ When called with a prefix, prompt for DIRECTORY."
        (prompt (format "Move torrent%s to %s? " (if (cdr ids) "s" "") location)))
     (when (y-or-n-p prompt)
       (setq deactivate-mark t)
-      (setq transmission-marked-torrent-ids nil)
+      (setq transmission-marked-ids nil)
       (transmission-request-async nil "torrent-set-location" arguments))))
 
 (defun transmission-reannounce ()
@@ -1002,7 +1004,7 @@ When called with a prefix, prompt for DIRECTORY."
   (interactive)
   (transmission-let*-ids nil
     (setq deactivate-mark t)
-    (setq transmission-marked-torrent-ids nil)
+    (setq transmission-marked-ids nil)
     (transmission-request-async nil "torrent-reannounce" (list :ids ids))))
 
 (defun transmission-remove (&optional unlink)
@@ -1013,7 +1015,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
     (when (yes-or-no-p (concat "Remove " (and unlink "and unlink ")
                                "torrent" (and (< 1 (length ids)) "s") "? "))
       (setq deactivate-mark t)
-      (setq transmission-marked-torrent-ids nil)
+      (setq transmission-marked-ids nil)
       (transmission-request-async nil "torrent-remove" arguments))))
 
 (defun transmission-set-bandwidth-priority ()
@@ -1090,7 +1092,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (interactive)
   (transmission-let*-ids nil
     (setq deactivate-mark t)
-    (setq transmission-marked-torrent-ids nil)
+    (setq transmission-marked-ids nil)
     (transmission-request-async
      (lambda (content)
        (let* ((torrents (transmission-torrents (json-read-from-string content)))
@@ -1310,21 +1312,25 @@ See `transmission-read-time' for details on time input."
       (message "Copied %s" magnet))))
 
 (defun transmission-toggle-mark ()
-  "Toggle mark of the current torrent."
+  "Toggle mark of the current items."
   (interactive)
-  (let ((id (cdr (assq 'id (tabulated-list-get-id)))))
-    (if (member id transmission-marked-torrent-ids)
+  (let* ((key (pcase major-mode
+                (`transmission-mode 'id)
+                (`transmission-files-mode 'index)))
+         (id (cdr (assq key (tabulated-list-get-id)))))
+    (if (member id transmission-marked-ids)
         (progn
-          (setf transmission-marked-torrent-ids (delete id transmission-marked-torrent-ids))
+          (setq transmission-marked-ids (delete id transmission-marked-ids))
           (tabulated-list-put-tag " " t))
-      (push id transmission-marked-torrent-ids)
-      (tabulated-list-put-tag (propertize "*" 'font-lock-face 'font-lock-constant-face) t))))
+      (push id transmission-marked-ids)
+      (tabulated-list-put-tag ">" t))))
 
 (defun transmission-unmark-all ()
-  "Remove mark from all torrents."
+  "Remove mark from all items."
   (interactive)
-  (when transmission-marked-torrent-ids
-    (setf transmission-marked-torrent-ids nil)
+  (when transmission-marked-ids
+    (setq transmission-marked-ids nil)
+    ;;; FIXME: don't refresh here
     (transmission-refresh)))
 
 
@@ -1617,6 +1623,7 @@ Also run the timer for timer object `transmission-timer'."
                (if (and old-id (eq old-id id))
                    (revert-buffer)
                  (setq transmission-torrent-id id)
+                 (setq transmission-marked-ids nil)
                  (transmission-draw)
                  (goto-char (point-min)))))
            (pop-to-buffer-same-window buffer))))))
@@ -1628,11 +1635,14 @@ torrent is marked.
 ID is a Lisp object identifying the entry to print, and COLS is a vector
 of column descriptors."
   (tabulated-list-print-entry id cols)
-  (let ((torrent-id (cdr (assq 'id id))))
-    (when (member torrent-id transmission-marked-torrent-ids)
+  (let* ((key (pcase major-mode
+                (`transmission-mode 'id)
+                (`transmission-files-mode 'index)))
+         (item-id (cdr (assq key id))))
+    (when (member item-id transmission-marked-ids)
       (save-excursion
         (forward-line -1)
-        (tabulated-list-put-tag (propertize "*" 'font-lock-face 'font-lock-constant-face))))))
+        (tabulated-list-put-tag ">")))))
 
 
 ;; Major mode definitions
@@ -1700,7 +1710,6 @@ Key bindings:
     (define-key map "d" 'transmission-set-torrent-download)
     (define-key map "e" 'transmission-peers)
     (define-key map "l" 'transmission-set-torrent-ratio)
-    (define-key map "m" 'transmission-move)
     (define-key map "t" 'transmission-trackers-add)
     (define-key map "T" 'transmission-trackers-remove)
     (define-key map "u" 'transmission-set-torrent-upload)
@@ -1759,8 +1768,9 @@ Key bindings:
     (define-key map "!" 'transmission-files-command)
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
-    (define-key map "m" 'transmission-move)
+    (define-key map "m" 'transmission-toggle-mark)
     (define-key map "u" 'transmission-files-unwant)
+    (define-key map "U" 'transmission-unmark-all)
     (define-key map "w" 'transmission-files-want)
     (define-key map "y" 'transmission-files-priority)
     map)
@@ -1800,9 +1810,11 @@ Key bindings:
           ("Size" 9 ,(transmission-tabulated-list-pred 'length)
            :right-align t :transmission-size t)
           ("Name" 0 t)])
+  (setq tabulated-list-padding 1)
   (transmission-tabulated-list-format)
   (setq-local file-name-at-point-functions #'transmission-files-file-at-point)
   (setq transmission-refresh-function #'transmission-draw-files)
+  (setq tabulated-list-printer #'transmission-print-torrent)
   (setq-local revert-buffer-function #'transmission-refresh)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (add-hook 'before-revert-hook #'transmission-tabulated-list-format nil t))
@@ -1820,7 +1832,7 @@ Key bindings:
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
     (define-key map "l" 'transmission-set-ratio)
-    (define-key map "m" 'transmission-move)
+    (define-key map "m" 'transmission-toggle-mark)
     (define-key map "r" 'transmission-remove)
     (define-key map "s" 'transmission-toggle)
     (define-key map "t" 'transmission-trackers-add)
@@ -1828,7 +1840,6 @@ Key bindings:
     (define-key map "v" 'transmission-verify)
     (define-key map "q" 'transmission-quit)
     (define-key map "y" 'transmission-set-bandwidth-priority)
-    (define-key map "x" 'transmission-toggle-mark)
     (define-key map "U" 'transmission-unmark-all)
     map)
   "Keymap used in `transmission-mode' buffers.")
@@ -1898,7 +1909,7 @@ Key bindings:
            :right-align t)
           ("Status" 11 t)
           ("Name" 0 t)])
-  (setq tabulated-list-padding 2)
+  (setq tabulated-list-padding 1)
   (transmission-tabulated-list-format)
   (setq transmission-refresh-function #'transmission-draw-torrents)
   (setq tabulated-list-printer #'transmission-print-torrent)
