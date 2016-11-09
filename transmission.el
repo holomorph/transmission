@@ -927,6 +927,24 @@ WINDOW with `window-start' and the line/column coordinates of `point'."
       (move-to-column column)
       (setf (window-start) start))))
 
+(defmacro transmission-with-saved-state (&rest body)
+  "Execute BODY, restoring window position, point, and mark."
+  (declare (indent 0) (debug t))
+  (let ((old-states (make-symbol "old-states"))
+        (old-mark (make-symbol "old-mark"))
+        (old-mark-active (make-symbol "old-mark-active")))
+    `(let* ((,old-states (or (mapcar #'transmission-window->state
+                                     (get-buffer-window-list nil nil t))
+                             (list (transmission-window->state nil))))
+            (,old-mark (if (not (region-active-p)) (mark)
+                         (let ((beg (region-beginning)))
+                           (if (= (window-point) beg) (region-end) beg))))
+            (,old-mark-active mark-active))
+       ,@body
+       (mapc #'transmission-restore-state ,old-states)
+       (and ,old-mark (set-mark ,old-mark))
+       (unless ,old-mark-active (deactivate-mark)))))
+
 
 ;; Interactive
 
@@ -1330,8 +1348,8 @@ See `transmission-read-time' for details on time input."
   (interactive)
   (when transmission-marked-ids
     (setq transmission-marked-ids nil)
-    ;;; FIXME: don't refresh here
-    (transmission-refresh)))
+    (transmission-with-saved-state
+      (tabulated-list-print))))
 
 
 ;; Formatting
@@ -1590,19 +1608,10 @@ Each form in BODY is a column descriptor."
 (defun transmission-refresh (&optional _arg _noconfirm)
   "Refresh the current buffer, restoring window position, point, and mark.
 Also run the timer for timer object `transmission-timer'."
-  (let* ((old-states (or (mapcar #'transmission-window->state
-                                 (get-buffer-window-list nil nil t))
-                         (list (transmission-window->state nil))))
-         (old-mark (if (not (region-active-p)) (mark)
-                     (let ((beg (region-beginning)))
-                       (if (= (window-point) beg) (region-end) beg))))
-         (old-mark-active mark-active))
+  (transmission-with-saved-state
     (run-hooks 'before-revert-hook)
     (transmission-draw)
-    (run-hooks 'after-revert-hook)
-    (mapc #'transmission-restore-state old-states)
-    (and old-mark (set-mark old-mark))
-    (unless old-mark-active (deactivate-mark)))
+    (run-hooks 'after-revert-hook))
   (transmission-timer-check))
 
 (defmacro transmission-context (mode)
