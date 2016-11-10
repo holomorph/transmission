@@ -1354,7 +1354,7 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
           (while (not (eobp))
             (transmission-toggle-mark-at-point)
             (forward-line))))
-    (let ((sign (signum arg)))
+    (let ((sign (cond ((> arg 0) 1) ((< arg 0) -1) (t 0))))
       (dotimes (_ (abs arg))
         (transmission-toggle-mark-at-point)
         (forward-line sign)))))
