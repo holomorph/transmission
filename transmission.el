@@ -1329,19 +1329,35 @@ See `transmission-read-time' for details on time input."
       (kill-new magnet)
       (message "Copied %s" magnet))))
 
-(defun transmission-toggle-mark ()
-  "Toggle mark of the current items."
-  (interactive)
-  (let* ((key (pcase major-mode
-                (`transmission-mode 'id)
-                (`transmission-files-mode 'index)))
-         (id (cdr (assq key (tabulated-list-get-id)))))
+(defun transmission-toggle-mark-at-point ()
+  "Toggle mark of item at point.
+Registers the change in `transmission-marked-ids'."
+  (let* ((eid (tabulated-list-get-id))
+         (id (cdr (or (assq 'id eid) (assq 'index eid)))))
     (if (member id transmission-marked-ids)
         (progn
           (setq transmission-marked-ids (delete id transmission-marked-ids))
-          (tabulated-list-put-tag " " t))
+          (tabulated-list-put-tag " "))
       (push id transmission-marked-ids)
-      (tabulated-list-put-tag ">" t))))
+      (tabulated-list-put-tag ">"))))
+
+(defun transmission-toggle-mark (arg)
+  "Toggle mark of item(s) at point.
+If the region is active, toggle the mark on all items in the region.
+Otherwise, with a prefix arg, mark files on the next ARG lines."
+  (interactive "p")
+  (if (use-region-p)
+      (save-excursion
+        (save-restriction
+          (narrow-to-region (region-beginning) (region-end))
+          (goto-char (point-min))
+          (while (not (eobp))
+            (transmission-toggle-mark-at-point)
+            (forward-line))))
+    (let ((sign (signum arg)))
+      (dotimes (_ (abs arg))
+        (transmission-toggle-mark-at-point)
+        (forward-line sign)))))
 
 (defun transmission-unmark-all ()
   "Remove mark from all items."
