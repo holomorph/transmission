@@ -1616,14 +1616,7 @@ Also run the timer for timer object `transmission-timer'."
 (define-derived-mode transmission-peers-mode tabulated-list-mode "Transmission-Peers"
   "Major mode for viewing peer information.
 See https://trac.transmissionbt.com/wiki/PeerStatusText
-for explanation of the peer flags.
-
-In addition to any hooks its parent mode might have run, this
-mode runs the hook `transmission-peers-mode-hook' at mode
-initialization.
-
-Key bindings:
-\\{transmission-peers-mode-map}"
+for explanation of the peer flags."
   :group 'transmission
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
@@ -1694,14 +1687,7 @@ Key bindings:
     ["Quit" quit-window]))
 
 (define-derived-mode transmission-info-mode special-mode "Transmission-Info"
-  "Major mode for viewing and manipulating torrent attributes.
-
-In addition to any hooks its parent mode might have run, this
-mode runs the hook `transmission-info-mode-hook' at mode
-initialization.
-
-Key bindings:
-\\{transmission-info-mode-map}"
+  "Major mode for viewing and manipulating torrent attributes."
   :group 'transmission
   (setq buffer-undo-list t)
   (setq font-lock-defaults '(transmission-info-font-lock-keywords t))
@@ -1744,14 +1730,7 @@ Key bindings:
     ["Quit" quit-window]))
 
 (define-derived-mode transmission-files-mode tabulated-list-mode "Transmission-Files"
-  "Major mode for a torrent's file list.
-
-In addition to any hooks its parent mode might have run, this
-mode runs the hook `transmission-files-mode-hook' at mode
-initialization.
-
-Key bindings:
-\\{transmission-files-mode-map}"
+  "Major mode for a torrent's file list."
   :group 'transmission
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
@@ -1831,14 +1810,7 @@ Key bindings:
 (define-derived-mode transmission-mode tabulated-list-mode "Transmission"
   "Major mode for the list of torrents in a Transmission session.
 See https://trac.transmissionbt.com/ for more information about
-Transmission.
-
-In addition to any hooks its parent mode might have run, this
-mode runs the hook `transmission-mode-hook' at mode
-initialization.
-
-Key bindings:
-\\{transmission-mode-map}"
+Transmission."
   :group 'transmission
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
