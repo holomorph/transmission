@@ -50,7 +50,7 @@
 ;; line utility transmission-remote(1), the ncurses interface
 ;; transmission-remote-cli(1), and the rtorrent(1) client.  These can
 ;; be found respectively at the following:
-;; <https://trac.transmissionbt.com/browser/trunk/daemon/remote.c>
+;; <https://github.com/transmission/transmission/blob/master/daemon/remote.c>
 ;; <https://github.com/fagga/transmission-remote-cli>
 ;; <https://rakshasa.github.io/rtorrent/>
 
@@ -73,7 +73,8 @@
 
 (defgroup transmission nil
   "Interface to a Transmission session."
-  :link '(url-link "https://trac.transmissionbt.com/")
+  :link '(url-link "https://github.com/transmission/transmission")
+  :link '(url-link "https://transmissionbt.com/")
   :group 'external)
 
 (defcustom transmission-host "localhost"
@@ -400,7 +401,7 @@ ARGUMENTS is a plist having keys corresponding to METHOD.
 TAG is an integer and ignored.
 
 Details regarding the Transmission RPC can be found here:
-<https://trac.transmissionbt.com/browser/trunk/extras/rpc-spec.txt>"
+<https://github.com/transmission/transmission/blob/master/extras/rpc-spec.txt>"
   (let ((process (transmission-make-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
     (unwind-protect
@@ -1615,7 +1616,7 @@ Also run the timer for timer object `transmission-timer'."
 
 (define-derived-mode transmission-peers-mode tabulated-list-mode "Transmission-Peers"
   "Major mode for viewing peer information.
-See https://trac.transmissionbt.com/wiki/PeerStatusText
+See https://github.com/transmission/transmission/wiki/Peer-Status-Text
 for explanation of the peer flags."
   :group 'transmission
   (setq-local line-move-visual nil)
@@ -1809,7 +1810,7 @@ for explanation of the peer flags."
 
 (define-derived-mode transmission-mode tabulated-list-mode "Transmission"
   "Major mode for the list of torrents in a Transmission session.
-See https://trac.transmissionbt.com/ for more information about
+See https://github.com/transmission/transmission for more information about
 Transmission."
   :group 'transmission
   (setq-local line-move-visual nil)
