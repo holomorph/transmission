@@ -85,7 +85,8 @@
   "Port or name of the service for the Transmission session."
   :type '(choice (const :tag "Default" 9091)
                  (string :tag "Service")
-                 (integer :tag "Port")))
+                 (integer :tag "Port"))
+  :link '(function-link make-network-process))
 
 (defcustom transmission-rpc-path "/transmission/rpc"
   "Path to the Transmission session RPC interface."
@@ -165,6 +166,7 @@ See `format-time-string'."
                  (const :tag "Universal Time (UTC)" t)
                  (const :tag "System Wall Clock" wall)
                  (string :tag "Time Zone Identifier"))
+  :link '(info-link "(libc) TZ Variable")
   :link '(function-link format-time-string))
 
 (defcustom transmission-torrent-functions '(transmission-ffap)
