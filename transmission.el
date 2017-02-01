@@ -684,8 +684,8 @@ Days are the keys of `transmission-schedules'."
   "Return a list of unique announce URLs from all current torrents."
   (let* ((response (transmission-request "torrent-get" '(:fields ("trackers"))))
          (trackers (transmission-refs (transmission-torrents response) 'trackers))
-         (urls (mapcar (lambda (vector) (transmission-refs vector 'announce))
-                       trackers)))
+         (urls (cl-loop for vector in trackers
+                        collect (transmission-refs vector 'announce))))
     (delete-dups (apply #'append (delq nil urls)))))
 
 (defun transmission-btih-p (string)
@@ -1121,9 +1121,9 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
          (array (or (transmission-list-trackers id)
                     (user-error "No trackers to remove")))
          (prompt (format "Remove tracker (%d trackers): " (length array)))
-         (trackers (mapcar (lambda (x) (cons (cdr (assq 'announce x))
-                                             (cdr (assq 'id x))))
-                           array))
+         (trackers (cl-loop for x across array
+                            collect (cons (cdr (assq 'announce x))
+                                          (cdr (assq 'id x)))))
          (completion-extra-properties
           `(:annotation-function
             (lambda (x) (format " ID# %d" (cdr (assoc x ',trackers))))))
@@ -1143,10 +1143,9 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Replace tracker by ID or announce URL."
   (interactive)
   (let* ((id (or transmission-torrent-id (user-error "No torrent selected")))
-         (trackers (or (mapcar (lambda (x)
-                                 (cons (cdr (assq 'announce x))
-                                       (cdr (assq 'id x))))
-                               (transmission-list-trackers id))
+         (trackers (or (cl-loop for x across (transmission-list-trackers id)
+                                collect (cons (cdr (assq 'announce x))
+                                              (cdr (assq 'id x))))
                        (user-error "No trackers to replace")))
          (prompt (format "Replace tracker (%d trackers): " (length trackers)))
          (tid (or (let* ((completion-extra-properties
@@ -1180,8 +1179,8 @@ If DAYS is nil, disable turtle mode schedule."
                      (if (not (eq t .alt-speed-time-enabled)) "(disabled)"
                        (or (transmission-n->days .alt-speed-time-day) "(none)"))))
             (names (transmission-read-strings prompt transmission-schedules))
-            (bits (mapcar (lambda (x) (cdr (assoc-string x transmission-schedules)))
-                          names)))
+            (bits (cl-loop for x in names
+                           collect (cdr (assq (intern x) transmission-schedules)))))
        (list (apply #'logior bits)))))
   (let ((arguments
          (append `(:alt-speed-time-enabled ,(if (zerop days) json-false t))
