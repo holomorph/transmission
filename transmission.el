@@ -882,8 +882,10 @@ point or in region--is non-nil, then BINDINGS and BODY are fed to
                   (mapcar (lambda (id) (cdr (assq 'id id)))
                           (transmission-prop-values-in-region 'tabulated-list-id)))))
      (if ids
-         (let* (,@bindings)
-           ,@body)
+         ,(if bindings
+              `(let* (,@bindings)
+                 ,@body)
+            `(progn ,@body))
        (user-error "No torrent selected"))))
 
 (defun transmission-collect-hook (hook)
