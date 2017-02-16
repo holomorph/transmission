@@ -474,7 +474,9 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
 (defun transmission-timer-revert ()
   "Revert the buffer or cancel `transmission-timer'."
   (if (and (memq major-mode transmission-refresh-modes)
-           (not (or isearch-mode (buffer-narrowed-p) (use-region-p))))
+           (not (or (bound-and-true-p isearch-mode)
+                    (buffer-narrowed-p)
+                    (use-region-p))))
       (revert-buffer)
     (cancel-timer transmission-timer)))
 
