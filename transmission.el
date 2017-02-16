@@ -897,7 +897,7 @@ point or in region--is non-nil, then BINDINGS and BODY are fed to
      hook
      (lambda (fun)
        (let ((val (funcall fun)))
-         (when val (push val res)))
+         (when val (cl-pushnew val res :test #'equal)))
        nil))
     (nreverse res)))
 
