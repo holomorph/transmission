@@ -417,8 +417,9 @@ Details regarding the Transmission RPC can be found here:
 
 ;; Asynchronous calls
 
-(defun transmission-process-filter (process _string)
-  "Function used as a supplement to the default filter function for PROCESS."
+(defun transmission-process-filter (process text)
+  "Handle PROCESS's output TEXT and trigger handlers."
+  (internal-default-process-filter process text)
   (when (buffer-live-p (process-buffer process))
     (with-current-buffer (process-buffer process)
       (when (transmission--content-finished-p)
@@ -453,7 +454,7 @@ METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
   (let ((process (transmission-make-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
     (set-process-sentinel process #'transmission-process-sentinel)
-    (add-function :after (process-filter process) 'transmission-process-filter)
+    (set-process-filter process #'transmission-process-filter)
     (process-put process :request content)
     (process-put process :callback callback)
     (transmission-http-post process content)
