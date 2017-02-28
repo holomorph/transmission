@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.10
-;; Package-Requires: ((emacs "24.4") (let-alist "1.0.3"))
+;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
 ;; This program is free software; you can redistribute it and/or
@@ -946,10 +946,11 @@ When called with a prefix, prompt for DIRECTORY."
      (let-alist (json-read-from-string content)
        (pcase .result
          ("success"
-          (or (and .arguments.torrent-added.name
-                   (message "Added %s" .arguments.torrent-added.name))
-              (and .arguments.torrent-duplicate.name
-                   (message "Already added %s" .arguments.torrent-duplicate.name))))
+          (let-alist .arguments
+            (or (and .torrent-added.name
+                     (message "Added %s" .torrent-added.name))
+                (and .torrent-duplicate.name
+                     (message "Already added %s" .torrent-duplicate.name)))))
          (_ (message .result)))))
    "torrent-add"
    (append (if (and (file-readable-p torrent) (not (file-directory-p torrent)))
