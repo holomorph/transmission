@@ -1023,7 +1023,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-let*-ids
       ((prompt "Set bandwidth priority: ")
        (priority (completing-read prompt transmission-priority-alist nil t))
-       (number (cdr (assoc-string priority transmission-priority-alist)))
+       (number (cdr (assq (intern priority) transmission-priority-alist)))
        (arguments `(:ids ,ids :bandwidthPriority ,number)))
     (transmission-request-async nil "torrent-set" arguments)))
 
@@ -1492,7 +1492,7 @@ Each form in BODY is a column descriptor."
     (setq tabulated-list-entries nil)
     (transmission-do-entries files
       (format "%d%%" (transmission-percent .bytesCompleted .length))
-      (symbol-name (car (rassoc .priority transmission-priority-alist)))
+      (symbol-name (car (rassq .priority transmission-priority-alist)))
       (if (eq .wanted :json-false) "no" "yes")
       (transmission-size .length)
       (if truncate (string-remove-prefix directory .name) .name)))
@@ -1517,7 +1517,7 @@ Each form in BODY is a column descriptor."
              (fmt (if (zerop (mod percent 1)) "%d" "%.2f")))
         (concat "Percent done: " (format fmt percent) "%"))
       (format "Bandwidth priority: %s"
-              (car (rassoc .bandwidthPriority transmission-priority-alist)))
+              (car (rassq .bandwidthPriority transmission-priority-alist)))
       (concat "Speed: "
               (transmission-format-limits
                .honorsSessionLimits .rateDownload .rateUpload
