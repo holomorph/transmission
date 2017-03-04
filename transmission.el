@@ -1,10 +1,10 @@
 ;;; transmission.el --- Interface to a Transmission session -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2016  Mark Oteiza <mvoteiza@udel.edu>
+;; Copyright (C) 2014-2017  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.10
-;; Package-Requires: ((emacs "24.4") (let-alist "1.0.3"))
+;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
 ;; This program is free software; you can redistribute it and/or
@@ -50,7 +50,7 @@
 ;; line utility transmission-remote(1), the ncurses interface
 ;; transmission-remote-cli(1), and the rtorrent(1) client.  These can
 ;; be found respectively at the following:
-;; <https://trac.transmissionbt.com/browser/trunk/daemon/remote.c>
+;; <https://github.com/transmission/transmission/blob/master/daemon/remote.c>
 ;; <https://github.com/fagga/transmission-remote-cli>
 ;; <https://rakshasa.github.io/rtorrent/>
 
@@ -73,7 +73,8 @@
 
 (defgroup transmission nil
   "Interface to a Transmission session."
-  :link '(url-link "https://trac.transmissionbt.com/")
+  :link '(url-link "https://github.com/transmission/transmission")
+  :link '(url-link "https://transmissionbt.com/")
   :group 'external)
 
 (defcustom transmission-host "localhost"
@@ -84,7 +85,8 @@
   "Port or name of the service for the Transmission session."
   :type '(choice (const :tag "Default" 9091)
                  (string :tag "Service")
-                 (integer :tag "Port")))
+                 (integer :tag "Port"))
+  :link '(function-link make-network-process))
 
 (defcustom transmission-rpc-path "/transmission/rpc"
   "Path to the Transmission session RPC interface."
@@ -164,6 +166,7 @@ See `format-time-string'."
                  (const :tag "Universal Time (UTC)" t)
                  (const :tag "System Wall Clock" wall)
                  (string :tag "Time Zone Identifier"))
+  :link '(info-link "(libc) TZ Variable")
   :link '(function-link format-time-string))
 
 (defcustom transmission-torrent-functions '(transmission-ffap)
@@ -353,9 +356,8 @@ and port default to `transmission-host' and
       (if auth (push (cons "Authorization" auth) headers)))
     (with-temp-buffer
       (insert (format "POST %s HTTP/1.1\r\n" transmission-rpc-path))
-      (mapc (lambda (elt)
-              (insert (format "%s: %s\r\n" (car elt) (cdr elt))))
-            headers)
+      (dolist (elt headers)
+        (insert (format "%s: %s\r\n" (car elt) (cdr elt))))
       (insert "\r\n" content)
       (process-send-string process (buffer-string)))))
 
@@ -403,7 +405,7 @@ ARGUMENTS is a plist having keys corresponding to METHOD.
 TAG is an integer and ignored.
 
 Details regarding the Transmission RPC can be found here:
-<https://trac.transmissionbt.com/browser/trunk/extras/rpc-spec.txt>"
+<https://github.com/transmission/transmission/blob/master/extras/rpc-spec.txt>"
   (let ((process (transmission-make-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
     (unwind-protect
@@ -418,8 +420,9 @@ Details regarding the Transmission RPC can be found here:
 
 ;; Asynchronous calls
 
-(defun transmission-process-filter (process _string)
-  "Function used as a supplement to the default filter function for PROCESS."
+(defun transmission-process-filter (process text)
+  "Handle PROCESS's output TEXT and trigger handlers."
+  (internal-default-process-filter process text)
   (when (buffer-live-p (process-buffer process))
     (with-current-buffer (process-buffer process)
       (when (transmission--content-finished-p)
@@ -454,7 +457,7 @@ METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
   (let ((process (transmission-make-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
     (set-process-sentinel process #'transmission-process-sentinel)
-    (add-function :after (process-filter process) 'transmission-process-filter)
+    (set-process-filter process #'transmission-process-filter)
     (process-put process :request content)
     (process-put process :callback callback)
     (transmission-http-post process content)
@@ -475,7 +478,9 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
 (defun transmission-timer-revert ()
   "Revert the buffer or cancel `transmission-timer'."
   (if (and (memq major-mode transmission-refresh-modes)
-           (not (or isearch-mode (buffer-narrowed-p) (use-region-p))))
+           (not (or (bound-and-true-p isearch-mode)
+                    (buffer-narrowed-p)
+                    (use-region-p))))
       (revert-buffer)
     (cancel-timer transmission-timer)))
 
@@ -514,8 +519,7 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
 
 (defun transmission-every-prefix-p (prefix list)
   "Return t if PREFIX is a prefix to every string in LIST, otherwise nil."
-  (not (cl-loop for string in list
-                if (not (string-prefix-p prefix string)) return t)))
+  (cl-loop for string in list always (string-prefix-p prefix string)))
 
 (defun transmission-slice (str k)
   "Slice STRING into K strings of somewhat equal size.
@@ -554,8 +558,10 @@ If none are found, return nil."
   "Return a string showing SECONDS in human-readable form;
 otherwise some other estimate indicated by SECONDS and PERCENT."
   (if (<= seconds 0)
-      (if (eql percent 1) "Done"
-        (if (char-displayable-p ?∞) (eval-when-compile (char-to-string ?∞)) "Inf"))
+      (cond
+       ((= percent 1) "Done")
+       ((char-displayable-p ?∞) (eval-when-compile (char-to-string ?∞)))
+       (t "Inf"))
     (let* ((minute 60.0)
            (hour 3600.0)
            (day 86400.0)
@@ -685,8 +691,8 @@ Days are the keys of `transmission-schedules'."
   "Return a list of unique announce URLs from all current torrents."
   (let* ((response (transmission-request "torrent-get" '(:fields ("trackers"))))
          (trackers (transmission-refs (transmission-torrents response) 'trackers))
-         (urls (mapcar (lambda (vector) (transmission-refs vector 'announce))
-                       trackers)))
+         (urls (cl-loop for vector in trackers
+                        collect (transmission-refs vector 'announce))))
     (delete-dups (apply #'append (delq nil urls)))))
 
 (defun transmission-btih-p (string)
@@ -886,8 +892,10 @@ point or in region--is non-nil, then BINDINGS and BODY are fed to
                   (mapcar (lambda (id) (cdr (assq 'id id)))
                           (transmission-prop-values-in-region 'tabulated-list-id)))))
      (if ids
-         (let* (,@bindings)
-           ,@body)
+         ,(if bindings
+              `(let* (,@bindings)
+                 ,@body)
+            `(progn ,@body))
        (user-error "No torrent selected"))))
 
 (defun transmission-collect-hook (hook)
@@ -897,7 +905,7 @@ point or in region--is non-nil, then BINDINGS and BODY are fed to
      hook
      (lambda (fun)
        (let ((val (funcall fun)))
-         (when val (push val res)))
+         (when val (cl-pushnew val res :test #'equal)))
        nil))
     (nreverse res)))
 
@@ -964,10 +972,11 @@ When called with a prefix, prompt for DIRECTORY."
      (let-alist (json-read-from-string content)
        (pcase .result
          ("success"
-          (or (and .arguments.torrent-added.name
-                   (message "Added %s" .arguments.torrent-added.name))
-              (and .arguments.torrent-duplicate.name
-                   (message "Already added %s" .arguments.torrent-duplicate.name))))
+          (let-alist .arguments
+            (or (and .torrent-added.name
+                     (message "Added %s" .torrent-added.name))
+                (and .torrent-duplicate.name
+                     (message "Already added %s" .torrent-duplicate.name)))))
          (_ (message .result)))))
    "torrent-add"
    (append (if (and (file-readable-p torrent) (not (file-directory-p torrent)))
@@ -1042,7 +1051,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-let*-ids
       ((prompt "Set bandwidth priority: ")
        (priority (completing-read prompt transmission-priority-alist nil t))
-       (number (cdr (assoc-string priority transmission-priority-alist)))
+       (number (cdr (assq (intern priority) transmission-priority-alist)))
        (arguments `(:ids ,ids :bandwidthPriority ,number)))
     (transmission-request-async nil "torrent-set" arguments)))
 
@@ -1147,9 +1156,9 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
          (array (or (transmission-list-trackers id)
                     (user-error "No trackers to remove")))
          (prompt (format "Remove tracker (%d trackers): " (length array)))
-         (trackers (mapcar (lambda (x) (cons (cdr (assq 'announce x))
-                                             (cdr (assq 'id x))))
-                           array))
+         (trackers (cl-loop for x across array
+                            collect (cons (cdr (assq 'announce x))
+                                          (cdr (assq 'id x)))))
          (completion-extra-properties
           `(:annotation-function
             (lambda (x) (format " ID# %d" (cdr (assoc x ',trackers))))))
@@ -1169,10 +1178,9 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Replace tracker by ID or announce URL."
   (interactive)
   (let* ((id (or transmission-torrent-id (user-error "No torrent selected")))
-         (trackers (or (mapcar (lambda (x)
-                                 (cons (cdr (assq 'announce x))
-                                       (cdr (assq 'id x))))
-                               (transmission-list-trackers id))
+         (trackers (or (cl-loop for x across (transmission-list-trackers id)
+                                collect (cons (cdr (assq 'announce x))
+                                              (cdr (assq 'id x))))
                        (user-error "No trackers to replace")))
          (prompt (format "Replace tracker (%d trackers): " (length trackers)))
          (tid (or (let* ((completion-extra-properties
@@ -1206,8 +1214,8 @@ If DAYS is nil, disable turtle mode schedule."
                      (if (not (eq t .alt-speed-time-enabled)) "(disabled)"
                        (or (transmission-n->days .alt-speed-time-day) "(none)"))))
             (names (transmission-read-strings prompt transmission-schedules))
-            (bits (mapcar (lambda (x) (cdr (assoc-string x transmission-schedules)))
-                          names)))
+            (bits (cl-loop for x in names
+                           collect (cdr (assq (intern x) transmission-schedules)))))
        (list (apply #'logior bits)))))
   (let ((arguments
          (append `(:alt-speed-time-enabled ,(if (zerop days) json-false t))
@@ -1276,7 +1284,7 @@ See `transmission-read-time' for details on time input."
   (interactive)
   (let ((cur (current-buffer)))
     (if (cl-loop for list in (window-prev-buffers)
-                 if (not (eq cur (car list))) return t)
+                 never (eq cur (car list)))
         (quit-window)
       (if (one-window-p)
           (bury-buffer)
@@ -1551,7 +1559,7 @@ Each form in BODY is a column descriptor."
     (setq tabulated-list-entries nil)
     (transmission-do-entries files
       (format "%d%%" (transmission-percent .bytesCompleted .length))
-      (symbol-name (car (rassoc .priority transmission-priority-alist)))
+      (symbol-name (car (rassq .priority transmission-priority-alist)))
       (if (eq .wanted :json-false) "no" "yes")
       (transmission-size .length)
       (if truncate (string-remove-prefix directory .name) .name)))
@@ -1576,7 +1584,7 @@ Each form in BODY is a column descriptor."
              (fmt (if (zerop (mod percent 1)) "%d" "%.2f")))
         (concat "Percent done: " (format fmt percent) "%"))
       (format "Bandwidth priority: %s"
-              (car (rassoc .bandwidthPriority transmission-priority-alist)))
+              (car (rassq .bandwidthPriority transmission-priority-alist)))
       (concat "Speed: "
               (transmission-format-limits
                .honorsSessionLimits .rateDownload .rateUpload
@@ -1689,15 +1697,8 @@ of column descriptors."
 
 (define-derived-mode transmission-peers-mode tabulated-list-mode "Transmission-Peers"
   "Major mode for viewing peer information.
-See https://trac.transmissionbt.com/wiki/PeerStatusText
-for explanation of the peer flags.
-
-In addition to any hooks its parent mode might have run, this
-mode runs the hook `transmission-peers-mode-hook' at mode
-initialization.
-
-Key bindings:
-\\{transmission-peers-mode-map}"
+See https://github.com/transmission/transmission/wiki/Peer-Status-Text
+for explanation of the peer flags."
   :group 'transmission
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
@@ -1767,14 +1768,7 @@ Key bindings:
     ["Quit" quit-window]))
 
 (define-derived-mode transmission-info-mode special-mode "Transmission-Info"
-  "Major mode for viewing and manipulating torrent attributes.
-
-In addition to any hooks its parent mode might have run, this
-mode runs the hook `transmission-info-mode-hook' at mode
-initialization.
-
-Key bindings:
-\\{transmission-info-mode-map}"
+  "Major mode for viewing and manipulating torrent attributes."
   :group 'transmission
   (setq buffer-undo-list t)
   (setq font-lock-defaults '(transmission-info-font-lock-keywords t))
@@ -1818,14 +1812,7 @@ Key bindings:
     ["Quit" quit-window]))
 
 (define-derived-mode transmission-files-mode tabulated-list-mode "Transmission-Files"
-  "Major mode for a torrent's file list.
-
-In addition to any hooks its parent mode might have run, this
-mode runs the hook `transmission-files-mode-hook' at mode
-initialization.
-
-Key bindings:
-\\{transmission-files-mode-map}"
+  "Major mode for a torrent's file list."
   :group 'transmission
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
@@ -1910,15 +1897,8 @@ Key bindings:
 
 (define-derived-mode transmission-mode tabulated-list-mode "Transmission"
   "Major mode for the list of torrents in a Transmission session.
-See https://trac.transmissionbt.com/ for more information about
-Transmission.
-
-In addition to any hooks its parent mode might have run, this
-mode runs the hook `transmission-mode-hook' at mode
-initialization.
-
-Key bindings:
-\\{transmission-mode-map}"
+See https://github.com/transmission/transmission for more information about
+Transmission."
   :group 'transmission
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
