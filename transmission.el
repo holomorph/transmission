@@ -516,8 +516,7 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
 
 (defun transmission-every-prefix-p (prefix list)
   "Return t if PREFIX is a prefix to every string in LIST, otherwise nil."
-  (not (cl-loop for string in list
-                if (not (string-prefix-p prefix string)) return t)))
+  (cl-loop for string in list always (string-prefix-p prefix string)))
 
 (defun transmission-slice (str k)
   "Slice STRING into K strings of somewhat equal size.
@@ -1255,7 +1254,7 @@ See `transmission-read-time' for details on time input."
   (interactive)
   (let ((cur (current-buffer)))
     (if (cl-loop for list in (window-prev-buffers)
-                 if (not (eq cur (car list))) return t)
+                 never (eq cur (car list)))
         (quit-window)
       (if (one-window-p)
           (bury-buffer)
