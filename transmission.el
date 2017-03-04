@@ -555,8 +555,10 @@ If none are found, return nil."
   "Return a string showing SECONDS in human-readable form;
 otherwise some other estimate indicated by SECONDS and PERCENT."
   (if (<= seconds 0)
-      (if (eql percent 1) "Done"
-        (if (char-displayable-p ?∞) (eval-when-compile (char-to-string ?∞)) "Inf"))
+      (cond
+       ((= percent 1) "Done")
+       ((char-displayable-p ?∞) (eval-when-compile (char-to-string ?∞)))
+       (t "Inf"))
     (let* ((minute 60.0)
            (hour 3600.0)
            (day 86400.0)
