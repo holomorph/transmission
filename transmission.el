@@ -1301,6 +1301,24 @@ See `transmission-read-time' for details on time input."
     (if file (find-file-read-only file)
       (user-error "File does not exist"))))
 
+(defun transmission-find-file-other-window ()
+  "Visit the file at point with `find-file-read-only-other-window'."
+  (interactive)
+  (let ((file (run-hook-with-args-until-success 'file-name-at-point-functions)))
+    (if file (find-file-read-only-other-window file)
+      (user-error "File does not exist"))))
+
+(defun transmission-display-file ()
+  "Display the file at point in another window."
+  (interactive)
+  (let* ((file (run-hook-with-args-until-success 'file-name-at-point-functions))
+         (buf (and file (find-file-noselect file))))
+    (if (null buf)
+        (user-error "File does not exist")
+      (with-current-buffer buf
+        (setq buffer-read-only t))
+      (display-buffer buf t))))
+
 (defun transmission-copy-magnet ()
   "Copy magnet link of current torrent."
   (interactive)
@@ -1711,6 +1729,8 @@ for explanation of the peer flags."
 (defvar transmission-files-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'transmission-find-file)
+    (define-key map "o" 'transmission-find-file-other-window)
+    (define-key map (kbd "C-o") 'transmission-display-file)
     (define-key map "!" 'transmission-files-command)
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
@@ -1727,6 +1747,9 @@ for explanation of the peer flags."
     ["Run Command On File" transmission-files-command]
     ["Visit File" transmission-find-file
      "Switch to a read-only buffer visiting file at point"]
+    ["Visit File In Other Window" transmission-find-file-other-window]
+    ["Display File" transmission-display-file
+     "Display a read-only buffer visiting file at point"]
     ["Mark Files Unwanted" transmission-files-unwant]
     ["Mark Files Wanted" transmission-files-want]
     ["Set Files' Bandwidth Priority" transmission-files-priority]
