@@ -1307,27 +1307,20 @@ See `transmission-read-time' for details on time input."
 (defun transmission-find-file ()
   "Visit the file at point with `find-file-read-only'."
   (interactive)
-  (let ((file (run-hook-with-args-until-success 'file-name-at-point-functions)))
-    (if file (find-file-read-only file)
-      (user-error "File does not exist"))))
+  (find-file-read-only (transmission-files-file-at-point)))
 
 (defun transmission-find-file-other-window ()
-  "Visit the file at point with `find-file-read-only-other-window'."
+  "Visit the file at point in another window."
   (interactive)
-  (let ((file (run-hook-with-args-until-success 'file-name-at-point-functions)))
-    (if file (find-file-read-only-other-window file)
-      (user-error "File does not exist"))))
+  (find-file-read-only-other-window (transmission-files-file-at-point)))
 
 (defun transmission-display-file ()
   "Display the file at point in another window."
   (interactive)
-  (let* ((file (run-hook-with-args-until-success 'file-name-at-point-functions))
-         (buf (and file (find-file-noselect file))))
-    (if (null buf)
-        (user-error "File does not exist")
-      (with-current-buffer buf
-        (setq buffer-read-only t))
-      (display-buffer buf t))))
+  (let ((buf (find-file-noselect (transmission-files-file-at-point))))
+    (with-current-buffer buf
+      (read-only-mode 1))
+    (display-buffer buf t)))
 
 (defun transmission-view-file ()
   "Examine the file at point in view mode."
