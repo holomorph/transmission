@@ -1018,6 +1018,16 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
       (setq deactivate-mark t)
       (transmission-request-async nil "torrent-remove" arguments))))
 
+(defun transmission-delete (ids)
+  "Prompt to delete (unlink) torrent at point or torrents in region."
+  (interactive
+   (transmission-let*-ids
+       ((prompt (concat "Delete torrent" (and (< 1 (length ids)) "s") "? ")))
+     (list (and (yes-or-no-p prompt) ids))))
+  (when ids
+    (setq deactivate-mark t)
+    (transmission-request-async nil "torrent-remove" `(:ids ,ids :delete-local-data t))))
+
 (defun transmission-set-bandwidth-priority ()
   "Set bandwidth priority of torrent(s) at point or in region."
   (interactive)
@@ -1318,6 +1328,18 @@ See `transmission-read-time' for details on time input."
       (with-current-buffer buf
         (setq buffer-read-only t))
       (display-buffer buf t))))
+
+(defun transmission-view-file ()
+  "Examine the file at point in view mode."
+  (interactive)
+  (view-file (transmission-files-file-at-point)))
+
+(defun transmission-copy-file-name-as-kill ()
+  "Copy the name of the file at point into the kill ring."
+  (interactive)
+  (let ((filename (transmission-files-file-at-point)))
+    (kill-new filename)
+    (message "Copied %s" filename)))
 
 (defun transmission-copy-magnet ()
   "Copy magnet link of current torrent."
@@ -1731,11 +1753,14 @@ for explanation of the peer flags."
     (define-key map (kbd "RET") 'transmission-find-file)
     (define-key map "o" 'transmission-find-file-other-window)
     (define-key map (kbd "C-o") 'transmission-display-file)
+    (define-key map "^" 'quit-window)
     (define-key map "!" 'transmission-files-command)
+    (define-key map "X" 'transmission-files-command)
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
     (define-key map "m" 'transmission-move)
     (define-key map "u" 'transmission-files-unwant)
+    (define-key map "v" 'transmission-view-file)
     (define-key map "w" 'transmission-files-want)
     (define-key map "y" 'transmission-files-priority)
     map)
@@ -1750,6 +1775,8 @@ for explanation of the peer flags."
     ["Visit File In Other Window" transmission-find-file-other-window]
     ["Display File" transmission-display-file
      "Display a read-only buffer visiting file at point"]
+    ["Visit File In View Mode" transmission-view-file]
+    "--"
     ["Mark Files Unwanted" transmission-files-unwant]
     ["Mark Files Wanted" transmission-files-want]
     ["Set Files' Bandwidth Priority" transmission-files-priority]
@@ -1793,6 +1820,7 @@ for explanation of the peer flags."
     (define-key map "l" 'transmission-set-ratio)
     (define-key map "m" 'transmission-move)
     (define-key map "r" 'transmission-remove)
+    (define-key map "D" 'transmission-delete)
     (define-key map "s" 'transmission-toggle)
     (define-key map "t" 'transmission-trackers-add)
     (define-key map "u" 'transmission-set-upload)
@@ -1820,6 +1848,9 @@ for explanation of the peer flags."
       :help "Toggle whether torrent honors session limits."]
      ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio])
     ["Move Torrent" transmission-move]
+    ["Remove Torrent" transmission-remove]
+    ["Delete Torrent" transmission-delete
+     :help "Delete torrent contents from disk."]
     ["Reannounce Torrent" transmission-reannounce]
     ["Verify Torrent" transmission-verify]
     "--"
