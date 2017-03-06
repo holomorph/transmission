@@ -1,3 +1,11 @@
+** Features
+
+*** Added commands for viewing or displaying torrent files
+corresponding to various dired commands.  These include
+`transmission-find-file-other-window', `transmission-display-file',
+and `transmission-view-file', bound to the corresponding keys as in
+Dired.
+
 * Changes in 0.10
 
 ** Features
