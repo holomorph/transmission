@@ -862,7 +862,7 @@ MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
   "Return a pluralized string expressing quantity N of thing S.
 Done in the spirit of `dired-plural-s'."
   (let ((m (if (= -1 n) 0 n)))
-    (concat (transmission-group-digits m) " " s (unless (= m 1) "s"))))
+    (concat (transmission-group-digits m) " " s (when (/= m 1) "s"))))
 
 (defun transmission-format-size (bytes)
   "Format size BYTES into a more readable string."
@@ -1300,7 +1300,7 @@ See `transmission-read-time' for details on time input."
           (input (read-shell-command prompt nil nil def t)))
      (if fap (list (if (string-empty-p input) (or (car def) "") input) fap)
        (user-error "File does not exist"))))
-  (let* ((args (nconc (split-string command) (list (expand-file-name file))))
+  (let* ((args (nconc (split-string-and-unquote command) (list (expand-file-name file))))
          (prog (car args)))
     (apply #'start-process prog nil args)))
 
