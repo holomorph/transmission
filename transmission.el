@@ -1327,6 +1327,11 @@ See `transmission-read-time' for details on time input."
   (interactive)
   (view-file (transmission-files-file-at-point)))
 
+(defun transmission-browse-url-of-file ()
+  "Browse file at point in a WWW browser."
+  (interactive)
+  (browse-url-of-file (expand-file-name (transmission-files-file-at-point))))
+
 (defun transmission-copy-file-name-as-kill ()
   "Copy the name of the file at point into the kill ring."
   (interactive)
@@ -1748,6 +1753,7 @@ for explanation of the peer flags."
     (define-key map "^" 'quit-window)
     (define-key map "!" 'transmission-files-command)
     (define-key map "X" 'transmission-files-command)
+    (define-key map "W" 'transmission-browse-url-of-file)
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
     (define-key map "m" 'transmission-move)
@@ -1768,6 +1774,7 @@ for explanation of the peer flags."
     ["Display File" transmission-display-file
      "Display a read-only buffer visiting file at point"]
     ["Visit File In View Mode" transmission-view-file]
+    ["Open File In WWW Browser" transmission-browse-url-of-file]
     "--"
     ["Mark Files Unwanted" transmission-files-unwant]
     ["Mark Files Wanted" transmission-files-want]
