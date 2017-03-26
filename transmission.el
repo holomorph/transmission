@@ -1620,6 +1620,7 @@ Also run the timer for timer object `transmission-timer'."
 
 (defmacro transmission-context (mode)
   "Switch to a context buffer of major mode MODE."
+  (declare (debug (symbolp)))
   (cl-assert (string-suffix-p "-mode" (symbol-name mode)))
   (let ((name (make-symbol "name")))
     `(let ((id (or transmission-torrent-id
