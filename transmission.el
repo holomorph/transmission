@@ -781,19 +781,17 @@ The two are spliced together with indices for each file, sorted by file name."
 If IP is not a key, add it with the value from `transmission-geoip-function'.
 If `transmission-geoip-function' has changed, reset `transmission-geoip-hash'
 from `transmission-hash-table'."
-  (when (functionp transmission-geoip-function)
-    (if (not transmission-geoip-use-cache)
-        (funcall transmission-geoip-function ip)
-      (let ((fn (get 'transmission-geoip-hash :fn)))
-        (if (eq fn transmission-geoip-function)
-            (or (gethash ip transmission-geoip-hash)
-                (setf (gethash ip transmission-geoip-hash)
-                      (funcall transmission-geoip-function ip)))
-          (setq transmission-geoip-hash
-                (copy-hash-table transmission-hash-table))
-          (put 'transmission-geoip-hash :fn transmission-geoip-function)
-          (setf (gethash ip transmission-geoip-hash)
-                (funcall transmission-geoip-function ip)))))))
+  (let ((fun transmission-geoip-function)
+        (cache transmission-geoip-hash))
+    (when (functionp fun)
+      (if (not transmission-geoip-use-cache)
+          (funcall fun ip)
+        (if (eq fun (get 'transmission-geoip-hash :fn))
+            (or (gethash ip cache)
+                (setf (gethash ip cache) (funcall fun ip)))
+          (setq cache (copy-hash-table transmission-hash-table))
+          (put 'transmission-geoip-hash :fn fun)
+          (setf (gethash ip cache) (funcall fun ip)))))))
 
 (defun transmission-time (seconds)
   "Format a time string, given SECONDS from the epoch."
