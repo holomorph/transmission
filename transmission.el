@@ -1052,6 +1052,14 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                      `(:speed-limit-up-enabled t :speed-limit-up ,limit))))
     (transmission-request-async nil "session-set" arguments)))
 
+(defun transmission-set-cache-size (size)
+  "Set global cache size in MB."
+  (interactive
+   (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+     (list (read-number (format "Set global cache size (%d MB): " .cache-size-mb)))))
+  (let ((arguments (list :cache-size-mb (max size 1))))
+    (transmission-request-async nil "session-set" arguments)))
+
 (defun transmission-set-ratio (limit)
   "Set global seed ratio LIMIT."
   (interactive (transmission-prompt-ratio-limit))
