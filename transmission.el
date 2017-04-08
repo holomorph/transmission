@@ -907,7 +907,7 @@ is set."
                       (region-beginning) (region-end) 'tabulated-list-id)
                      collect (cdr (assq 'id x))))
             (let ((value (get-text-property (point) 'tabulated-list-id)))
-              (when value (setq ids (cdr (assq 'id value)))))))
+              (when value (setq ids (list (cdr (assq 'id value))))))))
         (if (null ids) (user-error "No torrent selected")
           (when ,region (setq deactivate-mark t))
           ,@spec)))))
