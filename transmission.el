@@ -909,7 +909,6 @@ is set."
             (let ((value (get-text-property (point) 'tabulated-list-id)))
               (when value (setq ids (list (cdr (assq 'id value))))))))
         (if (null ids) (user-error "No torrent selected")
-          (when ,region (setq deactivate-mark t))
           ,@spec)))))
 
 (defun transmission-collect-hook (hook)
@@ -1016,14 +1015,18 @@ When called with a prefix, prompt for DIRECTORY."
   (transmission-interactive
    (let* ((dir (read-directory-name "New directory: "))
           (prompt (format "Move torrent%s to %s? " (if (cdr ids) "s" "") dir)))
-     (if (y-or-n-p prompt) (list ids dir) '(nil nil))))
+     (if (y-or-n-p prompt)
+         (progn (setq deactivate-mark t) (list ids dir))
+       '(nil nil))))
   (when ids
     (let ((arguments (list :ids ids :move t :location (expand-file-name location))))
       (transmission-request-async nil "torrent-set-location" arguments))))
 
 (defun transmission-reannounce (ids)
   "Reannounce torrent at point or in region."
-  (transmission-interactive (list ids))
+  (transmission-interactive
+   (setq deactivate-mark t)
+   (list ids))
   (when ids
     (transmission-request-async nil "torrent-reannounce" (list :ids ids))))
 
@@ -1033,7 +1036,8 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-interactive
    (if (yes-or-no-p (concat "Remove " (and current-prefix-arg "and unlink ")
                             "torrent" (and (< 1 (length ids)) "s") "? "))
-       (list ids current-prefix-arg) '(nil nil)))
+       (progn (setq deactivate-mark t) (list ids current-prefix-arg))
+     '(nil nil)))
   (when ids
     (let ((arguments `(:ids ,ids :delete-local-data ,(and unlink t))))
       (transmission-request-async nil "torrent-remove" arguments))))
@@ -1042,7 +1046,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Prompt to delete (unlink) torrent at point or torrents in region."
   (transmission-interactive
    (let* ((prompt (concat "Delete torrent" (and (< 1 (length ids)) "s") "? ")))
-     (list (and (yes-or-no-p prompt) ids))))
+     (list (and (yes-or-no-p prompt) (setq deactivate-mark t) ids))))
   (when ids
     (transmission-request-async nil "torrent-remove" `(:ids ,ids :delete-local-data t))))
 
@@ -1116,7 +1120,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 
 (defun transmission-toggle (ids)
   "Toggle torrent between started and stopped."
-  (transmission-interactive (list ids))
+  (transmission-interactive (setq deactivate-mark t) (list ids))
   (when ids
     (transmission-request-async
      (lambda (content)
@@ -1274,7 +1278,7 @@ See `transmission-read-time' for details on time input."
   "Verify torrent at point or in region."
   (transmission-interactive
    (if (y-or-n-p (concat "Verify torrent" (if (cdr ids) "s") "? "))
-       (list ids) '(nil)))
+       (progn (setq deactivate-mark t) (list ids)) '(nil)))
   (when ids (transmission-request-async nil "torrent-verify" (list :ids ids))))
 
 (defun transmission-quit ()
