@@ -745,7 +745,7 @@ Days are the keys of `transmission-schedules'."
          (end (and region (region-end)))
          (indices
           (if (null region)
-              (cdr (assq 'index (get-text-property (point) prop)))
+              (list (cdr (assq 'index (get-text-property (point) prop))))
             (mapcar (lambda (id) (cdr (assq 'index id)))
                     (transmission-text-property-all beg end prop)))))
     (if (and id indices)
