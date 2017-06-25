@@ -933,7 +933,11 @@ is set."
                     ((or (listp form) (null form))
                      (mapcar (lambda (subexp) (expand subexp x)) form))
                     (t (error "bad syntax: %S" form)))))
-              (expand spec `(when ,region (format "[%d in region]" (length ids))))))))))
+              (expand spec
+                      `(cond
+                        (transmission-marked-ids
+                         (format "[%d marked]" (length transmission-marked-ids)))
+                        (,region (format "[%d in region]" (length ids)))))))))))
 
 (defun transmission-collect-hook (hook)
   "Run HOOK and return a list of non-nil results from calling its elements."
