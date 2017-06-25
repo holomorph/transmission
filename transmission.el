@@ -909,7 +909,26 @@ is set."
             (let ((value (get-text-property (point) 'tabulated-list-id)))
               (when value (setq ids (list (cdr (assq 'id value))))))))
         (if (null ids) (user-error "No torrent selected")
-          ,@spec)))))
+          ,@(cl-labels
+                ((expand (form x)
+                   (cond
+                    ((atom form) form)
+                    ((and (listp form)
+                          (memq (car form)
+                                '(read-string y-or-n-p yes-or-no-p completing-read)))
+                     (pcase form
+                       (`(read-string ,prompt . ,rest)
+                        `(read-string (concat ,prompt ,x) ,@rest))
+                       (`(y-or-n-p ,prompt)
+                        `(y-or-n-p (concat ,prompt ,x)))
+                       (`(yes-or-no-p ,prompt)
+                        `(yes-or-no-p (concat ,prompt ,x)))
+                       (`(completing-read ,prompt . ,rest)
+                        `(completing-read (concat ,prompt ,x " ") ,@rest))))
+                    ((or (listp form) (null form))
+                     (mapcar (lambda (subexp) (expand subexp x)) form))
+                    (t (error "bad syntax: %S" form)))))
+              (expand spec `(when ,region (format "[%d in region]" (length ids))))))))))
 
 (defun transmission-collect-hook (hook)
   "Run HOOK and return a list of non-nil results from calling its elements."
