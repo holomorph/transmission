@@ -902,7 +902,9 @@ is set."
   (declare (debug t))
   (let ((region (make-symbol "region")))
     `(interactive
-      (let ((ids (or transmission-torrent-id transmission-marked-ids))
+      (let ((ids
+             (or (and transmission-torrent-id (list transmission-torrent-id))
+                 transmission-marked-ids))
             ,region)
         (when (null ids)
           (if (setq ,region (use-region-p))
