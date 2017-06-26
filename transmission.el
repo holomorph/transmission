@@ -920,24 +920,24 @@ is set."
                     ((atom form) form)
                     ((and (listp form)
                           (memq (car form)
-                                '(read-string y-or-n-p yes-or-no-p completing-read)))
+                                '(read-number y-or-n-p yes-or-no-p completing-read)))
                      (pcase form
-                       (`(read-string ,prompt . ,rest)
-                        `(read-string (concat ,prompt ,x) ,@rest))
+                       (`(read-number ,prompt . ,rest)
+                        `(read-number (concat ,prompt ,x) ,@rest))
                        (`(y-or-n-p ,prompt)
                         `(y-or-n-p (concat ,prompt ,x)))
                        (`(yes-or-no-p ,prompt)
                         `(yes-or-no-p (concat ,prompt ,x)))
                        (`(completing-read ,prompt . ,rest)
-                        `(completing-read (concat ,prompt ,x " ") ,@rest))))
+                        `(completing-read (concat ,prompt ,x) ,@rest))))
                     ((or (listp form) (null form))
                      (mapcar (lambda (subexp) (expand subexp x)) form))
                     (t (error "bad syntax: %S" form)))))
               (expand spec
                       `(cond
                         (transmission-marked-ids
-                         (format "[%d marked]" (length transmission-marked-ids)))
-                        (,region (format "[%d in region]" (length ids)))))))))))
+                         (format "[%d marked] " (length transmission-marked-ids)))
+                        (,region (format "[%d in region] " (length ids)))))))))))
 
 (defun transmission-collect-hook (hook)
   "Run HOOK and return a list of non-nil results from calling its elements."
@@ -1061,20 +1061,14 @@ When called with a prefix, prompt for DIRECTORY."
   (transmission-interactive
    (let* ((dir (read-directory-name "New directory: "))
           (prompt (format "Move torrent%s to %s? " (if (cdr ids) "s" "") dir)))
-     (if (y-or-n-p prompt)
-         (progn (setq deactivate-mark t transmission-marked-ids nil)
-                (list ids dir))
-       '(nil nil))))
+     (if (y-or-n-p prompt) (list ids dir) '(nil nil))))
   (when ids
     (let ((arguments (list :ids ids :move t :location (expand-file-name location))))
       (transmission-request-async nil "torrent-set-location" arguments))))
 
 (defun transmission-reannounce (ids)
   "Reannounce torrent at point or in region."
-  (transmission-interactive
-   (setq deactivate-mark t)
-   (setq transmission-marked-ids nil)
-   (list ids))
+  (transmission-interactive (list ids))
   (when ids
     (transmission-request-async nil "torrent-reannounce" (list :ids ids))))
 
@@ -1095,7 +1089,10 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Prompt to delete (unlink) torrent at point or torrents in region."
   (transmission-interactive
    (let* ((prompt (concat "Delete torrent" (and (< 1 (length ids)) "s") "? ")))
-     (list (and (yes-or-no-p prompt) (setq deactivate-mark t) ids))))
+     (list
+      (and (yes-or-no-p prompt)
+           (setq transmission-marked-ids nil deactivate-mark t)
+           ids))))
   (when ids
     (transmission-request-async nil "torrent-remove" `(:ids ,ids :delete-local-data t))))
 
@@ -1105,7 +1102,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
    (let* ((prompt "Set bandwidth priority: ")
           (priority (completing-read prompt transmission-priority-alist nil t))
           (number (cdr (assq (intern priority) transmission-priority-alist))))
-     (list ids number)))
+     (list (when number ids) number)))
   (when ids
     (let ((arguments `(:ids ,ids :bandwidthPriority ,priority)))
       (transmission-request-async nil "torrent-set" arguments))))
@@ -1170,7 +1167,6 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-toggle (ids)
   "Toggle torrent between started and stopped."
   (transmission-interactive
-   (setq deactivate-mark t transmission-marked-ids nil)
    (list ids))
   (when ids
     (transmission-request-async
@@ -1329,7 +1325,7 @@ See `transmission-read-time' for details on time input."
   "Verify torrent at point or in region."
   (transmission-interactive
    (if (y-or-n-p (concat "Verify torrent" (if (cdr ids) "s") "? "))
-       (progn (setq deactivate-mark t) (list ids)) '(nil)))
+       (list ids) '(nil)))
   (when ids (transmission-request-async nil "torrent-verify" (list :ids ids))))
 
 (defun transmission-quit ()
