@@ -549,16 +549,6 @@ If none are found, return nil."
         (goto-char (or pos end))))
     (nreverse (delq nil res))))
 
-(defun transmission-prop-values-in-region (prop)
-  "Return a list of truthy values of text property PROP in region or at point.
-If none are found, return nil."
-  (if (use-region-p)
-      (let ((beg (region-beginning))
-            (end (region-end)))
-        (transmission-text-property-all beg end prop))
-    (let ((value (get-text-property (point) prop)))
-      (if value (list value)))))
-
 (defun transmission-eta (seconds percent)
   "Return a string showing SECONDS in human-readable form;
 otherwise some other estimate indicated by SECONDS and PERCENT."
