@@ -1436,10 +1436,14 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
           (while (not (eobp))
             (transmission-toggle-mark-at-point)
             (forward-line))))
-    (let ((sign (cond ((> arg 0) 1) ((< arg 0) -1) (t 0))))
-      (dotimes (_ (abs arg))
-        (transmission-toggle-mark-at-point)
-        (forward-line sign)))))
+    (while (and (> arg 0) (not (eobp)))
+      (setq arg (1- arg))
+      (transmission-toggle-mark-at-point)
+      (forward-line 1))
+    (while (and (< arg 0) (not (bobp)))
+      (setq arg (1+ arg))
+      (forward-line -1)
+      (transmission-toggle-mark-at-point))))
 
 (defun transmission-unmark-all ()
   "Remove mark from all items."
