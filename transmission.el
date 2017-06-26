@@ -1416,7 +1416,7 @@ See `transmission-read-time' for details on time input."
 Registers the change in `transmission-marked-ids'."
   (let* ((eid (tabulated-list-get-id))
          (id (cdr (or (assq 'id eid) (assq 'index eid)))))
-    (if (member id transmission-marked-ids)
+    (if (memq id transmission-marked-ids)
         (progn
           (setq transmission-marked-ids (delete id transmission-marked-ids))
           (tabulated-list-put-tag " "))
@@ -1749,7 +1749,7 @@ of column descriptors."
                 (`transmission-mode 'id)
                 (`transmission-files-mode 'index)))
          (item-id (cdr (assq key id))))
-    (when (member item-id transmission-marked-ids)
+    (when (memq item-id transmission-marked-ids)
       (save-excursion
         (forward-line -1)
         (tabulated-list-put-tag ">")))))
