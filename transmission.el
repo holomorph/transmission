@@ -684,7 +684,7 @@ Days are the keys of `transmission-schedules'."
          (torrents (transmission-torrents response)))
     (cdr (assq 'trackerStats (elt torrents 0)))))
 
-(defun transmission-list-unique-announce-urls ()
+(defun transmission-unique-announce-urls ()
   "Return a list of unique announce URLs from all current torrents."
   (let* ((response (transmission-request "torrent-get" '(:fields ("trackers"))))
          (trackers (transmission-refs (transmission-torrents response) 'trackers))
@@ -1117,7 +1117,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                   "Add announce URLs: "
                   (cl-loop for url in
                            (append transmission-trackers
-                                   (transmission-list-unique-announce-urls))
+                                   (transmission-unique-announce-urls))
                            unless (member url trackers) collect url))
                  (user-error "No trackers to add")))
        (arguments (list :ids ids :trackerAdd
@@ -1176,7 +1176,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
          (replacement
           (completing-read "Replacement tracker? "
                            (append transmission-trackers
-                                   (transmission-list-unique-announce-urls))))
+                                   (transmission-unique-announce-urls))))
          (arguments (list :ids id :trackerReplace (vector tid replacement))))
     (transmission-request-async
      (lambda (content)
