@@ -1163,8 +1163,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 
 (defun transmission-toggle (ids)
   "Toggle selected torrent(s) between started and stopped."
-  (transmission-interactive
-   (list ids))
+  (transmission-interactive (list ids))
   (when ids
     (transmission-request-async
      (lambda (content)
@@ -1416,7 +1415,8 @@ Registers the change in `transmission-marked-ids'."
           (setq transmission-marked-ids (delete id transmission-marked-ids))
           (tabulated-list-put-tag " "))
       (push id transmission-marked-ids)
-      (tabulated-list-put-tag ">"))))
+      (tabulated-list-put-tag ">"))
+    (set-buffer-modified-p nil)))
 
 (defun transmission-toggle-mark (arg)
   "Toggle mark of item(s) at point.
