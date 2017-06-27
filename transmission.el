@@ -883,6 +883,13 @@ KEY should be a key in an element of `tabulated-list-entries'."
     (> (cdr (assq key (car a)))
        (cdr (assq key (car b))))))
 
+(defun transmission-move-to-file-name ()
+  "Move to the beginning of the filename on the current line."
+  (let* ((eol (line-end-position))
+         (change (next-single-property-change (point-at-bol) 'transmission-name nil eol)))
+    (when (and change (< change eol))
+      (goto-char change))))
+
 (defmacro transmission-interactive (&rest spec)
   "Specify interactive use of a function.
 The symbol `ids' is bound to torrent IDs marked, at point or in region.
@@ -1609,7 +1616,7 @@ Each form in BODY is a column descriptor."
     (format "%.1f" (if (> .uploadRatio 0) .uploadRatio 0))
     (if (not (zerop .error)) (propertize "error" 'font-lock-face 'error)
       (transmission-format-status .status .rateUpload .rateDownload))
-    .name)
+    (propertize .name 'transmission-name t))
   (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
@@ -1627,7 +1634,8 @@ Each form in BODY is a column descriptor."
       (symbol-name (car (rassq .priority transmission-priority-alist)))
       (if (eq .wanted :json-false) "no" "yes")
       (transmission-size .length)
-      (if truncate (string-remove-prefix directory .name) .name)))
+      (propertize (if truncate (string-remove-prefix directory .name) .name)
+                  'transmission-name t)))
   (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
@@ -1846,6 +1854,10 @@ for explanation of the peer flags."
   (interactive)
   (transmission-context transmission-info-mode))
 
+(defvar transmission-files-font-lock-keywords
+  '(("^[>]" (".+" (transmission-move-to-file-name) nil (0 'warning))))
+  "Default expressions to highlight in `transmission-files-mode'.")
+
 (defvar transmission-files-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'transmission-find-file)
@@ -1903,6 +1915,7 @@ for explanation of the peer flags."
   (setq transmission-refresh-function #'transmission-draw-files)
   (setq tabulated-list-printer #'transmission-print-torrent)
   (setq-local revert-buffer-function #'transmission-refresh)
+  (setq-local font-lock-defaults '(transmission-files-font-lock-keywords t))
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (add-hook 'before-revert-hook #'transmission-tabulated-list-format nil t))
 
@@ -1910,6 +1923,10 @@ for explanation of the peer flags."
   "Open a `transmission-files-mode' buffer for torrent at point."
   (interactive)
   (transmission-context transmission-files-mode))
+
+(defvar transmission-font-lock-keywords
+  '(("^[>]" (".+" (transmission-move-to-file-name) nil (0 'warning))))
+  "Default expressions to highlight in `transmission-mode'.")
 
 (defvar transmission-mode-map
   (let ((map (make-sparse-keymap)))
@@ -1998,6 +2015,7 @@ Transmission."
   (setq transmission-refresh-function #'transmission-draw-torrents)
   (setq tabulated-list-printer #'transmission-print-torrent)
   (setq-local revert-buffer-function #'transmission-refresh)
+  (setq-local font-lock-defaults '(transmission-font-lock-keywords t))
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (add-hook 'before-revert-hook #'transmission-tabulated-list-format nil t))
 
