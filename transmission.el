@@ -744,7 +744,6 @@ Days are the keys of `transmission-schedules'."
                         (transmission-text-property-all beg end prop))))))
     (if (and id indices)
         (let ((arguments (list :ids id action indices)))
-          (setq transmission-marked-ids nil)
           (transmission-request-async nil "torrent-set" arguments))
       (user-error "No files selected or at point"))))
 
