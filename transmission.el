@@ -1244,11 +1244,14 @@ See `transmission-read-time' for details on time input."
    (lambda (content)
      (let* ((arguments (cdr (assq 'arguments (json-read-from-string content))))
             (enable (equal json-false (cdr (assq 'alt-speed-enabled arguments)))))
-       (when (y-or-n-p (concat (if enable "En" "Dis") "able turtle mode? "))
-         (transmission-request-async
-          (lambda (content)
-            (message (cdr (assq 'result (json-read-from-string content)))))
-          "session-set" `(:alt-speed-enabled ,(or enable json-false))))))
+       (transmission-request-async
+        (lambda (content)
+          (let-alist (json-read-from-string content)
+            (pcase .result
+              ("success"
+               (message (concat "Turtle mode " (if enable "en" "dis") "abled")))
+              (_ (message .result)))))
+        "session-set" `(:alt-speed-enabled ,(or enable json-false)))))
    "session-get"))
 
 (defun transmission-verify ()
