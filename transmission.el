@@ -894,12 +894,13 @@ KEY should be a key in an element of `tabulated-list-entries'."
 The symbol `ids' is bound to torrent IDs marked, at point or in region.
 Else, a `user-error' is signalled."
   (declare (debug t))
-  (let ((region (make-symbol "region")))
+  (let ((region (make-symbol "region"))
+        (marked (make-symbol "marked")))
     `(interactive
-      (let ((ids
-             (or (and transmission-torrent-id (list transmission-torrent-id))
-                 transmission-marked-ids))
-            ,region)
+      (let (ids ,region ,marked)
+        (setq ids
+              (or (and transmission-torrent-id (list transmission-torrent-id))
+                  (setq ,marked transmission-marked-ids)))
         (when (null ids)
           (if (setq ,region (use-region-p))
               (setq ids
@@ -931,8 +932,7 @@ Else, a `user-error' is signalled."
                     (t (error "bad syntax: %S" form)))))
               (expand spec
                       `(cond
-                        (transmission-marked-ids
-                         (format "[%d marked] " (length transmission-marked-ids)))
+                        (,marked (format "[%d marked] " (length ,marked)))
                         (,region (format "[%d in region] " (length ids)))))))))))
 
 (defun transmission-collect-hook (hook)
