@@ -895,12 +895,12 @@ The symbol `ids' is bound to torrent IDs marked, at point or in region.
 Else, a `user-error' is signalled."
   (declare (debug t))
   (let ((region (make-symbol "region"))
-        (marked (make-symbol "marked")))
+        (marked (make-symbol "marked"))
+        (torrent (make-symbol "torrent")))
     `(interactive
-      (let (ids ,region ,marked)
-        (setq ids
-              (or (and transmission-torrent-id (list transmission-torrent-id))
-                  (setq ,marked transmission-marked-ids)))
+      (let ((,torrent transmission-torrent-id) ,marked ,region ids)
+        (setq ids (or (and ,torrent (list ,torrent))
+                      (setq ,marked transmission-marked-ids)))
         (when (null ids)
           (if (setq ,region (use-region-p))
               (setq ids
