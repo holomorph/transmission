@@ -1442,10 +1442,12 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
 (defun transmission-unmark-all ()
   "Remove mark from all items."
   (interactive)
-  (when transmission-marked-ids
-    (setq transmission-marked-ids nil)
-    (transmission-with-saved-state
-      (tabulated-list-print))))
+  (let (len)
+    (when (> (setq len (length transmission-marked-ids)) 0)
+      (setq transmission-marked-ids nil)
+      (message "%s removed" (transmission-plural len "mark"))
+      (transmission-with-saved-state
+        (tabulated-list-print)))))
 
 
 ;; Formatting
