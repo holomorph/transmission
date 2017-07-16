@@ -875,6 +875,19 @@ Done in the spirit of `dired-plural-s'."
   (format "%s (%s bytes)" (transmission-size bytes)
           (transmission-group-digits bytes)))
 
+(defun transmission-toggle-mark-at-point ()
+  "Toggle mark of item at point.
+Registers the change in `transmission-marked-ids'."
+  (let* ((eid (tabulated-list-get-id))
+         (id (cdr (or (assq 'id eid) (assq 'index eid)))))
+    (if (memq id transmission-marked-ids)
+        (progn
+          (setq transmission-marked-ids (delete id transmission-marked-ids))
+          (tabulated-list-put-tag " "))
+      (push id transmission-marked-ids)
+      (tabulated-list-put-tag ">"))
+    (set-buffer-modified-p nil)))
+
 (defun transmission-tabulated-list-pred (key)
   "Return a sorting predicate comparing values of KEY.
 KEY should be a key in an element of `tabulated-list-entries'."
@@ -891,8 +904,8 @@ KEY should be a key in an element of `tabulated-list-entries'."
 
 (defmacro transmission-interactive (&rest spec)
   "Specify interactive use of a function.
-The symbol `ids' is bound to torrent IDs marked, at point or in region.
-Else, a `user-error' is signalled."
+The symbol `ids' is bound to a list of torrent IDs marked, at
+point or in region, otherwise a `user-error' is signalled."
   (declare (debug t))
   (let ((region (make-symbol "region"))
         (marked (make-symbol "marked"))
@@ -917,7 +930,8 @@ Else, a `user-error' is signalled."
                     ((atom form) form)
                     ((and (listp form)
                           (memq (car form)
-                                '(read-number y-or-n-p yes-or-no-p completing-read)))
+                                '(read-number y-or-n-p yes-or-no-p
+                                  completing-read transmission-read-strings)))
                      (pcase form
                        (`(read-number ,prompt . ,rest)
                         `(read-number (concat ,prompt ,x) ,@rest))
@@ -926,7 +940,9 @@ Else, a `user-error' is signalled."
                        (`(yes-or-no-p ,prompt)
                         `(yes-or-no-p (concat ,prompt ,x)))
                        (`(completing-read ,prompt . ,rest)
-                        `(completing-read (concat ,prompt ,x) ,@rest))))
+                        `(completing-read (concat ,prompt ,x) ,@rest))
+                       (`(transmission-read-strings ,prompt . ,rest)
+                        `(transmission-read-strings (concat ,prompt ,x) ,@rest))))
                     ((or (listp form) (null form))
                      (mapcar (lambda (subexp) (expand subexp x)) form))
                     (t (error "bad syntax: %S" form)))))
@@ -1403,19 +1419,6 @@ See `transmission-read-time' for details on time input."
     (when magnet
       (kill-new magnet)
       (message "Copied %s" magnet))))
-
-(defun transmission-toggle-mark-at-point ()
-  "Toggle mark of item at point.
-Registers the change in `transmission-marked-ids'."
-  (let* ((eid (tabulated-list-get-id))
-         (id (cdr (or (assq 'id eid) (assq 'index eid)))))
-    (if (memq id transmission-marked-ids)
-        (progn
-          (setq transmission-marked-ids (delete id transmission-marked-ids))
-          (tabulated-list-put-tag " "))
-      (push id transmission-marked-ids)
-      (tabulated-list-put-tag ">"))
-    (set-buffer-modified-p nil)))
 
 (defun transmission-toggle-mark (arg)
   "Toggle mark of item(s) at point.
