@@ -1,10 +1,28 @@
 ** Features
 
+*** Dired-like marks for torrents and their contents.
+For items such as torrents or files within torrents, actions which
+either acted on point and the items on region can now be applied on
+marked items.  Marks take precedence, followed by the region, then the
+item at point.
+
+**** New commands for manipulating marks `transmission-toggle-mark'
+and `transmission-unmark-all', bound to the corresponding keys as in
+Dired.
+
 *** Added commands for viewing or displaying torrent files
 corresponding to various dired commands.  These include
 `transmission-find-file-other-window', `transmission-display-file',
 and `transmission-view-file', bound to the corresponding keys as in
 Dired.
+
+** Changes
+
+*** Many interactive functions now have signatures.
+These commands now somewhat reflect the Transmission API, making them
+more useful from Lisp.
+
+*** `transmission-move' is no longer bound.
 
 * Changes in 0.10
 
@@ -12,24 +30,24 @@ Dired.
 
 *** New commands for controlling turtle mode, or "alt-speed" mode.
 
-**** `transmission-turtle-toggle` for toggling whether the limits are
+**** `transmission-turtle-toggle' for toggling whether the limits are
 active.
 
-**** `transmission-turtle-set-days` and
-`transmission-turtle-set-times` for indicating the days of the week
+**** `transmission-turtle-set-days' and
+`transmission-turtle-set-times' for indicating the days of the week
 and time of day when the limits should be automatically enabled,
 respectively.
 
-**** `transmission-turtle-set-speeds` to set the alternative speed
+**** `transmission-turtle-set-speeds' to set the alternative speed
 limits.
 
 *** Executing a command on a file now uses MIME (mailcap) to guess
 possible default commands.  These can be navigated with M-n in the
-`transmission-files-command` prompt.
+`transmission-files-command' prompt.
 
-*** New command `transmission-free` to report free disk space
+*** New command `transmission-free' to report free disk space
 
-*** New command `transmission-stats` to report session statistics
+*** New command `transmission-stats' to report session statistics
 
 *** Torrent specific limits are shown in info context.
 Specifically, ratio, download rate, and upload rate information.
@@ -67,7 +85,7 @@ commands.
 
 *** Point, mark, and window start are better managed across refresh.
 Before, if a particular buffer was being viewed in multiple windows,
-this would confuse `transmission-refresh` and the state would be lost.
+this would confuse `transmission-refresh' and the state would be lost.
 Now, the state is recorded and restored in each window showing a
 buffer, resulting in much improved behavior.
 
@@ -127,10 +145,10 @@ timer to refresh the associated buffer.
 *** New command for copying the current torrent's magnet link
 into the kill ring.
 
-*** `transmission-add` now has a conditional default argument.
+*** `transmission-add' now has a conditional default argument.
 The default argument is a guess of a valid torrent at point, either as
 a URL, file name, magnet link, or info hash. The behavior can be
-customized with the new variable `transmission-torrent-functions`.
+customized with the new variable `transmission-torrent-functions'.
 
 *** New one-line pieces display.
 Visible when new custom variable `transmission-pieces-display' is set
@@ -195,7 +213,7 @@ Ultimately dropped the dependency on seq.el
 
 **** Set `line-move-visual' to nil in tabulated-list buffers
 
-*** New function `transmission-request-async` for sending requests
+*** New function `transmission-request-async' for sending requests
 without blocking to wait for a response.
 
 * Changes in 0.5
@@ -203,11 +221,11 @@ without blocking to wait for a response.
 ** Features
 
 *** Download directory can be specified when adding a torrent
-by prefixing `transmission-add`
+by prefixing `transmission-add'
 
-*** New command `transmission-move` for changing download directory
+*** New command `transmission-move' for changing download directory
 
-*** `tabulated-list-mode` is employed for torrent and file listing.
+*** `tabulated-list-mode' is employed for torrent and file listing.
 This adds some sorting facilities to these listings, as well as a
 header line.
 
@@ -229,13 +247,13 @@ A count of pieces obtained and a percentage are shown.
 *** transmission-quit is smarter now
 
 *** More use is made of global and buffer-local variables
-For instance, `transmission-torrent-id`, `transmission-torrent-vector`
+For instance, `transmission-torrent-id', `transmission-torrent-vector'
 
 * Changes in 0.4.1
 
 *** Display of pieces is now correct
 
-*** `transmission-files-command` now tries incomplete .part files
+*** `transmission-files-command' now tries incomplete .part files
 
 *** Use 'font-lock-face instead of 'font property
 Fontification goes missing sometimes otherwise

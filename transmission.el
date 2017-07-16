@@ -500,7 +500,7 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
 ;; Other
 
 (defun transmission-refs (sequence key)
-  "Make a list of the values of KEY in each element of SEQUENCE."
+  "Return a list of the values of KEY in each element of SEQUENCE."
   (mapcar (lambda (x) (cdr (assq key x))) sequence))
 
 (defun transmission-size (bytes)
