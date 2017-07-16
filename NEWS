@@ -22,7 +22,7 @@ Dired.
 These commands now somewhat reflect the Transmission API, making them
 more useful from Lisp.
 
-*** `transmission-move' is no longer bound.
+*** `transmission-move' is no longer bound to a key.
 
 * Changes in 0.10
 
