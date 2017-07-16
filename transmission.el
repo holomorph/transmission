@@ -1442,7 +1442,7 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
 (defun transmission-unmark-all ()
   "Remove mark from all items."
   (interactive)
-  (let ((inhibit-read-only t) len n)
+  (let ((inhibit-read-only t) len n props)
     (when (> (setq len (length transmission-marked-ids)) 0)
       (setq n len)
       (save-excursion
@@ -1451,8 +1451,9 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
           (goto-char (point-min))
           (while (and (> n 0) (zerop (forward-line)))
             (when (= (following-char) ?>)
+              (setq props (text-properties-at (point)))
               (delete-region (point) (1+ (point)))
-              (insert "\s")
+              (insert (apply #'propertize "\s" props))
               (cl-decf n)))))
       (setq transmission-marked-ids nil)
       (set-buffer-modified-p nil)
