@@ -30,9 +30,9 @@
 
 ;; Entry points are the `transmission' and `transmission-add'
 ;; commands.  A variety of commands are available for manipulating
-;; torrents and their contents, some of which can be applied over
-;; multiple items by selecting them within a region.  The menus for
-;; each context provide good exposure.
+;; torrents and their contents, many of which can be applied over
+;; multiple items by selecting them with marks or within a region.
+;; The menus for each context provide good exposure.
 
 ;; "M-x transmission RET" pops up a torrent list.  One can add,
 ;; start/stop, verify, remove torrents, set speed limits, ratio
