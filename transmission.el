@@ -1660,15 +1660,21 @@ Each form in BODY is a column descriptor."
   (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
+(defmacro transmission-insert-each-when (&rest body)
+  "Insert each non-nil form in BODY sequentially on its own line."
+  (declare (indent 0) (debug t))
+  (let ((tmp (make-symbol "tmp")))
+    (cl-loop for form in body
+             collect `(when (setq ,tmp ,form) (insert ,tmp "\n")) into res
+             finally return `(let (,tmp) ,@res))))
+
 (defun transmission-draw-info (id)
   (let* ((arguments `(:ids ,id :fields ,transmission-draw-info-keys))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
   (erase-buffer)
   (let-alist (elt transmission-torrent-vector 0)
-    (mapc
-     (lambda (s) (if s (insert s "\n")))
-     (vector
+    (transmission-insert-each-when
       (format "ID: %d" id)
       (concat "Name: " .name)
       (concat "Hash: " .hashString)
@@ -1700,7 +1706,7 @@ Each form in BODY is a column descriptor."
       (unless (zerop .corruptEver)
         (concat "Corrupt: " (transmission-format-size .corruptEver)))
       (concat "Total size: " (transmission-format-size .totalSize))
-      (transmission-format-pieces-internal .pieces .pieceCount .pieceSize)))))
+      (transmission-format-pieces-internal .pieces .pieceCount .pieceSize))))
 
 (defun transmission-draw-peers (id)
   (let* ((arguments `(:ids ,id :fields ("peers")))
