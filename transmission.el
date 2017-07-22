@@ -1960,6 +1960,7 @@ for explanation of the peer flags."
 
 (defvar transmission-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map "!" 'transmission-files)
     (define-key map (kbd "RET") 'transmission-files)
     (define-key map "a" 'transmission-add)
     (define-key map "d" 'transmission-set-download)
