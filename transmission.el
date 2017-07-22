@@ -322,6 +322,7 @@ update `transmission-session-id' and signal the error."
     (let* ((buffer (current-buffer))
            (status (read buffer)))
       (pcase status
+        (200)
         ((or 301 404 405) (signal 'transmission-wrong-rpc-path status))
         (401 (signal 'transmission-unauthorized status))
         (409 (when (search-forward (format "%s: " transmission-session-header))
