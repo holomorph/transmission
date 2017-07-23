@@ -186,7 +186,7 @@ The function should accept an IP address and return a string or nil."
 
 (defcustom transmission-geoip-use-cache nil
   "Whether to cache IP address/location name associations.
-If non-nil, associations are stored in `transmission-geoip-hash'.
+If non-nil, associations are stored in `transmission-geoip-table'.
 Useful if `transmission-geoip-function' does not have its own
 caching built in or is otherwise slow."
   :type 'boolean)
@@ -284,11 +284,8 @@ Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
 (defvar transmission-timer nil
   "Timer for repeating `revert-buffer' in a visible Transmission buffer.")
 
-(defconst transmission-hash-table (make-hash-table :test 'equal)
-  "Hash table used as initial value of `transmission-geoip-hash'.")
-
-(defvar transmission-geoip-hash (copy-hash-table transmission-hash-table)
-  "Hash table storing associations between IP addresses and location names.")
+(defvar transmission-geoip-table (make-hash-table :test 'equal)
+  "Table for storing associations between IP addresses and location names.")
 
 (defvar-local transmission-marked-ids nil
   "List of indices of the currently marked items.")
@@ -783,20 +780,19 @@ The two are spliced together with indices for each file, sorted by file name."
         (car (last (split-string (buffer-string) ": " t "[ \t\r\n]*")))))))
 
 (defun transmission-geoip-retrieve (ip)
-  "Retrieve value of IP in `transmission-geoip-hash'.
+  "Retrieve value of IP in `transmission-geoip-table'.
 If IP is not a key, add it with the value from `transmission-geoip-function'.
-If `transmission-geoip-function' has changed, reset `transmission-geoip-hash'
-from `transmission-hash-table'."
+If `transmission-geoip-function' has changed, reset `transmission-geoip-table'."
   (let ((fun transmission-geoip-function)
-        (cache transmission-geoip-hash))
+        (cache transmission-geoip-table))
     (when (functionp fun)
       (if (not transmission-geoip-use-cache)
           (funcall fun ip)
-        (if (eq fun (get 'transmission-geoip-hash :fn))
+        (if (eq fun (get 'transmission-geoip-table :fn))
             (or (gethash ip cache)
                 (setf (gethash ip cache) (funcall fun ip)))
-          (setq cache (copy-hash-table transmission-hash-table))
-          (put 'transmission-geoip-hash :fn fun)
+          (setq cache (make-hash-table :test 'equal))
+          (put 'transmission-geoip-table :fn fun)
           (setf (gethash ip cache) (funcall fun ip)))))))
 
 (defun transmission-time (seconds)
