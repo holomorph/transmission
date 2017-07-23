@@ -354,7 +354,7 @@ and port default to `transmission-host' and
   (let ((headers (list (cons transmission-session-header transmission-session-id)
                        (cons "Content-length" (string-bytes content)))))
     (let ((auth (transmission--auth-string)))
-      (if auth (push (cons "Authorization" auth) headers)))
+      (when auth (push (cons "Authorization" auth) headers)))
     (with-temp-buffer
       (insert (format "POST %s HTTP/1.1\r\n" transmission-rpc-path))
       (dolist (elt headers)
@@ -382,8 +382,8 @@ Return JSON object parsed from content."
   "Return a network client process connected to a transmission daemon.
 When creating a new connection, the address is determined by the
 custom variables `transmission-host' and `transmission-service'."
-  (let ((socket (if (file-name-absolute-p transmission-host)
-                    (expand-file-name transmission-host)))
+  (let ((socket (when (file-name-absolute-p transmission-host)
+                  (expand-file-name transmission-host)))
         buffer process)
     (unwind-protect
         (prog1
@@ -395,8 +395,8 @@ custom variables `transmission-host' and `transmission-service'."
                    :service (or socket transmission-service)
                    :family (if socket 'local) :noquery t))
           (setq buffer nil process nil))
-      (if (process-live-p process) (kill-process process))
-      (if (buffer-live-p buffer) (kill-buffer buffer)))))
+      (when (process-live-p process) (kill-process process))
+      (when (buffer-live-p buffer) (kill-buffer buffer)))))
 
 (defun transmission-request (method &optional arguments tag)
   "Send a request to Transmission.
@@ -515,7 +515,7 @@ of \"fields\" in the arguments of the \"torrent-get\" request."
   "Return the top-most parent directory in string FILENAME."
   (let ((index (and (stringp filename)
                     (string-match-p "/" filename))))
-    (if index (substring filename 0 (1+ index)))))
+    (when index (substring filename 0 (1+ index)))))
 
 (defun transmission-every-prefix-p (prefix list)
   "Return t if PREFIX is a prefix to every string in LIST, otherwise nil."
@@ -656,7 +656,7 @@ Returns a list of non-blank inputs."
 Uses `diary-entry-time' to parse user input.
 Returns minutes from midnight, otherwise nil."
   (let ((hhmm (diary-entry-time (read-string prompt))))
-    (if (>= hhmm 0) (+ (% hhmm 100) (* 60 (/ hhmm 100))))))
+    (when (>= hhmm 0) (+ (% hhmm 100) (* 60 (/ hhmm 100))))))
 
 (defun transmission-format-minutes (minutes)
   "Return a formatted string from MINUTES from midnight."
@@ -1016,8 +1016,8 @@ When called with a prefix, prompt for DIRECTORY."
           (def (mapcar #'file-relative-name f))
           (prompt (concat "Add torrent" (if def (format " [%s]" (car def))) ": ")))
      (list (read-file-name prompt nil def)
-           (if current-prefix-arg
-               (read-directory-name "Target directory: ")))))
+           (when current-prefix-arg
+             (read-directory-name "Target directory: ")))))
   (transmission-request-async
    (lambda (content)
      (let-alist (json-read-from-string content)
@@ -1038,7 +1038,7 @@ When called with a prefix, prompt for DIRECTORY."
              `(:filename ,(if (transmission-btih-p torrent)
                               (concat "magnet:?xt=urn:btih:" torrent)
                             torrent)))
-           (if directory (list :download-dir (expand-file-name directory))))))
+           (when directory (list :download-dir (expand-file-name directory))))))
 
 (defun transmission-free (directory)
   "Show in the echo area how much free space is in DIRECTORY."
@@ -1300,8 +1300,8 @@ See `transmission-read-time' for details on time input."
            (list start stop) '(nil nil)))))
   (when (or begin end)
     (let ((arguments
-           (append (if begin (list :alt-speed-time-begin begin))
-                   (if end (list :alt-speed-time-end end)))))
+           (append (when begin (list :alt-speed-time-begin begin))
+                   (when end (list :alt-speed-time-end end)))))
       (transmission-request-async nil "session-set" arguments))))
 
 (defun transmission-turtle-set-speeds (up down)
@@ -1312,8 +1312,8 @@ See `transmission-read-time' for details on time input."
            (p2 (format "Set turtle download limit (%d kB/s): " .alt-speed-down)))
        (list (read-number p1) (read-number p2)))))
   (let ((arguments
-         (append (if down (list :alt-speed-down down))
-                 (if up (list :alt-speed-up up)))))
+         (append (when down (list :alt-speed-down down))
+                 (when up (list :alt-speed-up up)))))
     (transmission-request-async nil "session-set" arguments)))
 
 (defun transmission-turtle-toggle ()
@@ -1336,7 +1336,7 @@ See `transmission-read-time' for details on time input."
 (defun transmission-verify (ids)
   "Verify torrent at point, in region, or marked."
   (transmission-interactive
-   (if (y-or-n-p (concat "Verify torrent" (if (cdr ids) "s") "? "))
+   (if (y-or-n-p (concat "Verify torrent" (when (cdr ids) "s") "? "))
        (list ids) '(nil)))
   (when ids (transmission-request-async nil "torrent-verify" (list :ids ids))))
 
@@ -1374,7 +1374,7 @@ See `transmission-read-time' for details on time input."
           (def (mailcap-file-default-commands
                 (list (replace-regexp-in-string "\\.part\\'" "" fap))))
           (prompt (and fap (concat "! on " (file-name-nondirectory fap)
-                                   (if def (format " (default %s)" (car def)))
+                                   (when def (format " (default %s)" (car def)))
                                    ": ")))
           (input (read-shell-command prompt nil nil def t)))
      (if fap (list (if (string-empty-p input) (or (car def) "") input) fap)
@@ -1600,7 +1600,7 @@ indicates that the speed limit is enabled."
   "Format download and upload rate and limits into a string."
   (concat (transmission-format-speed-limit rx rx-lim rx-thr) " down, "
           (transmission-format-speed-limit tx tx-lim tx-thr) " up"
-          (if (eq session t) ", session limited")))
+          (when (eq session t) ", session limited")))
 
 
 ;; Drawing
@@ -1648,15 +1648,15 @@ Each form in BODY is a column descriptor."
     (setq transmission-torrent-vector (transmission-torrents response)))
   (let* ((files (transmission-files-sort transmission-torrent-vector))
          (names (transmission-refs files 'name))
-         (directory (transmission-files-directory-base (car names)))
-         (truncate (if directory (transmission-every-prefix-p directory names))))
+         (dir (transmission-files-directory-base (car names)))
+         (truncate (and dir (transmission-every-prefix-p dir names))))
     (setq tabulated-list-entries nil)
     (transmission-do-entries files
       (format "%d%%" (transmission-percent .bytesCompleted .length))
       (symbol-name (car (rassq .priority transmission-priority-alist)))
       (if (eq .wanted :json-false) "no" "yes")
       (transmission-size .length)
-      (propertize (if truncate (string-remove-prefix directory .name) .name)
+      (propertize (if truncate (string-remove-prefix dir .name) .name)
                   'transmission-name t)))
   (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
