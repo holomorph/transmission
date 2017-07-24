@@ -290,6 +290,9 @@ Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
 (defvar-local transmission-marked-ids nil
   "List of indices of the currently marked items.")
 
+(defvar transmission-network-process-pool nil
+  "List of network processes connected to Transmission.")
+
 
 ;; JSON RPC
 
@@ -375,8 +378,15 @@ Return JSON object parsed from content."
   (transmission-http-post process content)
   (transmission-wait process))
 
+(defun transmission-process-sentinel (process _message)
+  "Sentinel for network processes made by `transmission-make-network-process'."
+  (setq transmission-network-process-pool
+        (delq process transmission-network-process-pool))
+  (when (buffer-live-p (process-buffer process))
+    (kill-buffer (process-buffer process))))
+
 (defun transmission-make-network-process ()
-  "Return a network client process connected to a transmission daemon.
+  "Return a network client process connected to a Transmission daemon.
 When creating a new connection, the address is determined by the
 custom variables `transmission-host' and `transmission-service'."
   (let ((socket (when (file-name-absolute-p transmission-host)
@@ -390,10 +400,22 @@ custom variables `transmission-host' and `transmission-service'."
                    :name "transmission" :buffer buffer
                    :host (unless socket transmission-host)
                    :service (or socket transmission-service)
-                   :family (if socket 'local) :noquery t))
+                   :family (when socket 'local) :noquery t))
+          (set-process-sentinel process #'transmission-process-sentinel)
           (setq buffer nil process nil))
       (when (process-live-p process) (kill-process process))
       (when (buffer-live-p buffer) (kill-buffer buffer)))))
+
+(defun transmission-get-network-process ()
+  "Return a network client process connected to a Transmission daemon.
+Returns a stopped process in `transmission-network-process-pool'
+or, if none is found, establishes a new connection and adds it to
+the pool."
+  (or (cl-loop for process in transmission-network-process-pool
+               when (process-command process) return (continue-process process))
+      (let ((process (transmission-make-network-process)))
+        (push process transmission-network-process-pool)
+        process)))
 
 (defun transmission-request (method &optional arguments tag)
   "Send a request to Transmission.
@@ -404,19 +426,26 @@ TAG is an integer and ignored.
 
 Details regarding the Transmission RPC can be found here:
 <https://github.com/transmission/transmission/blob/master/extras/rpc-spec.txt>"
-  (let ((process (transmission-make-network-process))
+  (let ((process (transmission-get-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
     (unwind-protect
         (condition-case nil
             (transmission-send process content)
           (transmission-conflict
            (transmission-send process content)))
-      (when (process-live-p process)
-        (delete-process process)
+      (if (process-live-p process) (stop-process process)
+        (setq transmission-network-process-pool
+              (delq process transmission-network-process-pool))
         (kill-buffer (process-buffer process))))))
 
 
 ;; Asynchronous calls
+
+(defun transmission-process-callback (process)
+  "Call PROCESS's callback if it has one."
+  (let ((callback (process-get process :callback)))
+    (when callback
+      (run-at-time 0 nil callback (buffer-substring (point) (point-max))))))
 
 (defun transmission-process-filter (process text)
   "Handle PROCESS's output TEXT and trigger handlers."
@@ -426,34 +455,22 @@ Details regarding the Transmission RPC can be found here:
       (when (transmission--content-finished-p)
         (condition-case e
             (progn (transmission--status)
-                   (delete-process process))
+                   (transmission-process-callback process)
+                   (stop-process process))
           (transmission-conflict
            (transmission-http-post process (process-get process :request)))
           (error
            (process-put process :callback nil)
-           (delete-process process)
-           (message "%s" (error-message-string e))))))))
-
-(defun transmission-process-sentinel (process _message)
-  "Dispatch callback function for PROCESS and kill the process buffer."
-  (when (buffer-live-p (process-buffer process))
-    (unwind-protect
-        (let* ((callback (process-get process :callback))
-               (content (and callback
-                             (with-current-buffer (process-buffer process)
-                               (transmission--move-to-content)
-                               (buffer-substring (point) (point-max))))))
-          (if callback (run-at-time 0 nil callback content)))
-      (kill-buffer (process-buffer process)))))
+           (stop-process process)
+           (signal (car e) (cdr e))))))))
 
 (defun transmission-request-async (callback method &optional arguments tag)
   "Send a request to Transmission asynchronously.
 
 CALLBACK accepts one argument, the HTTP response content.
 METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
-  (let ((process (transmission-make-network-process))
+  (let ((process (transmission-get-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
-    (set-process-sentinel process #'transmission-process-sentinel)
     (set-process-filter process #'transmission-process-filter)
     (process-put process :request content)
     (process-put process :callback callback)
