@@ -801,16 +801,11 @@ If `transmission-geoip-function' has changed, reset `transmission-geoip-table'."
     (format-time-string transmission-time-format (seconds-to-time seconds)
                         transmission-time-zone)))
 
-(defun transmission-hamming-weight (x)
-  "Calculate the Hamming weight of X."
-  (let ((m1 #x555555555555555)
-        (m2 #x333333333333333)
-        (m4 #x0f0f0f0f0f0f0f0f)
-        (h01 #x0101010101010101))
-    (setq x (- x (logand (lsh x -1) m1)))
-    (setq x (+ (logand x m2) (logand (lsh x -2) m2)))
-    (setq x (logand (+ x (lsh x -4)) m4))
-    (lsh (* x h01) -56)))
+(defun transmission-hamming-weight (byte)
+  "Calculate the Hamming weight of BYTE."
+  (setq byte (- byte (logand (lsh byte -1) #x55555555)))
+  (setq byte (+ (logand byte #x33333333) (logand (lsh byte -2) #x33333333)))
+  (lsh (* (logand (+ byte (lsh byte -4)) #x0f0f0f0f) #x01010101) -24))
 
 (defun transmission-count-bits (bytearray)
   "Calculate sum of Hamming weight of each byte in BYTEARRAY."
