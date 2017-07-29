@@ -445,7 +445,9 @@ Details regarding the Transmission RPC can be found here:
   "Call PROCESS's callback if it has one."
   (let ((callback (process-get process :callback)))
     (when callback
-      (run-at-time 0 nil callback (buffer-substring (point) (point-max))))))
+      (run-at-time 0 nil callback (buffer-substring (point) (point-max)))
+      (set-process-plist process nil)
+      (set-process-filter process nil))))
 
 (defun transmission-process-filter (process text)
   "Handle PROCESS's output TEXT and trigger handlers."
