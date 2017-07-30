@@ -1326,6 +1326,21 @@ See `transmission-read-time' for details on time input."
                  (when up (list :alt-speed-up up)))))
     (transmission-request-async nil "session-set" arguments)))
 
+(defun transmission-turtle-status ()
+  "Message details about turtle mode configuration."
+  (interactive)
+  (transmission-request-async
+   (lambda (content)
+     (let-alist (cdr (assq 'arguments (json-read-from-string content)))
+       (message
+        "%sabled; %d kB/s down, %d kB/s up; schedule %sabled, %s-%s, %s"
+        (if (eq .alt-speed-enabled t) "En" "Dis") .alt-speed-down .alt-speed-up
+        (if (eq .alt-speed-time-enabled t) "en" "dis")
+        (transmission-format-minutes .alt-speed-time-begin)
+        (transmission-format-minutes .alt-speed-time-end)
+        (mapconcat #'symbol-name (transmission-n->days .alt-speed-time-day) " "))))
+   "session-get"))
+
 (defun transmission-turtle-toggle ()
   "Toggle turtle mode."
   (interactive)
@@ -2021,6 +2036,7 @@ for explanation of the peer flags."
     ["Query Free Space" transmission-free]
     ["Session Statistics" transmission-stats]
     ("Turtle Mode" :help "Set and schedule alternative speed limits"
+     ["Turtle Mode Status" transmission-turtle-status]
      ["Toggle Turtle Mode" transmission-turtle-toggle]
      ["Set Active Days" transmission-turtle-set-days]
      ["Set Active Time Span" transmission-turtle-set-times]
