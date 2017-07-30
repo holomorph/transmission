@@ -1476,7 +1476,7 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
 (defun transmission-unmark-all ()
   "Remove mark from all items."
   (interactive)
-  (let ((inhibit-read-only t) len n props)
+  (let ((inhibit-read-only t) len n)
     (when (> (setq len (length transmission-marked-ids)) 0)
       (setq n len)
       (save-excursion
@@ -1486,14 +1486,35 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
           (catch :eobp
             (while (> n 0)
               (when (= (following-char) ?>)
-                (setq props (text-properties-at (point)))
+                (insert-and-inherit ?\s)
                 (delete-region (point) (1+ (point)))
-                (insert (apply #'propertize "\s" props))
                 (cl-decf n))
              (when (not (zerop (forward-line))) (throw :eobp nil))))))
       (setq transmission-marked-ids nil)
       (set-buffer-modified-p nil)
       (message "%s removed" (transmission-plural len "mark")))))
+
+(defun transmission-invert-marks ()
+  "Toggle mark on all items."
+  (interactive)
+  (let ((inhibit-read-only t) ids tag key)
+    (when (setq key (cl-case major-mode
+                      (transmission-mode 'id)
+                      (transmission-files-mode 'index)))
+      (save-excursion
+        (save-restriction
+          (widen)
+          (goto-char (point-min))
+          (catch :eobp
+            (while t
+              (when (setq tag (car (memq (following-char) '(?> ?\s))))
+                (insert-and-inherit (if (= tag ?>) ?\s ?>))
+                (delete-region (point) (1+ (point)))
+                (when (= tag ?\s)
+                  (push (cdr (assq key (tabulated-list-get-id))) ids)))
+              (when (not (zerop (forward-line))) (throw :eobp nil))))))
+      (setq transmission-marked-ids ids)
+      (set-buffer-modified-p nil))))
 
 
 ;; Formatting
@@ -1948,6 +1969,10 @@ for explanation of the peer flags."
     ["Mark Files Wanted" transmission-files-want]
     ["Set Files' Bandwidth Priority" transmission-files-priority]
     "--"
+    ["Toggle Mark" transmission-toggle-mark]
+    ["Unmark All" transmission-unmark-all]
+    ["Invert Marks" transmission-invert-marks]
+    "--"
     ["View Torrent Info" transmission-info]
     ["View Torrent Peers" transmission-peers]
     "--"
@@ -2032,6 +2057,7 @@ for explanation of the peer flags."
     "--"
     ["Toggle Mark" transmission-toggle-mark]
     ["Unmark All" transmission-unmark-all]
+    ["Invert Marks" transmission-invert-marks]
     "--"
     ["Query Free Space" transmission-free]
     ["Session Statistics" transmission-stats]
