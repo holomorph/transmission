@@ -1880,12 +1880,12 @@ for explanation of the peer flags."
   (let ((map (make-sparse-keymap)))
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
+    (define-key map "a" 'transmission-trackers-add)
     (define-key map "c" 'transmission-copy-magnet)
     (define-key map "d" 'transmission-set-torrent-download)
     (define-key map "e" 'transmission-peers)
     (define-key map "l" 'transmission-set-torrent-ratio)
-    (define-key map "t" 'transmission-trackers-add)
-    (define-key map "T" 'transmission-trackers-remove)
+    (define-key map "r" 'transmission-trackers-remove)
     (define-key map "u" 'transmission-set-torrent-upload)
     (define-key map "y" 'transmission-set-bandwidth-priority)
     map)
@@ -1945,6 +1945,7 @@ for explanation of the peer flags."
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
     (define-key map "m" 'transmission-toggle-mark)
+    (define-key map "t" 'transmission-invert-marks)
     (define-key map "u" 'transmission-files-unwant)
     (define-key map "U" 'transmission-unmark-all)
     (define-key map "v" 'transmission-view-file)
@@ -2017,12 +2018,13 @@ for explanation of the peer flags."
     (define-key map "d" 'transmission-set-download)
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
+    (define-key map "k" 'transmission-trackers-add)
     (define-key map "l" 'transmission-set-ratio)
     (define-key map "m" 'transmission-toggle-mark)
     (define-key map "r" 'transmission-remove)
     (define-key map "D" 'transmission-delete)
     (define-key map "s" 'transmission-toggle)
-    (define-key map "t" 'transmission-trackers-add)
+    (define-key map "t" 'transmission-invert-marks)
     (define-key map "u" 'transmission-set-upload)
     (define-key map "v" 'transmission-verify)
     (define-key map "q" 'transmission-quit)
@@ -2038,6 +2040,7 @@ for explanation of the peer flags."
     ["Start/Stop Torrent" transmission-toggle
      :help "Toggle pause on torrents at point or in region"]
     ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
+    ["Add Tracker URLs" transmission-trackers-add]
     ("Set Global/Session Limits"
      ["Set Global Download Limit" transmission-set-download]
      ["Set Global Upload Limit" transmission-set-upload]
