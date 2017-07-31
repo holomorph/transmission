@@ -6,9 +6,9 @@ either acted on point and the items on region can now be applied on
 marked items.  Marks take precedence, followed by the region, then the
 item at point.
 
-**** New commands for manipulating marks `transmission-toggle-mark'
-and `transmission-unmark-all', bound to the corresponding keys as in
-Dired.
+**** New commands for manipulating marks: `transmission-toggle-mark',
+`transmission-unmark-all', and `transmission-invert-marks' bound to
+the corresponding keys as in Dired.
 
 *** Added commands for viewing or displaying torrent files
 corresponding to various dired commands.  These include
@@ -16,11 +16,17 @@ corresponding to various dired commands.  These include
 and `transmission-view-file', bound to the corresponding keys as in
 Dired.
 
+*** New command `transmission-turtle-status' to show the state of
+turtle mode.
+
 ** Changes
 
 *** Many interactive functions now have signatures.
 These commands now somewhat reflect the Transmission API, making them
 more useful from Lisp.
+
+*** Bindings for adding and removing trackers in the info context have
+changed to "a" and "r", respectively.
 
 *** `transmission-move' is no longer bound to a key.
 
