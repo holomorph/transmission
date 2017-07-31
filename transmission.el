@@ -631,6 +631,11 @@ Direction D should be a symbol, either \"up\" or \"down\"."
            (transmission-throttle-torrent ids limit (read-number prompt))))
        "torrent-get" `(:ids ,ids :fields (,str ,(concat str "ed")))))))
 
+(defun transmission-torrent-honors-speed-limits-p ()
+  "Return non-nil if torrent honors session speed limits, otherwise nil."
+  (let ((torrent (elt transmission-torrent-vector 0)))
+    (eq t (cdr (assq 'honorsSessionLimits torrent)))))
+
 (defun transmission-prompt-speed-limit (upload)
   "Make a prompt to set transfer speed limit.
 If UPLOAD is non-nil, make a prompt for upload rate, otherwise
@@ -1902,10 +1907,11 @@ for explanation of the peer flags."
     ["Reannounce Torrent" transmission-reannounce]
     ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
     ("Set Torrent Limits"
+     ["Honor Session Speed Limits" transmission-toggle-limits
+      :help "Toggle whether torrent honors session limits."
+      :style toggle :selected (transmission-torrent-honors-speed-limits-p)]
      ["Set Torrent Download Limit" transmission-set-torrent-download]
      ["Set Torrent Upload Limit" transmission-set-torrent-upload]
-     ["Toggle Torrent Speed Limits" transmission-toggle-limits
-      :help "Toggle whether torrent honors session limits."]
      ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio])
     ["Verify Torrent" transmission-verify]
     "--"
@@ -1966,8 +1972,10 @@ for explanation of the peer flags."
     ["Visit File In View Mode" transmission-view-file]
     ["Open File In WWW Browser" transmission-browse-url-of-file]
     "--"
-    ["Mark Files Unwanted" transmission-files-unwant]
-    ["Mark Files Wanted" transmission-files-want]
+    ["Unwant Files" transmission-files-unwant
+     :help "Tell Transmission not to download files at point or in region"]
+    ["Want Files" transmission-files-want
+     :help "Tell Transmission to download files at point or in region"]
     ["Set Files' Bandwidth Priority" transmission-files-priority]
     "--"
     ["Toggle Mark" transmission-toggle-mark]
@@ -2046,10 +2054,10 @@ for explanation of the peer flags."
      ["Set Global Upload Limit" transmission-set-upload]
      ["Set Global Seed Ratio Limit" transmission-set-ratio])
     ("Set Torrent Limits"
-     ["Set Torrent Download Limit" transmission-set-torrent-download]
-     ["Set Torrent Upload Limit" transmission-set-torrent-upload]
      ["Toggle Torrent Speed Limits" transmission-toggle-limits
       :help "Toggle whether torrent honors session limits."]
+     ["Set Torrent Download Limit" transmission-set-torrent-download]
+     ["Set Torrent Upload Limit" transmission-set-torrent-upload]
      ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio])
     ["Move Torrent" transmission-move]
     ["Remove Torrent" transmission-remove]
@@ -2060,7 +2068,8 @@ for explanation of the peer flags."
     "--"
     ["Toggle Mark" transmission-toggle-mark]
     ["Unmark All" transmission-unmark-all]
-    ["Invert Marks" transmission-invert-marks]
+    ["Invert Marks" transmission-invert-marks
+     :help "Toggle mark on all items"]
     "--"
     ["Query Free Space" transmission-free]
     ["Session Statistics" transmission-stats]
