@@ -1667,19 +1667,19 @@ indicates that the speed limit is enabled."
       (tabulated-list-init-header))))
 
 (defmacro transmission-do-entries (seq &rest body)
-  "Map over SEQ, pushing each element to `tabulated-list-entries'.
+  "Map over SEQ to generate a new value of `tabulated-list-entries'.
 Each form in BODY is a column descriptor."
   (declare (indent 1) (debug t))
-  `(mapc (lambda (x)
-           (let-alist x
-             (push (list x (vector ,@body)) tabulated-list-entries)))
-         ,seq))
+  (let ((res (make-symbol "res")))
+    `(let (,res)
+       (mapc (lambda (x) (let-alist x (push (list x (vector ,@body)) ,res)))
+             ,seq)
+       (setq tabulated-list-entries (nreverse ,res)))))
 
 (defun transmission-draw-torrents (_id)
   (let* ((arguments `(:fields ,transmission-draw-torrents-keys))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
-  (setq tabulated-list-entries nil)
   (transmission-do-entries transmission-torrent-vector
     (transmission-eta .eta .percentDone)
     (transmission-size .sizeWhenDone)
@@ -1690,7 +1690,6 @@ Each form in BODY is a column descriptor."
     (if (not (zerop .error)) (propertize "error" 'font-lock-face 'error)
       (transmission-format-status .status .rateUpload .rateDownload))
     (propertize .name 'transmission-name t))
-  (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
 (defun transmission-draw-files (id)
@@ -1701,7 +1700,6 @@ Each form in BODY is a column descriptor."
          (names (transmission-refs files 'name))
          (dir (transmission-files-directory-base (car names)))
          (truncate (and dir (transmission-every-prefix-p dir names))))
-    (setq tabulated-list-entries nil)
     (transmission-do-entries files
       (format "%d%%" (transmission-percent .bytesCompleted .length))
       (symbol-name (car (rassq .priority transmission-priority-alist)))
@@ -1709,7 +1707,6 @@ Each form in BODY is a column descriptor."
       (transmission-size .length)
       (propertize (if truncate (string-remove-prefix dir .name) .name)
                   'transmission-name t)))
-  (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
 (defmacro transmission-insert-each-when (&rest body)
@@ -1764,7 +1761,6 @@ Each form in BODY is a column descriptor."
   (let* ((arguments `(:ids ,id :fields ("peers")))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
-  (setq tabulated-list-entries nil)
   (transmission-do-entries (cdr (assq 'peers (elt transmission-torrent-vector 0)))
     .address
     .flagStr
@@ -1773,7 +1769,6 @@ Each form in BODY is a column descriptor."
     (format "%d" (transmission-rate .rateToPeer))
     .clientName
     (or (transmission-geoip-retrieve .address) ""))
-  (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
 (defun transmission-draw ()
