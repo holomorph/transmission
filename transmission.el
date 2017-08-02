@@ -1343,7 +1343,8 @@ See `transmission-read-time' for details on time input."
         (if (eq .alt-speed-time-enabled t) "en" "dis")
         (transmission-format-minutes .alt-speed-time-begin)
         (transmission-format-minutes .alt-speed-time-end)
-        (mapconcat #'symbol-name (transmission-n->days .alt-speed-time-day) " "))))
+        (let ((bits (transmission-n->days .alt-speed-time-day)))
+          (if (null bits) "never" (mapconcat #'symbol-name bits " "))))))
    "session-get"))
 
 (defun transmission-turtle-toggle ()
