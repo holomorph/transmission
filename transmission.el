@@ -1277,23 +1277,26 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
        (let-alist (json-read-from-string content) (message .result)))
      "torrent-set" arguments)))
 
-(defun transmission-turtle-set-days (days)
+(defun transmission-turtle-set-days (days &optional disable)
   "Set DAYS on which turtle mode will be active.
 DAYS is a bitfield, the associations of which are in `transmission-schedules'.
-If DAYS is nil, disable turtle mode schedule."
+Empty input or non-positive DAYS makes no change to the schedule.
+With a prefix argument, disable turtle mode schedule."
   (interactive
    (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
-     (let* ((prompt
-             (format "Days %s: "
-                     (if (not (eq t .alt-speed-time-enabled)) "(disabled)"
-                       (or (transmission-n->days .alt-speed-time-day) "(none)"))))
-            (names (transmission-read-strings prompt transmission-schedules))
-            (bits (cl-loop for x in names
-                           collect (cdr (assq (intern x) transmission-schedules)))))
-       (list (apply #'logior bits)))))
+     (let* ((alist transmission-schedules)
+            (prompt
+             (format "Days %s%s: "
+                     (or (transmission-n->days .alt-speed-time-day) "(none)")
+                     (if (eq t .alt-speed-time-enabled) "" " [disabled]")))
+            (names (transmission-read-strings prompt alist))
+            (bits 0))
+       (dolist (name names)
+         (setq bits (logior (cdr (assq (intern name) alist)) bits)))
+       (list bits current-prefix-arg))))
   (let ((arguments
-         (append `(:alt-speed-time-enabled ,(if (zerop days) json-false t))
-                 (unless (zerop days) `(:alt-speed-time-day ,days)))))
+         (append `(:alt-speed-time-enabled ,(if disable json-false t))
+                 (unless (> days 0) `(:alt-speed-time-day ,days)))))
     (transmission-request-async nil "session-set" arguments)))
 
 (defun transmission-turtle-set-times (begin end)

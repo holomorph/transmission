@@ -21,6 +21,11 @@ turtle mode.
 
 ** Changes
 
+*** `transmission-turtle-set-days' now disables the schedule with a
+prefix argument instead of when empty input is given.  This
+facilitates independently changing the days and whether the schedule
+is enabled.
+
 *** Many interactive functions now have signatures.
 These commands now somewhat reflect the Transmission API, making them
 more useful from Lisp.
