@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014-2017  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
-;; Version: 0.10
+;; Version: 0.11
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -1507,9 +1507,9 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
   "Toggle mark on all items."
   (interactive)
   (let ((inhibit-read-only t) ids tag key)
-    (when (setq key (cl-case major-mode
-                      (transmission-mode 'id)
-                      (transmission-files-mode 'index)))
+    (when (setq key (pcase major-mode
+                      (`transmission-mode 'id)
+                      (`transmission-files-mode 'index)))
       (save-excursion
         (save-restriction
           (widen)
