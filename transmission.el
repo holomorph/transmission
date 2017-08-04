@@ -1296,7 +1296,7 @@ With a prefix argument, disable turtle mode schedule."
        (list bits current-prefix-arg))))
   (let ((arguments
          (append `(:alt-speed-time-enabled ,(if disable json-false t))
-                 (unless (> days 0) `(:alt-speed-time-day ,days)))))
+                 (when (> days 0) `(:alt-speed-time-day ,days)))))
     (transmission-request-async nil "session-set" arguments)))
 
 (defun transmission-turtle-set-times (begin end)
