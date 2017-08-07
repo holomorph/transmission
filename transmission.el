@@ -1849,7 +1849,8 @@ of column descriptors."
 
 (define-derived-mode transmission-peers-mode tabulated-list-mode "Transmission-Peers"
   "Major mode for viewing peer information.
-See https://github.com/transmission/transmission/wiki/Peer-Status-Text
+See the \"--peer-info\" option in transmission-remote(1) or
+https://github.com/transmission/transmission/wiki/Peer-Status-Text
 for explanation of the peer flags."
   :group 'transmission
   (setq-local line-move-visual nil)
