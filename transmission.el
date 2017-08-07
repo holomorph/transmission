@@ -149,7 +149,7 @@ See `file-size-human-readable'."
 (defcustom transmission-refresh-interval 2
   "Period in seconds of the refresh timer."
   :type '(number :validate (lambda (w)
-                             (unless (> (widget-value w) 0)
+                             (when (<= (widget-value w) 0)
                                (widget-put w :error "Value must be positive")
                                w))))
 
@@ -379,7 +379,7 @@ Return JSON object parsed from content."
   (transmission-wait process))
 
 (defun transmission-process-sentinel (process _message)
-  "Sentinel for network processes made by `transmission-make-network-process'."
+  "Sentinel for PROCESS made by `transmission-make-network-process'."
   (setq transmission-network-process-pool
         (delq process transmission-network-process-pool))
   (when (buffer-live-p (process-buffer process))
@@ -398,7 +398,7 @@ custom variables `transmission-host' and `transmission-service'."
                   process
                   (make-network-process
                    :name "transmission" :buffer buffer
-                   :host (unless socket transmission-host)
+                   :host (when (null socket) transmission-host)
                    :service (or socket transmission-service)
                    :family (when socket 'local) :noquery t))
           (set-process-sentinel process #'transmission-process-sentinel)
@@ -554,7 +554,7 @@ The result can have no more elements than STRING.
       (nreverse result))))
 
 (defun transmission-text-property-all (beg end prop)
-  "Return a list of non-nil values of a text property in a range.
+  "Return a list of non-nil values of a text property PROP between BEG and END.
 If none are found, return nil."
   (let (res pos)
     (save-excursion
@@ -958,7 +958,7 @@ point or in region, otherwise a `user-error' is signalled."
                         `(transmission-read-strings (concat ,prompt ,x) ,@rest))))
                     ((or (listp form) (null form))
                      (mapcar (lambda (subexp) (expand subexp x)) form))
-                    (t (error "bad syntax: %S" form)))))
+                    (t (error "Bad syntax: %S" form)))))
               (expand spec
                       `(cond
                         (,marked (format "[%d marked] " (length ,marked)))
