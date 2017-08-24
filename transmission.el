@@ -1495,7 +1495,9 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
           (catch :eobp
             (while (> n 0)
               (when (= (following-char) ?>)
-                (insert-and-inherit ?\s)
+                (save-excursion
+                  (forward-char)
+                  (insert-and-inherit ?\s))
                 (delete-region (point) (1+ (point)))
                 (cl-decf n))
              (when (not (zerop (forward-line))) (throw :eobp nil))))))
@@ -1517,7 +1519,9 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
           (catch :eobp
             (while t
               (when (setq tag (car (memq (following-char) '(?> ?\s))))
-                (insert-and-inherit (if (= tag ?>) ?\s ?>))
+                (save-excursion
+                  (forward-char)
+                  (insert-and-inherit (if (= tag ?>) ?\s ?>)))
                 (delete-region (point) (1+ (point)))
                 (when (= tag ?\s)
                   (push (cdr (assq key (tabulated-list-get-id))) ids)))
