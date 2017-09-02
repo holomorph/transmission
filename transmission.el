@@ -698,17 +698,17 @@ Days are the keys of `transmission-schedules'."
 (defun transmission-tracker-stats (id)
   "Return the \"trackerStats\" array for torrent id ID."
   (let* ((arguments `(:ids ,id :fields ("trackerStats")))
-         (response (transmission-request "torrent-get" arguments))
-         (torrents (transmission-torrents response)))
-    (cdr (assq 'trackerStats (elt torrents 0)))))
+         (response (transmission-request "torrent-get" arguments)))
+    (cdr (assq 'trackerStats (elt (transmission-torrents response) 0)))))
 
 (defun transmission-unique-announce-urls ()
   "Return a list of unique announce URLs from all current torrents."
-  (let* ((response (transmission-request "torrent-get" '(:fields ("trackers"))))
-         (trackers (transmission-refs (transmission-torrents response) 'trackers))
-         (urls (cl-loop for vector in trackers
-                        collect (transmission-refs vector 'announce))))
-    (delete-dups (apply #'append (delq nil urls)))))
+  (let ((response (transmission-request "torrent-get" '(:fields "trackers")))
+        torrents trackers res)
+    (dotimes (i (length (setq torrents (transmission-torrents response))))
+      (dotimes (j (length (setq trackers (cdr (assq 'trackers (aref torrents i))))))
+        (cl-pushnew (cdr (assq 'announce (aref trackers j))) res :test #'equal)))
+    res))
 
 (defun transmission-btih-p (string)
   "Return non-nil if STRING is a BitTorrent info hash, otherwise nil."
@@ -774,9 +774,9 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
          (base (or (and dir (cdr (assq 'name (tabulated-list-get-id))))
                    (user-error "No file at point")))
          (filename (and base (expand-file-name base dir))))
-    (setq filename (or (and (file-exists-p filename) filename)
-                       (let ((part (concat filename ".part")))
-                         (and (file-exists-p part) part))))
+    (or (file-exists-p filename)
+        (let ((part (concat filename ".part")))
+          (and (file-exists-p part) (setq filename part))))
     (if filename (abbreviate-file-name filename)
       (user-error "File does not exist"))))
 
@@ -1291,7 +1291,7 @@ With a prefix argument, disable turtle mode schedule."
             (names (transmission-read-strings prompt alist))
             (bits 0))
        (dolist (name names)
-         (setq bits (logior (cdr (assq (intern name) alist)) bits)))
+         (cl-callf logior bits (cdr (assq (intern name) alist))))
        (list bits current-prefix-arg))))
   (let ((arguments
          (append `(:alt-speed-time-enabled ,(if disable json-false t))
@@ -1473,11 +1473,11 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
             (transmission-toggle-mark-at-point)
             (forward-line))))
     (while (and (> arg 0) (not (eobp)))
-      (setq arg (1- arg))
+      (cl-decf arg)
       (transmission-toggle-mark-at-point)
       (forward-line 1))
     (while (and (< arg 0) (not (bobp)))
-      (setq arg (1+ arg))
+      (cl-incf arg)
       (forward-line -1)
       (transmission-toggle-mark-at-point))))
 
@@ -1485,8 +1485,7 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
   "Remove mark from all items."
   (interactive)
   (let ((inhibit-read-only t) len n)
-    (when (> (setq len (length transmission-marked-ids)) 0)
-      (setq n len)
+    (when (> (setq n (setq len (length transmission-marked-ids))) 0)
       (save-excursion
         (save-restriction
           (widen)
@@ -1508,7 +1507,7 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
   "Toggle mark on all items."
   (interactive)
   (let ((inhibit-read-only t) ids tag key)
-    (when (setq key (pcase major-mode
+    (when (setq key (pcase-exhaustive major-mode
                       (`transmission-mode 'id)
                       (`transmission-files-mode 'index)))
       (save-excursion
@@ -1823,7 +1822,7 @@ torrent is marked.
 ID is a Lisp object identifying the entry to print, and COLS is a vector
 of column descriptors."
   (tabulated-list-print-entry id cols)
-  (let* ((key (pcase major-mode
+  (let* ((key (pcase-exhaustive major-mode
                 (`transmission-mode 'id)
                 (`transmission-files-mode 'index)))
          (item-id (cdr (assq key id))))
