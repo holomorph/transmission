@@ -169,6 +169,20 @@ See `format-time-string'."
   :link '(info-link "(libc) TZ Variable")
   :link '(function-link format-time-string))
 
+(defcustom transmission-add-history-variable 'transmission-add-history
+  "History list to use for interactive prompts of `transmission-add'.
+Consider adding the value (`transmission-add-history' by default)
+to `savehist-additional-variables'."
+  :type 'variable
+  :link '(emacs-commentary-link "savehist"))
+
+(defcustom transmission-tracker-history-variable 'transmission-tracker-history
+  "History list to use for interactive prompts of tracker commands.
+Consider adding the value (`transmission-tracker-history' by default)
+to `savehist-additional-variables'."
+  :type 'variable
+  :link '(emacs-commentary-link "savehist"))
+
 (defcustom transmission-torrent-functions '(transmission-ffap)
   "List of functions to use for guessing torrents for `transmission-add'.
 Each function should accept no arguments, and return a string or nil."
@@ -261,6 +275,12 @@ caching built in or is otherwise slow."
 
 (defvar transmission-session-id nil
   "The \"X-Transmission-Session-Id\" header value.")
+
+(defvar transmission-add-history nil
+  "Default history list for `transmission-add'.")
+
+(defvar transmission-tracker-history nil
+  "Default history list for `transmission-trackers-add' and others.")
 
 (defvar-local transmission-torrent-vector nil
   "Vector of Transmission torrent data.")
@@ -656,18 +676,20 @@ for download rate."
                                  (if enabled (format "%.1f" limit) "disabled")
                                  "): "))))))
 
-(defun transmission-read-strings (prompt &optional collection)
+(defun transmission-read-strings (prompt &optional collection history)
   "Read strings until an input is blank, with optional completion.
 PROMPT and COLLECTION are the same as in `completing-read'.
 Returns a list of non-blank inputs."
-  (let (res entry)
+  (let ((history-add-new-input (null history))
+        res entry)
     (catch :finished
       (while t
-        (setq entry (if (not collection) (read-string prompt)
-                      (completing-read prompt collection nil)))
+        (setq entry (if (not collection) (read-string prompt nil history)
+                      (completing-read prompt collection nil nil nil history)))
         (if (and (not (string-empty-p entry))
                  (not (string-blank-p entry)))
-            (progn (push entry res)
+            (progn (when history (add-to-history history entry))
+                   (push entry res)
                    (setq collection (delete entry collection)))
           (throw :finished (nreverse res)))))))
 
@@ -1028,10 +1050,14 @@ When called with a prefix, prompt for DIRECTORY."
   (interactive
    (let* ((f (transmission-collect-hook 'transmission-torrent-functions))
           (def (mapcar #'file-relative-name f))
-          (prompt (concat "Add torrent" (if def (format " [%s]" (car def))) ": ")))
-     (list (read-file-name prompt nil def)
-           (when current-prefix-arg
-             (read-directory-name "Target directory: ")))))
+          (prompt (concat "Add torrent" (if def (format " [%s]" (car def))) ": "))
+          (history-add-new-input nil)
+          (file-name-history (symbol-value transmission-add-history-variable))
+          (input (read-file-name prompt nil def)))
+     (add-to-history transmission-add-history-variable input)
+     (list input
+           (if current-prefix-arg
+               (read-directory-name "Target directory: ")))))
   (transmission-request-async
    (lambda (content)
      (let-alist (json-read-from-string content)
@@ -1211,7 +1237,8 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                      (cl-loop for url in
                               (append transmission-trackers
                                       (transmission-unique-announce-urls))
-                              unless (member url trackers) collect url))
+                              unless (member url trackers) collect url)
+                     transmission-tracker-history-variable)
                     (user-error "No trackers to add"))))
      (list ids
            ;; Don't add trackers that are already there
@@ -1235,7 +1262,8 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
          (completion-extra-properties
           `(:annotation-function
             (lambda (x) (format " ID# %d" (cdr (assoc x ',trackers))))))
-         (urls (or (transmission-read-strings prompt trackers)
+         (urls (or (transmission-read-strings
+                    prompt trackers transmission-tracker-history-variable)
                    (user-error "No trackers selected for removal")))
          (tids (cl-loop for alist across array
                         if (or (member (cdr (assq 'announce alist)) urls)
@@ -1269,7 +1297,9 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
          (replacement
           (completing-read "Replacement tracker? "
                            (append transmission-trackers
-                                   (transmission-unique-announce-urls))))
+                                   (transmission-unique-announce-urls))
+                           nil nil nil
+                           transmission-tracker-history-variable))
          (arguments (list :ids id :trackerReplace (vector tid replacement))))
     (transmission-request-async
      (lambda (content)
