@@ -733,7 +733,7 @@ Days are the keys of `transmission-schedules'."
 
 (defun transmission-unique-announce-urls ()
   "Return a list of unique announce URLs from all current torrents."
-  (let ((response (transmission-request "torrent-get" '(:fields "trackers")))
+  (let ((response (transmission-request "torrent-get" '(:fields ("trackers"))))
         torrents trackers res)
     (dotimes (i (length (setq torrents (transmission-torrents response))))
       (dotimes (j (length (setq trackers (cdr (assq 'trackers (aref torrents i))))))
