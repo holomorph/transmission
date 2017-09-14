@@ -420,7 +420,8 @@ custom variables `transmission-host' and `transmission-service'."
                    :name "transmission" :buffer buffer
                    :host (when (null socket) transmission-host)
                    :service (or socket transmission-service)
-                   :family (when socket 'local) :noquery t))
+                   :family (when socket 'local) :noquery t
+                   :coding 'binary :filter-multibyte nil))
           (set-process-sentinel process #'transmission-process-sentinel)
           (setq buffer nil process nil))
       (when (process-live-p process) (kill-process process))
