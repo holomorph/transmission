@@ -301,6 +301,8 @@ Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
 (define-error 'transmission-wrong-rpc-path
   "Bad RPC path.  Check `transmission-rpc-path'")
 
+(define-error 'transmission-failure "")
+
 (defvar transmission-timer nil
   "Timer for repeating `revert-buffer' in a visible Transmission buffer.")
 
@@ -342,7 +344,11 @@ update `transmission-session-id' and signal the error."
     (let* ((buffer (current-buffer))
            (status (read buffer)))
       (pcase status
-        (200)
+        (200 (save-excursion
+               (let (result)
+                 (when (and (search-forward "\"result\":")
+                            (not (equal "success" (setq result (json-read)))))
+                   (signal 'transmission-failure (list result))))))
         ((or 301 404 405) (signal 'transmission-wrong-rpc-path status))
         (401 (signal 'transmission-unauthorized status))
         (409 (when (search-forward (format "%s: " transmission-session-header))
@@ -452,10 +458,12 @@ Details regarding the Transmission RPC can be found here:
     (set-process-plist process nil)
     (set-process-filter process nil)
     (unwind-protect
-        (condition-case nil
+        (condition-case err
             (transmission-send process content)
           (transmission-conflict
-           (transmission-send process content)))
+           (transmission-send process content))
+          (transmission-failure
+           (message "%s" (cdr err))))
       (if (process-live-p process) (stop-process process)
         (setq transmission-network-process-pool
               (delq process transmission-network-process-pool))
@@ -482,6 +490,8 @@ Details regarding the Transmission RPC can be found here:
                    (stop-process process))
           (transmission-conflict
            (transmission-http-post process (process-get process :request)))
+          (transmission-failure
+           (message "%s" (cdr e)))
           (error
            (stop-process process)
            (signal (car e) (cdr e))))))))
@@ -1065,15 +1075,11 @@ When called with a prefix, prompt for DIRECTORY."
                (read-directory-name "Target directory: ")))))
   (transmission-request-async
    (lambda (content)
-     (let-alist (json-read-from-string content)
-       (pcase .result
-         ("success"
-          (let-alist .arguments
-            (or (and .torrent-added.name
-                     (message "Added %s" .torrent-added.name))
-                (and .torrent-duplicate.name
-                     (message "Already added %s" .torrent-duplicate.name)))))
-         (_ (message .result)))))
+     (let-alist (cdr (assq 'arguments (json-read-from-string content)))
+       (or (and .torrent-added.name
+                (message "Added %s" .torrent-added.name))
+           (and .torrent-duplicate.name
+                (message "Already added %s" .torrent-duplicate.name)))))
    "torrent-add"
    (append (if (and (file-readable-p torrent) (not (file-directory-p torrent)))
                `(:metainfo ,(with-temp-buffer
@@ -1251,8 +1257,8 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
            (cl-loop for url in urls
                     unless (member url trackers) collect url))))
   (transmission-request-async
-   (lambda (content)
-     (let-alist (json-read-from-string content) (message .result)))
+   (lambda (_content)
+     (message "Added %s" (mapconcat #'identity urls ", ")))
    "torrent-set" (list :ids ids :trackerAdd urls)))
 
 (defun transmission-trackers-remove ()
@@ -1278,8 +1284,8 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                         collect (cdr (assq 'id alist))))
          (arguments (list :ids id :trackerRemove tids)))
     (transmission-request-async
-     (lambda (content)
-       (let-alist (json-read-from-string content) (message .result)))
+     (lambda (_content)
+       (message "Removed %s" (mapconcat #'identity urls ", ")))
      "torrent-set" arguments)))
 
 (defun transmission-trackers-replace ()
@@ -1309,8 +1315,8 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                            transmission-tracker-history-variable))
          (arguments (list :ids id :trackerReplace (vector tid replacement))))
     (transmission-request-async
-     (lambda (content)
-       (let-alist (json-read-from-string content) (message .result)))
+     (lambda (_content)
+       (message "Replaced #%d with %s" tid replacement))
      "torrent-set" arguments)))
 
 (defun transmission-turtle-set-days (days &optional disable)
@@ -1394,12 +1400,8 @@ See `transmission-read-time' for details on time input."
      (let* ((arguments (cdr (assq 'arguments (json-read-from-string content))))
             (enable (equal json-false (cdr (assq 'alt-speed-enabled arguments)))))
        (transmission-request-async
-        (lambda (content)
-          (let-alist (json-read-from-string content)
-            (pcase .result
-              ("success"
-               (message (concat "Turtle mode " (if enable "en" "dis") "abled")))
-              (_ (message .result)))))
+        (lambda (_content)
+          (message (concat "Turtle mode " (if enable "en" "dis") "abled")))
         "session-set" `(:alt-speed-enabled ,(or enable json-false)))))
    "session-get"))
 
