@@ -810,19 +810,16 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
     (if filename (abbreviate-file-name filename)
       (user-error "File does not exist"))))
 
-(defun transmission-files-sort (torrent)
+(defun transmission-files-index (torrent)
   "Return a list derived from the \"files\" and \"fileStats\" arrays in TORRENT.
 The two are spliced together with indices for each file, sorted by file name."
   (let* ((alist (elt torrent 0))
          (files (cdr (assq 'files alist)))
          (stats (cdr (assq 'fileStats alist))))
-    (sort (cl-loop for f across files
-                   for s across stats
-                   for i below (length files)
-                   collect (append f s (list (cons 'index i))))
-          (lambda (a b)
-            (string< (cdr (assq 'name a))
-                     (cdr (assq 'name b)))))))
+    (cl-loop for f across files
+             for s across stats
+             for i below (length files)
+             collect (append f s (list (cons 'index i))))))
 
 (defun transmission-geoiplookup (ip)
   "Return country name associated with IP using geoiplookup(1)."
@@ -1742,7 +1739,7 @@ Each form in BODY is a column descriptor."
   (let* ((arguments `(:ids ,id :fields ,transmission-draw-files-keys))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
-  (let* ((files (transmission-files-sort transmission-torrent-vector))
+  (let* ((files (transmission-files-index transmission-torrent-vector))
          (names (transmission-refs files 'name))
          (dir (transmission-files-directory-base (car names)))
          (truncate (and dir (transmission-every-prefix-p dir names))))
