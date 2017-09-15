@@ -513,10 +513,12 @@ METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
 ;; Response parsing
 
 (defun transmission-torrents (response)
-  "Return the \"torrents\" array in RESPONSE.
+  "Return the \"torrents\" array in RESPONSE, otherwise nil.
 Each element is an alist with keys corresponding to the elements
-of \"fields\" in the arguments of the \"torrent-get\" request."
-  (cdr (assq 'torrents (cdr (assq 'arguments response)))))
+of \"fields\" in the arguments of the \"torrent-get\" request.
+If the array is empty or not found, return nil."
+  (let ((obj (cdr (assq 'torrents (cdr (assq 'arguments response))))))
+    (and (vectorp obj) (< 0 (length obj)) obj)))
 
 
 ;; Timer management
