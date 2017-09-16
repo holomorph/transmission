@@ -205,6 +205,17 @@ Useful if `transmission-geoip-function' does not have its own
 caching built in or is otherwise slow."
   :type 'boolean)
 
+(defcustom transmission-turtle-lighter " turtle"
+  "Lighter for `transmission-turtle-mode'."
+  :type `(choice (const :tag "Default" " turtle")
+                 (const :tag "ASCII" " ,=,e")
+                 (const :tag "Emoji" ,(string ?\s #x1f422))
+                 (string :tag "Some string"))
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (transmission-turtle-poll))
+  :link '(info-link "(elisp) Defining Minor Modes"))
+
 (defconst transmission-schedules
   (eval-when-compile
     (pcase-let*
@@ -735,6 +746,28 @@ Days are the keys of `transmission-schedules'."
           (push k res)
           (cl-decf n v)))
       (nreverse res)))))
+
+(defun transmission-levi-civita (a b c)
+  "Return Levi-Civita symbol value for three numbers A, B, C."
+  (cond
+   ((or (< a b c) (< b c a) (< c a b)) 1)
+   ((or (< c b a) (< a c b) (< b a c)) -1)
+   ((or (= a b) (= b c) (= c a)) 0)
+   (t (error "how u do dat: (%d, %d, %d)" a b c))))
+
+(defun transmission-turtle-when (beg end &optional now)
+  "Calculate the time in seconds until the next schedule change.
+BEG END are minutes after midnight of schedules start and end.
+NOW is a time, defaulting to `current-time'."
+  (let* ((time (or now (current-time)))
+         (hours (string-to-number (format-time-string "%H" time)))
+         (minutes (+ (* 60 hours)
+                     (string-to-number (format-time-string "%M" time)))))
+    (pcase (transmission-levi-civita minutes beg end)
+      (1 (* 60 (if (> beg minutes) (- beg minutes) (+ beg minutes))))
+      (-1 (* 60 (if (> end minutes) (- end minutes) (+ end minutes))))
+      ;; FIXME this should probably just return 0 because of inaccuracy
+      (0 (* 60 (or (and (= minutes beg) end) (and (= minutes end) beg)))))))
 
 (defun transmission-tracker-url-p (str)
   "Return non-nil if STR is not just a number."
@@ -1341,7 +1374,7 @@ With a prefix argument, disable turtle mode schedule."
   (let ((arguments
          (append `(:alt-speed-time-enabled ,(if disable json-false t))
                  (when (> days 0) `(:alt-speed-time-day ,days)))))
-    (transmission-request-async nil "session-set" arguments)))
+    (transmission-request-async #'transmission-turtle-poll "session-set" arguments)))
 
 (defun transmission-turtle-set-times (begin end)
   "Set BEGIN and END times for turtle mode.
@@ -1364,7 +1397,7 @@ See `transmission-read-time' for details on time input."
     (let ((arguments
            (append (when begin (list :alt-speed-time-begin begin))
                    (when end (list :alt-speed-time-end end)))))
-      (transmission-request-async nil "session-set" arguments))))
+      (transmission-request-async #'transmission-turtle-poll "session-set" arguments))))
 
 (defun transmission-turtle-set-speeds (up down)
   "Set UP and DOWN speed limits (kB/s) for turtle mode."
@@ -1376,7 +1409,7 @@ See `transmission-read-time' for details on time input."
   (let ((arguments
          (append (when down (list :alt-speed-down down))
                  (when up (list :alt-speed-up up)))))
-    (transmission-request-async nil "session-set" arguments)))
+    (transmission-request-async #'transmission-turtle-poll "session-set" arguments)))
 
 (defun transmission-turtle-status ()
   "Message details about turtle mode configuration."
@@ -1392,18 +1425,6 @@ See `transmission-read-time' for details on time input."
         (transmission-format-minutes .alt-speed-time-end)
         (let ((bits (transmission-n->days .alt-speed-time-day)))
           (if (null bits) "never" (mapconcat #'symbol-name bits " "))))))
-   "session-get"))
-
-(defun transmission-turtle-toggle ()
-  "Toggle turtle mode."
-  (interactive)
-  (transmission-request-async
-   (lambda (response)
-     (let ((enable (equal json-false (cdr (assq 'alt-speed-enabled response)))))
-       (transmission-request-async
-        (lambda (_)
-          (message (concat "Turtle mode " (if enable "en" "dis") "abled")))
-        "session-set" `(:alt-speed-enabled ,(or enable json-false)))))
    "session-get"))
 
 (defun transmission-verify (ids)
@@ -1566,6 +1587,51 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
               (when (not (zerop (forward-line))) (throw :eobp nil))))))
       (setq transmission-marked-ids ids)
       (set-buffer-modified-p nil))))
+
+
+;; Turtle mode
+
+(defvar transmission-turtle-poll-callback
+  (let (timer enabled next lighter)
+    (lambda (response)
+       (let-alist response
+         (setq enabled (eq t .alt-speed-enabled))
+         (setq next (transmission-turtle-when .alt-speed-time-begin
+                                              .alt-speed-time-end))
+         (set-default 'transmission-turtle-mode enabled)
+         (setq lighter
+               (if enabled
+                   (concat transmission-turtle-lighter
+                           (format ":%d/%d" .alt-speed-down .alt-speed-up))
+                 nil))
+         (transmission-register-turtle-mode lighter)
+         (when timer (cancel-timer timer))
+         (setq timer (run-at-time next nil #'transmission-turtle-poll)))))
+  "Closure checking turtle mode status and marshaling a timer.")
+
+(defun transmission-turtle-poll (&rest _args)
+  (transmission-request-async
+   transmission-turtle-poll-callback "session-get"
+   '(:fields ("alt-speed-enabled" "alt-speed-down" "alt-speed-up"))))
+
+(defvar transmission-turtle-mode-lighter nil
+  "Lighter for `transmission-turtle-mode'. ")
+
+(define-minor-mode transmission-turtle-mode
+  "Toggle alternative speed limits (turtle mode)."
+  :group 'transmission
+  :global t
+  :lighter transmission-turtle-mode-lighter
+  (transmission-request-async
+   #'transmission-turtle-poll
+   "session-set" `(:alt-speed-enabled ,(or transmission-turtle-mode json-false))))
+
+(defun transmission-register-turtle-mode (lighter)
+  "Add LIGHTER to buffers with a transmission-* major mode."
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (string-prefix-p "transmission" (symbol-name major-mode))
+        (setq-local transmission-turtle-mode-lighter lighter)))))
 
 
 ;; Formatting
@@ -1842,6 +1908,7 @@ Also run the timer for timer object `transmission-timer'."
        (if (not id) (user-error "No torrent selected")
          (let ((buffer (or (get-buffer ,name)
                            (generate-new-buffer ,name))))
+           (transmission-turtle-poll)
            (with-current-buffer buffer
              (let ((old-id (or transmission-torrent-id
                                (cdr (assq 'id (tabulated-list-get-id))))))
@@ -2117,7 +2184,7 @@ for explanation of the peer flags."
     ["Session Statistics" transmission-stats]
     ("Turtle Mode" :help "Set and schedule alternative speed limits"
      ["Turtle Mode Status" transmission-turtle-status]
-     ["Toggle Turtle Mode" transmission-turtle-toggle]
+     ["Toggle Turtle Mode" transmission-turtle-mode]
      ["Set Active Days" transmission-turtle-set-days]
      ["Set Active Time Span" transmission-turtle-set-times]
      ["Set Turtle Speed Limits" transmission-turtle-set-speeds])
@@ -2164,6 +2231,7 @@ Transmission."
   (let* ((name "*transmission*")
          (buffer (or (get-buffer name)
                      (generate-new-buffer name))))
+    (transmission-turtle-poll)
     (unless (eq buffer (current-buffer))
       (with-current-buffer buffer
         (unless (eq major-mode 'transmission-mode)

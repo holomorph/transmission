@@ -6,6 +6,12 @@ torrents added and tracker announce URLs input.  The defaults are
 `transmission-add-history' and `transmission-tracker-history',
 respectively.
 
+** Changes
+
+*** `transmission-turtle-mode' replaces `transmission-turtle-toggle'
+The former mentioned is an actual minor mode which shows a lighter in
+transmission buffers.
+
 * Changes in 0.11
 
 ** Features
