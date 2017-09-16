@@ -213,7 +213,7 @@ caching built in or is otherwise slow."
                  (string :tag "Some string"))
   :set (lambda (symbol value)
          (set-default symbol value)
-         (transmission-turtle-poll))
+         (when (fboundp 'transmission-turtle-poll) (transmission-turtle-poll)))
   :link '(info-link "(elisp) Defining Minor Modes"))
 
 (defconst transmission-schedules
