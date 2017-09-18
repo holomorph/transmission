@@ -360,11 +360,11 @@ update `transmission-session-id' and signal the error."
                  (when (and (search-forward "\"result\":")
                             (not (equal "success" (setq result (json-read)))))
                    (signal 'transmission-failure (list result))))))
-        ((or 301 404 405) (signal 'transmission-wrong-rpc-path status))
-        (401 (signal 'transmission-unauthorized status))
+        ((or 301 404 405) (signal 'transmission-wrong-rpc-path (list status)))
+        (401 (signal 'transmission-unauthorized (list status)))
         (409 (when (search-forward (format "%s: " transmission-session-header))
                (setq transmission-session-id (read buffer))
-               (signal 'transmission-conflict status)))))))
+               (signal 'transmission-conflict (list status))))))))
 
 (defun transmission--auth-source-secret (user)
   "Return the secret for USER at found in `auth-sources'.
