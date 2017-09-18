@@ -1505,12 +1505,14 @@ See `transmission-read-time' for details on time input."
   (interactive)
   (browse-url-of-file (expand-file-name (transmission-files-file-at-point))))
 
-(defun transmission-copy-file-name-as-kill ()
-  "Copy the name of the file at point into the kill ring."
-  (interactive)
-  (let ((filename (transmission-files-file-at-point)))
-    (kill-new filename)
-    (message "Copied %s" filename)))
+(defun transmission-copy-filename-as-kill (&optional arg)
+  (interactive "P")
+  (let* ((fn (transmission-files-file-at-point))
+         (str (if arg fn (file-name-nondirectory fn))))
+    (if (eq last-command 'kill-region)
+        (kill-append str nil)
+      (kill-new str))
+    (message "%S" str)))
 
 (defun transmission-copy-magnet ()
   "Copy magnet link of current torrent."
@@ -2106,6 +2108,7 @@ for explanation of the peer flags."
      "Display a read-only buffer visiting file at point"]
     ["Visit File In View Mode" transmission-view-file]
     ["Open File In WWW Browser" transmission-browse-url-of-file]
+    ["Copy File Name" transmission-copy-filename-as-kill]
     "--"
     ["Unwant Files" transmission-files-unwant
      :help "Tell Transmission not to download files at point or in region"]
