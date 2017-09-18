@@ -183,7 +183,8 @@ to `savehist-additional-variables'."
   :type 'variable
   :link '(emacs-commentary-link "savehist"))
 
-(defcustom transmission-torrent-functions '(transmission-ffap)
+(defcustom transmission-torrent-functions
+  '(transmission-ffap transmission-ffap-selection transmission-ffap-last-killed)
   "List of functions to use for guessing torrents for `transmission-add'.
 Each function should accept no arguments, and return a string or nil."
   :type 'hook
