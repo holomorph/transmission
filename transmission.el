@@ -2055,6 +2055,7 @@ for explanation of the peer flags."
     (define-key map (kbd "C-o") 'transmission-display-file)
     (define-key map "^" 'quit-window)
     (define-key map "!" 'transmission-files-command)
+    (define-key map "&" 'transmission-files-command)
     (define-key map "X" 'transmission-files-command)
     (define-key map "W" 'transmission-browse-url-of-file)
     (define-key map "e" 'transmission-peers)
