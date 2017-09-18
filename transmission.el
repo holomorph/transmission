@@ -1941,6 +1941,33 @@ of column descriptors."
 
 ;; Major mode definitions
 
+(defmacro define-transmission-predicate (name test &rest body)
+  "Define transmission-NAME as a function.
+The function is to be used as a `sort' predicate for `tabulated-list-format'.
+The definition is (lambda (a b) (TEST ...)) where the body
+is constructed from TEST, BODY and the `tabulated-list-id' tagged as `<>'."
+  (declare (indent 2))
+  (let ((a (make-symbol "a"))
+        (b (make-symbol "b")))
+    (cl-labels
+        ((cut (form x)
+           (cond
+            ((eq form '<>) (list 'car x))
+            ((atom form) form)
+            ((or (listp form) (null form))
+             (mapcar (lambda (subexp) (cut subexp x)) form)))))
+      `(defun ,(intern (concat "transmission-" (symbol-name name))) (,a ,b)
+         (,test ,(cut (macroexp-progn body) a)
+                ,(cut (macroexp-progn body) b))))))
+
+(define-transmission-predicate download>? > (cdr (assq 'rateToClient <>)))
+(define-transmission-predicate upload>? > (cdr (assq 'rateToPeer <>)))
+(define-transmission-predicate size>? > (cdr (assq 'length <>)))
+(define-transmission-predicate eta>? > (cdr (assq 'eta <>)))
+(define-transmission-predicate size-when-done>? > (cdr (assq 'sizeWhenDone <>)))
+(define-transmission-predicate percent-done>? > (cdr (assq 'percentDone <>)))
+(define-transmission-predicate ratio>? > (cdr (assq 'uploadRatio <>)))
+
 (defvar transmission-peers-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "i" 'transmission-info)
@@ -1964,15 +1991,13 @@ for explanation of the peer flags."
   :group 'transmission
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
-        `[("Address" 15 nil)
-          ("Flags" 6 t)
-          ("Has" 4 nil :right-align t)
-          ("Down" 4 ,(transmission-tabulated-list-pred 'rateToClient)
-           :right-align t)
-          ("Up" 3 ,(transmission-tabulated-list-pred 'rateToPeer)
-           :right-align t :pad-right 2)
-          ("Client" 20 t)
-          ("Location" 0 t)])
+        [("Address" 15 nil)
+         ("Flags" 6 t)
+         ("Has" 4 nil :right-align t)
+         ("Down" 4 transmission-download>? :right-align t)
+         ("Up" 3 transmission-upload>? :right-align t :pad-right 2)
+         ("Client" 20 t)
+         ("Location" 0 t)])
   (tabulated-list-init-header)
   (setq transmission-refresh-function #'transmission-draw-peers)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
@@ -2103,12 +2128,11 @@ for explanation of the peer flags."
   :group 'transmission
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
-        `[("Have" 4 nil :right-align t)
-          ("Priority" 8 t)
-          ("Want" 4 t :right-align t)
-          ("Size" 9 ,(transmission-tabulated-list-pred 'length)
-           :right-align t :transmission-size t)
-          ("Name" 0 t)])
+        [("Have" 4 nil :right-align t)
+         ("Priority" 8 t)
+         ("Want" 4 t :right-align t)
+         ("Size" 9 transmission-size>? :right-align t :transmission-size t)
+         ("Name" 0 t)])
   (setq tabulated-list-padding 1)
   (transmission-tabulated-list-format)
   (setq-local file-name-at-point-functions #'transmission-files-file-at-point)
@@ -2204,18 +2228,15 @@ Transmission."
   :group 'transmission
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
-        `[("ETA" 4 ,(transmission-tabulated-list-pred 'eta)
-           :right-align t)
-          ("Size" 9 ,(transmission-tabulated-list-pred 'sizeWhenDone)
-           :right-align t :transmission-size t)
-          ("Have" 4 ,(transmission-tabulated-list-pred 'percentDone)
-           :right-align t)
-          ("Down" 4 nil :right-align t)
-          ("Up" 3 nil :right-align t)
-          ("Ratio" 5 ,(transmission-tabulated-list-pred 'uploadRatio)
-           :right-align t)
-          ("Status" 11 t)
-          ("Name" 0 t)])
+        [("ETA" 4 transmission-eta>? :right-align t)
+         ("Size" 9 transmission-size-when-done>?
+          :right-align t :transmission-size t)
+         ("Have" 4 transmission-percent-done>? :right-align t)
+         ("Down" 4 nil :right-align t)
+         ("Up" 3 nil :right-align t)
+         ("Ratio" 5 transmission-ratio>? :right-align t)
+         ("Status" 11 t)
+         ("Name" 0 t)])
   (setq tabulated-list-padding 1)
   (transmission-tabulated-list-format)
   (setq transmission-refresh-function #'transmission-draw-torrents)
