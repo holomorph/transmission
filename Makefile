@@ -21,7 +21,7 @@ dist: clean
 	tar czf transmission-$(VERSION).tar.gz transmission-$(VERSION)
 	rm -rf transmission-$(VERSION)
 
-install:
+install: $(SRC:=.gz)
 	install -d $(DESTDIR)$(emacsdir)
 	install -m644 $(SRC:=.gz) $(SRC:.el=.elc) -t $(DESTDIR)$(emacsdir)
 
