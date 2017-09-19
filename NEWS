@@ -1,3 +1,5 @@
+* Changes in 0.12
+
 ** Features
 
 *** New custom variables `transmission-add-history-variable' and
@@ -11,6 +13,15 @@ respectively.
 *** `transmission-turtle-mode' replaces `transmission-turtle-toggle'
 The former mentioned is an actual minor mode which shows a lighter in
 transmission buffers.
+
+*** RPC request functions work differently now.
+The "results" string is checked when HTTP status is checked and
+signals an error if not "success", which is caught and messaged.
+
+Only the "arguments" object is parsed, if possible.  The return from
+`transmission-request' is now the decoded arguments object, and the
+argument to `transmission-request-async''s callback is the same object
+instead of the HTTP response content.
 
 * Changes in 0.11
 
