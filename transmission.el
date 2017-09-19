@@ -67,6 +67,7 @@
 (require 'url-util)
 
 (eval-when-compile
+  (cl-declaim (optimize (speed 3)))
   (require 'cl-lib)
   (require 'let-alist)
   (require 'subr-x))
