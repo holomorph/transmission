@@ -1479,6 +1479,18 @@ See `transmission-read-time' for details on time input."
          (prog (car args)))
     (apply #'start-process prog nil args)))
 
+(defun transmission-copy-file ()
+  "Copy the file at point to another location."
+  (interactive)
+  (let* ((f (transmission-files-file-at-point))
+         (prompt (format "Copy %s to: " (file-name-nondirectory f)))
+         (def (when (bound-and-true-p dired-dwim-target)
+                (buffer-local-value 'default-directory
+                                    (window-buffer (next-window)))))
+         (dir (read-directory-name prompt nil def)))
+    (copy-file f dir nil t t t)
+    (message "Copied %s" (file-name-nondirectory f))))
+
 (defun transmission-find-file ()
   "Visit the file at point with `find-file-read-only'."
   (interactive)
@@ -2087,6 +2099,7 @@ for explanation of the peer flags."
     (define-key map "&" 'transmission-files-command)
     (define-key map "X" 'transmission-files-command)
     (define-key map "W" 'transmission-browse-url-of-file)
+    (define-key map "C" 'transmission-copy-file)
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
     (define-key map "m" 'transmission-toggle-mark)
