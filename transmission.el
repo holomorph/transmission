@@ -1634,7 +1634,8 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
   "Lighter for `transmission-turtle-mode'. ")
 
 (define-minor-mode transmission-turtle-mode
-  "Toggle alternative speed limits (turtle mode)."
+  "Toggle alternative speed limits (turtle mode).
+Indicates on the mode-line the down/up speed limits in kB/s."
   :group 'transmission
   :global t
   :lighter transmission-turtle-mode-lighter
