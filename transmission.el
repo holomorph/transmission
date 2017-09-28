@@ -977,13 +977,6 @@ Registers the change in `transmission-marked-ids'."
       (tabulated-list-put-tag ">"))
     (set-buffer-modified-p nil)))
 
-(defun transmission-tabulated-list-pred (key)
-  "Return a sorting predicate comparing values of KEY.
-KEY should be a key in an element of `tabulated-list-entries'."
-  (lambda (a b)
-    (> (cdr (assq key (car a)))
-       (cdr (assq key (car b))))))
-
 (defun transmission-move-to-file-name ()
   "Move to the beginning of the filename on the current line."
   (let* ((eol (line-end-position))
