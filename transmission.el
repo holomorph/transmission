@@ -754,8 +754,7 @@ Days are the keys of `transmission-schedules'."
   (cond
    ((or (< a b c) (< b c a) (< c a b)) 1)
    ((or (< c b a) (< a c b) (< b a c)) -1)
-   ((or (= a b) (= b c) (= c a)) 0)
-   (t (error "how u do dat: (%d, %d, %d)" a b c))))
+   ((or (= a b) (= b c) (= c a)) 0)))
 
 (defun transmission-turtle-when (beg end &optional now)
   "Calculate the time in seconds until the next schedule change.
@@ -1513,6 +1512,8 @@ See `transmission-read-time' for details on time input."
   (browse-url-of-file (expand-file-name (transmission-files-file-at-point))))
 
 (defun transmission-copy-filename-as-kill (&optional arg)
+  "Copy name of file at point into the kill ring.
+With a prefix argument, use the absolute file name."
   (interactive "P")
   (let* ((fn (transmission-files-file-at-point))
          (str (if arg fn (file-name-nondirectory fn))))
@@ -1603,28 +1604,29 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
 (defvar transmission-turtle-poll-callback
   (let (timer enabled next lighter)
     (lambda (response)
-       (let-alist response
-         (setq enabled (eq t .alt-speed-enabled))
-         (setq next (transmission-turtle-when .alt-speed-time-begin
-                                              .alt-speed-time-end))
-         (set-default 'transmission-turtle-mode enabled)
-         (setq lighter
-               (if enabled
-                   (concat transmission-turtle-lighter
-                           (format ":%d/%d" .alt-speed-down .alt-speed-up))
-                 nil))
-         (transmission-register-turtle-mode lighter)
-         (when timer (cancel-timer timer))
-         (setq timer (run-at-time next nil #'transmission-turtle-poll)))))
+      (let-alist response
+        (setq enabled (eq t .alt-speed-enabled))
+        (setq next (transmission-turtle-when .alt-speed-time-begin
+                                             .alt-speed-time-end))
+        (set-default 'transmission-turtle-mode enabled)
+        (setq lighter
+              (if enabled
+                  (concat transmission-turtle-lighter
+                          (format ":%d/%d" .alt-speed-down .alt-speed-up))
+                nil))
+        (transmission-register-turtle-mode lighter)
+        (when timer (cancel-timer timer))
+        (setq timer (run-at-time next nil #'transmission-turtle-poll)))))
   "Closure checking turtle mode status and marshaling a timer.")
 
 (defun transmission-turtle-poll (&rest _args)
+  "Initiate `transmission-turtle-poll-callback' timer function."
   (transmission-request-async
    transmission-turtle-poll-callback "session-get"
    '(:fields ("alt-speed-enabled" "alt-speed-down" "alt-speed-up"))))
 
 (defvar transmission-turtle-mode-lighter nil
-  "Lighter for `transmission-turtle-mode'. ")
+  "Lighter for `transmission-turtle-mode'.")
 
 (define-minor-mode transmission-turtle-mode
   "Toggle alternative speed limits (turtle mode).
