@@ -1707,8 +1707,8 @@ PIECES and COUNT are the same as in `transmission-format-pieces'."
   "Format piece data into a string.
 PIECES and COUNT are the same as in `transmission-format-pieces'.
 SIZE is the file size in bytes of a single piece."
-  (let ((have (apply #'+ (mapcar #'transmission-hamming-weight
-                                 (base64-decode-string pieces)))))
+  (let ((have (cl-loop for b across (base64-decode-string pieces)
+                       sum (transmission-hamming-weight b))))
     (concat
      "Piece count: " (transmission-group-digits have)
      " / " (transmission-group-digits count)
