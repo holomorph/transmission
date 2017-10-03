@@ -193,6 +193,13 @@ Each function should accept no arguments, and return a string or nil."
              transmission-ffap-selection
              transmission-ffap-last-killed))
 
+(defcustom transmission-files-command-functions '(mailcap-file-default-commands)
+  "List of functions to use for guessing default applications.
+Each function should accept one argument, a list of file names,
+and return a list of strings or nil."
+  :type 'hook
+  :options '(mailcap-file-default-commands))
+
 (defcustom transmission-geoip-function nil
   "Function used to translate an IP address into a location name.
 The function should accept an IP address and return a string or nil."
@@ -1033,16 +1040,16 @@ point or in region, otherwise a `user-error' is signalled."
                         (,marked (format "[%d marked] " (length ,marked)))
                         (,region (format "[%d in region] " (length ids)))))))))))
 
-(defun transmission-collect-hook (hook)
-  "Run HOOK and return a list of non-nil results from calling its elements."
+(defun transmission-collect-hook (hook &rest args)
+  "Run HOOK with ARGS and return a list of non-nil results from its elements."
   (let (res)
-    (run-hook-wrapped
-     hook
-     (lambda (fun)
-       (let ((val (funcall fun)))
-         (when val (cl-pushnew val res :test #'equal)))
-       nil))
-    (nreverse res)))
+    (cl-flet
+        ((collect (fun &rest args)
+           (let ((val (apply fun args)))
+             (when val (cl-pushnew val res :test #'equal))
+             nil)))
+      (apply #'run-hook-wrapped hook #'collect args)
+      (nreverse res))))
 
 (defmacro transmission-with-window-maybe (window &rest body)
   "If WINDOW is non-nil, execute BODY with WINDOW current.
@@ -1460,8 +1467,10 @@ See `transmission-read-time' for details on time input."
   "Run a command COMMAND on the FILE at point."
   (interactive
    (let* ((fap (run-hook-with-args-until-success 'file-name-at-point-functions))
-          (def (mailcap-file-default-commands
-                (list (replace-regexp-in-string "\\.part\\'" "" fap))))
+          (fn (replace-regexp-in-string "\\.part\\'" "" fap))
+          (def (let ((lists (transmission-collect-hook
+                             'transmission-files-command-functions (list fn))))
+                 (delete-dups (apply #'append lists))))
           (prompt (and fap (concat "! on " (file-name-nondirectory fap)
                                    (when def (format " (default %s)" (car def)))
                                    ": ")))
