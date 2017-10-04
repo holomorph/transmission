@@ -1123,7 +1123,7 @@ When called with a prefix, prompt for DIRECTORY."
    "torrent-add"
    (append (if (and (file-readable-p torrent) (not (file-directory-p torrent)))
                `(:metainfo ,(with-temp-buffer
-                              (insert-file-contents torrent)
+                              (insert-file-contents-literally torrent)
                               (base64-encode-string (buffer-string))))
              (setq torrent (string-trim torrent))
              `(:filename ,(if (transmission-btih-p torrent)
