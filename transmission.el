@@ -406,7 +406,7 @@ and port default to `transmission-host' and
       (dolist (elt headers)
         (insert (format "%s: %s\r\n" (car elt) (cdr elt))))
       (insert "\r\n" content)
-      (process-send-string process (buffer-string)))))
+      (process-send-region process (point-min) (point-max)))))
 
 (defun transmission-wait (process)
   "Wait to receive HTTP response from PROCESS.
@@ -585,9 +585,8 @@ If the array is empty or not found, return nil."
 
 (defun transmission-files-directory-base (filename)
   "Return the top-most parent directory in string FILENAME."
-  (let ((index (and (stringp filename)
-                    (string-match-p "/" filename))))
-    (when index (substring filename 0 (1+ index)))))
+  (let ((index (and (stringp filename) (string-match "/" filename))))
+    (when index (substring filename 0 (match-end 0)))))
 
 (defun transmission-every-prefix-p (prefix list)
   "Return t if PREFIX is a prefix to every string in LIST, otherwise nil."
@@ -799,7 +798,7 @@ NOW is a time, defaulting to `current-time'."
 
 (defun transmission-btih-p (string)
   "Return non-nil if STRING is a BitTorrent info hash, otherwise nil."
-  (if (and string (string-match-p "\\`[[:xdigit:]]\\{40\\}\\'" string)) string))
+  (and string (string-match (rx bos (= 40 xdigit) eos) string) string))
 
 (defun transmission-directory-name-p (name)
   "Return non-nil if NAME ends with a directory separator character."
