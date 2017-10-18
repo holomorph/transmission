@@ -1480,17 +1480,19 @@ See `transmission-read-time' for details on time input."
          (prog (car args)))
     (apply #'start-process prog nil args)))
 
-(defun transmission-copy-file ()
-  "Copy the file at point to another location."
-  (interactive)
-  (let* ((f (transmission-files-file-at-point))
-         (prompt (format "Copy %s to: " (file-name-nondirectory f)))
-         (def (when (bound-and-true-p dired-dwim-target)
-                (buffer-local-value 'default-directory
-                                    (window-buffer (next-window)))))
-         (dir (read-directory-name prompt nil def)))
-    (copy-file f dir nil t t t)
-    (message "Copied %s" (file-name-nondirectory f))))
+(defun transmission-copy-file (file newname &optional ok-if-already-exists)
+  "Copy the file at point to another location.
+FILE, NEWNAME, and OK-IF-ALREADY-EXISTS are the same as in `copy-file'."
+  (interactive
+   (let* ((f (transmission-files-file-at-point))
+          (prompt (format "Copy %s to: " (file-name-nondirectory f)))
+          (def (when (bound-and-true-p dired-dwim-target)
+                 (buffer-local-value 'default-directory
+                                     (window-buffer (next-window)))))
+          (new (read-file-name prompt nil def)))
+     (list f new 0)))
+  (copy-file file newname ok-if-already-exists t t t)
+  (message "Copied %s" (file-name-nondirectory file)))
 
 (defun transmission-find-file ()
   "Visit the file at point with `find-file-read-only'."
