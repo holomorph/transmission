@@ -837,17 +837,16 @@ NOW is a time, defaulting to `current-time'."
 (defun transmission-files-do (action)
   "Apply ACTION to files in `transmission-files-mode' buffers."
   (cl-assert (memq action transmission-file-symbols))
-  (let* ((id transmission-torrent-id)
-         (prop 'tabulated-list-id)
-         (region (use-region-p))
-         (beg (and region (region-beginning)))
-         (end (and region (region-end)))
-         (indices
-          (or transmission-marked-ids
-              (if (null region)
+  (let ((id transmission-torrent-id)
+        (prop 'tabulated-list-id)
+        region marked indices)
+    (setq indices
+          (or (setq marked transmission-marked-ids)
+              (if (null (setq region (use-region-p)))
                   (list (cdr (assq 'index (get-text-property (point) prop))))
-                (mapcar (lambda (id) (cdr (assq 'index id)))
-                        (transmission-text-property-all beg end prop))))))
+                (transmission-refs (transmission-text-property-all
+                                    (region-beginning) (region-end) prop)
+                                   'index))))
     (if (and id indices)
         (let ((arguments (list :ids id action indices)))
           (transmission-request-async nil "torrent-set" arguments))
@@ -1447,17 +1446,17 @@ See `transmission-read-time' for details on time input."
         (delete-window)))))
 
 (defun transmission-files-unwant ()
-  "Mark file(s) at point or in region as unwanted."
+  "Mark file(s)--at point, in region, or marked--as unwanted."
   (interactive)
   (transmission-files-do :files-unwanted))
 
 (defun transmission-files-want ()
-  "Mark file(s) at point or in region as wanted."
+  "Mark file(s)--at point, in region, or marked--as wanted."
   (interactive)
   (transmission-files-do :files-wanted))
 
 (defun transmission-files-priority (priority)
-  "Set bandwidth PRIORITY on file(s) at point or in region."
+  "Set bandwidth PRIORITY on file(s) at point, in region, or marked."
   (interactive
    (list (completing-read "Set priority: " transmission-priority-alist nil t)))
   (transmission-files-do (intern (concat ":priority-" priority))))
