@@ -2072,6 +2072,7 @@ for explanation of the peer flags."
 
 (defvar transmission-info-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") 'transmission-files)
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
     (define-key map "a" 'transmission-trackers-add)
