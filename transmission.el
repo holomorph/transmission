@@ -844,10 +844,10 @@ NOW is a time, defaulting to `current-time'."
   (cl-assert (memq action transmission-file-symbols))
   (let ((id transmission-torrent-id)
         (prop 'tabulated-list-id)
-        region marked indices)
+        indices)
     (setq indices
-          (or (setq marked transmission-marked-ids)
-              (if (null (setq region (use-region-p)))
+          (or transmission-marked-ids
+              (if (null (use-region-p))
                   (list (cdr (assq 'index (get-text-property (point) prop))))
                 (transmission-refs (transmission-text-property-all
                                     (region-beginning) (region-end) prop)
