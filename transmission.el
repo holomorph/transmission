@@ -1102,7 +1102,9 @@ WINDOW with `window-start' and the line/column coordinates of `point'."
   (and (stringp string)
        (let ((magnet-link-string-indicator "magnet:?xt="))
 	 (string-equal magnet-link-string-indicator
-		       (substring string 0 (length magnet-link-string-indicator))))))
+		       (substring string 0
+				  (min (length string)
+				       (length magnet-link-string-indicator)))))))
 
 
 ;; Interactive
