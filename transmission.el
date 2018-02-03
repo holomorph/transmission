@@ -1113,8 +1113,8 @@ WINDOW with `window-start' and the line/column coordinates of `point'."
 (defun transmission-add (torrent &optional directory)
   "Add TORRENT by filename, URL, magnet link, or info hash.
 When called with a prefix, prompt for DIRECTORY. When used
-interactively, magnet link will be fetched from the top
-kill ring entry."
+interactively, will try to fetch magnet link
+from `transmission-torrent-functions'."
   (interactive
    (let* ((f (transmission-collect-hook 'transmission-torrent-functions))
           (def (mapcar #'file-relative-name f))
