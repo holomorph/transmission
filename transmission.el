@@ -1099,9 +1099,10 @@ WINDOW with `window-start' and the line/column coordinates of `point'."
        (unless ,old-mark-active (deactivate-mark)))))
 
 (defun looks-like-a-magnet-link-p (string)
-  (let ((magnet-link-string-indicator "magnet:?xt="))
-    (string-equal magnet-link-string-indicator
-		  (substring string 0 (length magnet-link-string-indicator)))))
+  (and (stringp string)
+       (let ((magnet-link-string-indicator "magnet:?xt="))
+	 (string-equal magnet-link-string-indicator
+		       (substring string 0 (length magnet-link-string-indicator))))))
 
 
 ;; Interactive
