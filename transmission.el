@@ -1,6 +1,6 @@
 ;;; transmission.el --- Interface to a Transmission session -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2019  Mark Oteiza <mvoteiza@udel.edu>
+;; Copyright (C) 2014-2020  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.12.1
