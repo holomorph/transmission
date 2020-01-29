@@ -290,9 +290,6 @@ caching built in or is otherwise slow."
   '(:files-wanted :files-unwanted :priority-high :priority-low :priority-normal)
   "List of \"torrent-set\" method arguments for operating on files.")
 
-(defconst transmission-session-header "X-Transmission-Session-Id"
-  "The \"X-Transmission-Session-Id\" header key.")
-
 (defvar transmission-session-id nil
   "The \"X-Transmission-Session-Id\" header value.")
 
@@ -374,7 +371,7 @@ update `transmission-session-id' and signal the error."
                    (signal 'transmission-failure (list result))))))
         ((or 301 404 405) (signal 'transmission-wrong-rpc-path (list status)))
         (401 (signal 'transmission-unauthorized (list status)))
-        (409 (when (search-forward (format "%s: " transmission-session-header))
+        (409 (when (search-forward "X-Transmission-Session-Id: ")
                (setq transmission-session-id (read buffer))
                (signal 'transmission-conflict (list status))))
         (421 (signal 'transmission-misdirected (list transmission-host)))))))
@@ -401,7 +398,7 @@ and port default to `transmission-host' and
   "Send to PROCESS an HTTP POST request containing CONTENT."
   (with-current-buffer (process-buffer process)
     (erase-buffer))
-  (let ((headers (list (cons transmission-session-header transmission-session-id)
+  (let ((headers (list (cons "X-Transmission-Session-Id" transmission-session-id)
                        (cons "Host" transmission-host) ; CVE-2018-5702
                        (cons "Content-length" (string-bytes content)))))
     (let ((auth (transmission--auth-string)))
