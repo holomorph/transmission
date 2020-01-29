@@ -2003,7 +2003,7 @@ of column descriptors."
 The function is to be used as a `sort' predicate for `tabulated-list-format'.
 The definition is (lambda (a b) (TEST ...)) where the body
 is constructed from TEST, BODY and the `tabulated-list-id' tagged as `<>'."
-  (declare (indent 2))
+  (declare (indent 2) (debug (symbolp function-form body)))
   (let ((a (make-symbol "a"))
         (b (make-symbol "b")))
     (cl-labels
