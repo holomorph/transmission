@@ -839,17 +839,14 @@ NOW is a time, defaulting to `current-time'."
 (defun transmission-files-do (action)
   "Apply ACTION to files in `transmission-files-mode' buffers."
   (cl-assert (memq action transmission-file-symbols))
-  (let ((id transmission-torrent-id)
-        (prop 'tabulated-list-id)
-        indices)
-    (setq indices
-          (or transmission-marked-ids
-              (if (null (use-region-p))
-                  (list (cdr (assq 'index (get-text-property (point) prop))))
-                (transmission-refs (transmission-text-property-all
-                                    (region-beginning) (region-end) prop)
-                                   'index))))
-    (if (and id indices)
+  (let* ((id transmission-torrent-id)
+         (indices (and id
+                       (or transmission-marked-ids
+                           (if (not (use-region-p))
+                               (list (tabulated-list-get-id))
+                             (transmission-text-property-all
+                              (region-beginning) (region-end) 'tabulated-list-id))))))
+    (if indices
         (let ((arguments (list :ids id action indices)))
           (transmission-request-async nil "torrent-set" arguments))
       (user-error "No files selected or at point"))))
@@ -857,8 +854,10 @@ NOW is a time, defaulting to `current-time'."
 (defun transmission-files-file-at-point ()
   "Return the absolute path of the torrent file at point, or nil.
 If the file named \"foo\" does not exist, try \"foo.part\" before returning."
-  (let* ((dir (cdr (assq 'downloadDir (elt transmission-torrent-vector 0))))
-         (base (or (and dir (cdr (assq 'name (tabulated-list-get-id))))
+  (let* ((torrent (elt transmission-torrent-vector 0))
+         (dir (cdr (assq 'downloadDir torrent)))
+         (file (and dir (aref (cdr (assq 'files torrent)) (tabulated-list-get-id))))
+         (base (or (and file (cdr (assq 'name file)))
                    (user-error "No file at point")))
          (filename (and base (expand-file-name base dir))))
     (or (file-exists-p filename)
@@ -868,15 +867,14 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
       (user-error "File does not exist"))))
 
 (defun transmission-files-index (torrent)
-  "Return a list derived from the \"files\" and \"fileStats\" arrays in TORRENT.
-The two are spliced together with indices for each file, sorted by file name."
+  "Return an array of file data from TORRENT."
   (let* ((alist (elt torrent 0))
          (files (cdr (assq 'files alist)))
          (stats (cdr (assq 'fileStats alist))))
-    (cl-loop for f across files
-             for s across stats
-             for i below (length files)
-             collect (append f s (list (cons 'index i))))))
+    (dotimes (i (length stats))
+      (push (assq 'length (aref files i)) (aref stats i))
+      (push (assq 'name (aref files i)) (aref stats i)))
+    stats))
 
 (defun transmission-geoiplookup (ip)
   "Return country name associated with IP using geoiplookup(1)."
@@ -974,8 +972,7 @@ Done in the spirit of `dired-plural-s'."
 (defun transmission-toggle-mark-at-point ()
   "Toggle mark of item at point.
 Registers the change in `transmission-marked-ids'."
-  (let* ((eid (tabulated-list-get-id))
-         (id (cdr (or (assq 'id eid) (assq 'index eid)))))
+  (let ((id (tabulated-list-get-id)))
     (if (memq id transmission-marked-ids)
         (progn
           (setq transmission-marked-ids (delete id transmission-marked-ids))
@@ -1006,12 +1003,10 @@ point or in region, otherwise a `user-error' is signalled."
         (when (null ids)
           (if (setq ,region (use-region-p))
               (setq ids
-                    (cl-loop for x in
-                     (transmission-text-property-all
-                      (region-beginning) (region-end) 'tabulated-list-id)
-                     collect (cdr (assq 'id x))))
+                    (transmission-text-property-all
+                     (region-beginning) (region-end) 'tabulated-list-id))
             (let ((value (get-text-property (point) 'tabulated-list-id)))
-              (when value (setq ids (list (cdr (assq 'id value))))))))
+              (when value (setq ids (list value))))))
         (if (null ids) (user-error "No torrent selected")
           ,@(cl-labels
                 ((expand (form x)
@@ -1621,26 +1616,23 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
 (defun transmission-invert-marks ()
   "Toggle mark on all items."
   (interactive)
-  (let ((inhibit-read-only t) ids tag key)
-    (when (setq key (cl-ecase major-mode
-                      (transmission-mode 'id)
-                      (transmission-files-mode 'index)))
-      (save-excursion
-        (save-restriction
-          (widen)
-          (goto-char (point-min))
-          (catch :eobp
-            (while t
-              (when (setq tag (car (memq (following-char) '(?> ?\s))))
-                (save-excursion
-                  (forward-char)
-                  (insert-and-inherit (if (= tag ?>) ?\s ?>)))
-                (delete-region (point) (1+ (point)))
-                (when (= tag ?\s)
-                  (push (cdr (assq key (tabulated-list-get-id))) ids)))
-              (when (not (zerop (forward-line))) (throw :eobp nil))))))
-      (setq transmission-marked-ids ids)
-      (set-buffer-modified-p nil))))
+  (let ((inhibit-read-only t) ids tag)
+    (save-excursion
+      (save-restriction
+        (widen)
+        (goto-char (point-min))
+        (catch :eobp
+          (while t
+            (when (setq tag (car (memq (following-char) '(?> ?\s))))
+              (save-excursion
+                (forward-char)
+                (insert-and-inherit (if (= tag ?>) ?\s ?>)))
+              (delete-region (point) (1+ (point)))
+              (when (= tag ?\s)
+                (push (tabulated-list-get-id) ids)))
+            (when (not (zerop (forward-line))) (throw :eobp nil))))))
+    (setq transmission-marked-ids ids)
+    (set-buffer-modified-p nil)))
 
 
 ;; Turtle mode
@@ -1834,30 +1826,40 @@ indicates that the speed limit is enabled."
       (setf (cadr idx) (if (eq 'iec transmission-units) 9 7))
       (tabulated-list-init-header))))
 
-(defmacro transmission-do-entries (seq &rest body)
-  "Map over SEQ to generate a new value of `tabulated-list-entries'.
+(defmacro transmission-do-entries (vector &rest body)
+  "Map over VECTOR to generate a new value of `tabulated-list-entries'.
 Each form in BODY is a column descriptor."
   (declare (indent 1) (debug t))
-  (let ((res (make-symbol "res")))
-    `(let (,res)
-       (mapc (lambda (x) (let-alist x (push (list x (vector ,@body)) ,res)))
-             ,seq)
-       (setq tabulated-list-entries (nreverse ,res)))))
+  (let ((vec (make-symbol "vec"))
+        (res (make-symbol "res")))
+    `(let ((,vec ,vector) ,res)
+       (dotimes (i (length ,vec))
+         (let-alist (aref ,vec i) (push (list i (vector ,@body)) ,res)))
+       (setq tabulated-list-entries (nreverse ,res))
+       (tabulated-list-print))))
 
 (defun transmission-draw-torrents (_id)
   (let* ((arguments `(:fields ,transmission-draw-torrents-keys))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
-  (transmission-do-entries transmission-torrent-vector
-    (transmission-eta .eta .percentDone)
-    (transmission-size .sizeWhenDone)
-    (format "%d%%" (* 100 .percentDone))
-    (format "%d" (transmission-rate .rateDownload))
-    (format "%d" (transmission-rate .rateUpload))
-    (format "%.1f" (if (> .uploadRatio 0) .uploadRatio 0))
-    (if (not (zerop .error)) (propertize "error" 'font-lock-face 'error)
-      (transmission-format-status .status .rateUpload .rateDownload))
-    (propertize .name 'transmission-name t))
+  (let ((torrent transmission-torrent-vector)
+        res)
+    (dotimes (i (length torrent))
+      (let-alist (aref torrent i)
+        (push
+         (list .id
+               (vector
+                (transmission-eta .eta .percentDone)
+                (transmission-size .sizeWhenDone)
+                (format "%d%%" (* 100 .percentDone))
+                (format "%d" (transmission-rate .rateDownload))
+                (format "%d" (transmission-rate .rateUpload))
+                (format "%.1f" (if (> .uploadRatio 0) .uploadRatio 0))
+                (if (not (zerop .error)) (propertize "error" 'font-lock-face 'error)
+                  (transmission-format-status .status .rateUpload .rateDownload))
+                (propertize .name 'transmission-name t)))
+         res)))
+    (setq tabulated-list-entries (nreverse res)))
   (tabulated-list-print))
 
 (defun transmission-draw-files (id)
@@ -1874,8 +1876,7 @@ Each form in BODY is a column descriptor."
       (if (eq .wanted :json-false) "no" "yes")
       (transmission-size .length)
       (propertize (if truncate (string-remove-prefix dir .name) .name)
-                  'transmission-name t)))
-  (tabulated-list-print))
+                  'transmission-name t))))
 
 (defmacro transmission-insert-each-when (&rest body)
   "Insert each non-nil form in BODY sequentially on its own line."
@@ -1937,8 +1938,7 @@ Each form in BODY is a column descriptor."
     (format "%d" (transmission-rate .rateToClient))
     (format "%d" (transmission-rate .rateToPeer))
     .clientName
-    (or (transmission-geoip-retrieve .address) ""))
-  (tabulated-list-print))
+    (or (transmission-geoip-retrieve .address) "")))
 
 (defun transmission-draw ()
   "Draw the buffer with new contents via `transmission-refresh-function'."
@@ -1959,16 +1959,14 @@ Also run the timer for timer object `transmission-timer'."
   (declare (debug (symbolp)))
   (cl-assert (string-suffix-p "-mode" (symbol-name mode)))
   (let ((name (make-symbol "name")))
-    `(let ((id (or transmission-torrent-id
-                   (cdr (assq 'id (tabulated-list-get-id)))))
+    `(let ((id (or transmission-torrent-id (tabulated-list-get-id)))
            (,name ,(format "*%s*" (string-remove-suffix "-mode" (symbol-name mode)))))
        (if (not id) (user-error "No torrent selected")
          (let ((buffer (or (get-buffer ,name)
                            (generate-new-buffer ,name))))
            (transmission-turtle-poll)
            (with-current-buffer buffer
-             (let ((old-id (or transmission-torrent-id
-                               (cdr (assq 'id (tabulated-list-get-id))))))
+             (let ((old-id (or transmission-torrent-id (tabulated-list-get-id))))
                (unless (eq major-mode ',mode)
                  (funcall #',mode))
                (if (and old-id (eq old-id id))
@@ -1986,14 +1984,10 @@ torrent is marked.
 ID is a Lisp object identifying the entry to print, and COLS is a vector
 of column descriptors."
   (tabulated-list-print-entry id cols)
-  (let* ((key (cl-ecase major-mode
-                (transmission-mode 'id)
-                (transmission-files-mode 'index)))
-         (item-id (cdr (assq key id))))
-    (when (memq item-id transmission-marked-ids)
-      (save-excursion
-        (forward-line -1)
-        (tabulated-list-put-tag ">")))))
+  (when (memq id transmission-marked-ids)
+    (save-excursion
+      (forward-line -1)
+      (tabulated-list-put-tag ">"))))
 
 
 ;; Major mode definitions
