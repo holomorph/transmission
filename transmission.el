@@ -268,7 +268,7 @@ caching built in or is otherwise slow."
   "Alist of possible Transmission torrent statuses.")
 
 (defconst transmission-draw-torrents-keys
-  '("id" "name" "status" "eta" "error"
+  '("hashString" "name" "status" "eta" "error"
     "rateDownload" "rateUpload"
     "percentDone" "sizeWhenDone"
     "uploadRatio"))
@@ -277,7 +277,7 @@ caching built in or is otherwise slow."
   '("name" "files" "fileStats" "downloadDir"))
 
 (defconst transmission-draw-info-keys
-  '("name" "hashString" "magnetLink" "activityDate" "addedDate"
+  '("name" "id" "magnetLink" "activityDate" "addedDate"
     "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
     "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs" "peersFrom"
     "peersSendingToUs" "sizeWhenDone" "error" "errorString" "uploadRatio"
@@ -303,7 +303,7 @@ caching built in or is otherwise slow."
   "Vector of Transmission torrent data.")
 
 (defvar-local transmission-torrent-id nil
-  "The Transmission torrent ID integer.")
+  "The Transmission torrent SHA-1 hash.")
 
 (defvar-local transmission-refresh-function nil
   "The name of the function used to redraw a buffer.
@@ -330,7 +330,7 @@ Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
   "Table for storing associations between IP addresses and location names.")
 
 (defvar-local transmission-marked-ids nil
-  "List of indices of the currently marked items.")
+  "List of identifiers of the currently marked items.")
 
 (defvar transmission-network-process-pool nil
   "List of network processes connected to Transmission.")
@@ -973,7 +973,7 @@ Done in the spirit of `dired-plural-s'."
   "Toggle mark of item at point.
 Registers the change in `transmission-marked-ids'."
   (let ((id (tabulated-list-get-id)))
-    (if (memq id transmission-marked-ids)
+    (if (member id transmission-marked-ids)
         (progn
           (setq transmission-marked-ids (delete id transmission-marked-ids))
           (tabulated-list-put-tag " "))
@@ -1847,7 +1847,7 @@ Each form in BODY is a column descriptor."
     (dotimes (i (length torrent))
       (let-alist (aref torrent i)
         (push
-         (list .id
+         (list .hashString
                (vector
                 (transmission-eta .eta .percentDone)
                 (transmission-size .sizeWhenDone)
@@ -1893,9 +1893,9 @@ Each form in BODY is a column descriptor."
   (erase-buffer)
   (let-alist (elt transmission-torrent-vector 0)
     (transmission-insert-each-when
-      (format "ID: %d" id)
+      (format "ID: %d" .id)
       (concat "Name: " .name)
-      (concat "Hash: " .hashString)
+      (concat "Hash: " id)
       (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
       (concat "Location: " (abbreviate-file-name .downloadDir))
       (let* ((percent (* 100 .percentDone))
@@ -1969,7 +1969,7 @@ Also run the timer for timer object `transmission-timer'."
              (let ((old-id (or transmission-torrent-id (tabulated-list-get-id))))
                (unless (eq major-mode ',mode)
                  (funcall #',mode))
-               (if (and old-id (eq old-id id))
+               (if (and old-id (equal old-id id))
                    (revert-buffer)
                  (setq transmission-torrent-id id)
                  (setq transmission-marked-ids nil)
@@ -1984,7 +1984,7 @@ torrent is marked.
 ID is a Lisp object identifying the entry to print, and COLS is a vector
 of column descriptors."
   (tabulated-list-print-entry id cols)
-  (when (memq id transmission-marked-ids)
+  (when (member id transmission-marked-ids)
     (save-excursion
       (forward-line -1)
       (tabulated-list-put-tag ">"))))
