@@ -268,23 +268,23 @@ caching built in or is otherwise slow."
   "Alist of possible Transmission torrent statuses.")
 
 (defconst transmission-draw-torrents-keys
-  '("id" "name" "status" "eta" "error"
-    "rateDownload" "rateUpload"
-    "percentDone" "sizeWhenDone"
-    "uploadRatio"))
+  ["id" "name" "status" "eta" "error"
+   "rateDownload" "rateUpload"
+   "percentDone" "sizeWhenDone"
+   "uploadRatio"])
 
 (defconst transmission-draw-files-keys
-  '("name" "files" "fileStats" "downloadDir"))
+  ["name" "files" "fileStats" "downloadDir"])
 
 (defconst transmission-draw-info-keys
-  '("name" "hashString" "magnetLink" "activityDate" "addedDate"
-    "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
-    "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs" "peersFrom"
-    "peersSendingToUs" "sizeWhenDone" "error" "errorString" "uploadRatio"
-    "downloadedEver" "corruptEver" "haveValid" "totalSize" "percentDone"
-    "seedRatioLimit" "seedRatioMode" "bandwidthPriority" "downloadDir"
-    "uploadLimit" "uploadLimited" "downloadLimit" "downloadLimited"
-    "honorsSessionLimits" "rateDownload" "rateUpload" "queuePosition"))
+  ["name" "hashString" "magnetLink" "activityDate" "addedDate"
+   "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
+   "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs" "peersFrom"
+   "peersSendingToUs" "sizeWhenDone" "error" "errorString" "uploadRatio"
+   "downloadedEver" "corruptEver" "haveValid" "totalSize" "percentDone"
+   "seedRatioLimit" "seedRatioMode" "bandwidthPriority" "downloadDir"
+   "uploadLimit" "uploadLimited" "downloadLimit" "downloadLimited"
+   "honorsSessionLimits" "rateDownload" "rateUpload" "queuePosition"])
 
 (defconst transmission-file-symbols
   '(:files-wanted :files-unwanted :priority-high :priority-low :priority-normal)
@@ -681,7 +681,7 @@ Direction D should be a symbol, either \"up\" or \"down\"."
                 (prompt (concat "Set torrent's " (symbol-name d) "load limit ("
                                 (if throttle (format "%d kB/s" n) "disabled") "): ")))
            (transmission-throttle-torrent ids limit (read-number prompt))))
-       "torrent-get" `(:ids ,ids :fields (,str ,(concat str "ed")))))))
+       "torrent-get" `(:ids ,ids :fields [,str ,(concat str "ed")])))))
 
 (defun transmission-torrent-honors-speed-limits-p ()
   "Return non-nil if torrent honors session speed limits, otherwise nil."
@@ -781,13 +781,13 @@ NOW is a time, defaulting to `current-time'."
 
 (defun transmission-tracker-stats (id)
   "Return the \"trackerStats\" array for torrent id ID."
-  (let* ((arguments `(:ids ,id :fields ("trackerStats")))
+  (let* ((arguments `(:ids ,id :fields ["trackerStats"]))
          (response (transmission-request "torrent-get" arguments)))
     (cdr (assq 'trackerStats (elt (transmission-torrents response) 0)))))
 
 (defun transmission-unique-announce-urls ()
   "Return a list of unique announce URLs from all current torrents."
-  (let ((response (transmission-request "torrent-get" '(:fields ("trackers"))))
+  (let ((response (transmission-request "torrent-get" '(:fields ["trackers"])))
         torrents trackers res)
     (dotimes (i (length (setq torrents (transmission-torrents response))))
       (dotimes (j (length (setq trackers (cdr (assq 'trackers (aref torrents i))))))
@@ -1259,7 +1259,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                        (:json-false t) (_ :json-false))))
          (transmission-request-async nil "torrent-set"
                                      `(:ids ,ids :honorsSessionLimits ,honor))))
-     "torrent-get" `(:ids ,ids :fields ("honorsSessionLimits")))))
+     "torrent-get" `(:ids ,ids :fields ["honorsSessionLimits"]))))
 
 (defun transmission-toggle (ids)
   "Toggle selected torrent(s) between started and stopped."
@@ -1273,7 +1273,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
               (method (and status
                            (if (zerop status) "torrent-start" "torrent-stop"))))
          (when method (transmission-request-async nil method (list :ids ids)))))
-     "torrent-get" (list :ids ids :fields '("status")))))
+     "torrent-get" (list :ids ids :fields ["status"]))))
 
 (defun transmission-trackers-add (ids urls)
   "Add announce URLs to selected torrent or torrents."
@@ -1663,7 +1663,7 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
   "Initiate `transmission-turtle-poll-callback' timer function."
   (transmission-request-async
    transmission-turtle-poll-callback "session-get"
-   '(:fields ("alt-speed-enabled" "alt-speed-down" "alt-speed-up"))))
+   '(:fields ["alt-speed-enabled" "alt-speed-down" "alt-speed-up"])))
 
 (defvar transmission-turtle-mode-lighter nil
   "Lighter for `transmission-turtle-mode'.")
@@ -1923,7 +1923,7 @@ Each form in BODY is a column descriptor."
       (transmission-format-pieces-internal .pieces .pieceCount .pieceSize))))
 
 (defun transmission-draw-peers (id)
-  (let* ((arguments `(:ids ,id :fields ("peers")))
+  (let* ((arguments `(:ids ,id :fields ["peers"]))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
   (transmission-do-entries (cdr (assq 'peers (elt transmission-torrent-vector 0)))
