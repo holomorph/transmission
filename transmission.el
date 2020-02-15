@@ -305,10 +305,6 @@ caching built in or is otherwise slow."
 (defvar-local transmission-torrent-id nil
   "The Transmission torrent ID integer.")
 
-(defvar-local transmission-refresh-function nil
-  "The name of the function used to redraw a buffer.
-Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
-
 (define-error 'transmission-conflict
   "Wrong or missing header \"X-Transmission-Session-Id\"")
 
@@ -1940,19 +1936,26 @@ Each form in BODY is a column descriptor."
     (or (transmission-geoip-retrieve .address) ""))
   (tabulated-list-print))
 
-(defun transmission-draw ()
-  "Draw the buffer with new contents via `transmission-refresh-function'."
-  (with-silent-modifications
-    (funcall transmission-refresh-function transmission-torrent-id)))
+(defmacro define-transmission-refresher (name)
+  "Define a function `transmission-refresh-NAME' that refreshes a context buffer.
+The defined function takes no arguments and expects
+`transmission-draw-NAME' to exist.
+Window position, point, and mark are restored, and the timer
+object `transmission-timer' is run."
+  (declare (indent 1) (debug (symbolp)))
+  (let ((thing (symbol-name name)))
+    `(defun ,(intern (concat "transmission-refresh-" thing)) (_arg _noconfirm)
+       (transmission-with-saved-state
+         (run-hooks 'before-revert-hook)
+         (with-silent-modifications
+           (,(intern (concat "transmission-draw-" thing)) transmission-torrent-id))
+         (run-hooks 'after-revert-hook))
+       (transmission-timer-check))))
 
-(defun transmission-refresh (&optional _arg _noconfirm)
-  "Refresh the current buffer, restoring window position, point, and mark.
-Also run the timer for timer object `transmission-timer'."
-  (transmission-with-saved-state
-    (run-hooks 'before-revert-hook)
-    (transmission-draw)
-    (run-hooks 'after-revert-hook))
-  (transmission-timer-check))
+(define-transmission-refresher torrents)
+(define-transmission-refresher files)
+(define-transmission-refresher info)
+(define-transmission-refresher peers)
 
 (defmacro transmission-context (mode)
   "Switch to a context buffer of major mode MODE."
@@ -1975,7 +1978,7 @@ Also run the timer for timer object `transmission-timer'."
                    (revert-buffer)
                  (setq transmission-torrent-id id)
                  (setq transmission-marked-ids nil)
-                 (transmission-draw)
+                 (revert-buffer)
                  (goto-char (point-min)))))
            (pop-to-buffer-same-window buffer))))))
 
@@ -2060,9 +2063,8 @@ for explanation of the peer flags."
          ("Client" 20 t)
          ("Location" 0 t)])
   (tabulated-list-init-header)
-  (setq transmission-refresh-function #'transmission-draw-peers)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
-  (setq-local revert-buffer-function #'transmission-refresh))
+  (setq-local revert-buffer-function #'transmission-refresh-peers))
 
 (defun transmission-peers ()
   "Open a `transmission-peers-mode' buffer for torrent at point."
@@ -2127,9 +2129,8 @@ for explanation of the peer flags."
   :group 'transmission
   (setq buffer-undo-list t)
   (setq font-lock-defaults '(transmission-info-font-lock-keywords t))
-  (setq transmission-refresh-function #'transmission-draw-info)
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
-  (setq-local revert-buffer-function #'transmission-refresh))
+  (setq-local revert-buffer-function #'transmission-refresh-info))
 
 (defun transmission-info ()
   "Open a `transmission-info-mode' buffer for torrent at point."
@@ -2205,9 +2206,8 @@ for explanation of the peer flags."
   (setq tabulated-list-padding 1)
   (transmission-tabulated-list-format)
   (setq-local file-name-at-point-functions #'transmission-files-file-at-point)
-  (setq transmission-refresh-function #'transmission-draw-files)
   (setq tabulated-list-printer #'transmission-print-torrent)
-  (setq-local revert-buffer-function #'transmission-refresh)
+  (setq-local revert-buffer-function #'transmission-refresh-files)
   (setq-local font-lock-defaults '(transmission-files-font-lock-keywords t))
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (add-hook 'before-revert-hook #'transmission-tabulated-list-format nil t))
@@ -2313,9 +2313,8 @@ Transmission."
          ("Name" 0 t)])
   (setq tabulated-list-padding 1)
   (transmission-tabulated-list-format)
-  (setq transmission-refresh-function #'transmission-draw-torrents)
   (setq tabulated-list-printer #'transmission-print-torrent)
-  (setq-local revert-buffer-function #'transmission-refresh)
+  (setq-local revert-buffer-function #'transmission-refresh-torrents)
   (setq-local font-lock-defaults '(transmission-font-lock-keywords t))
   (add-hook 'post-command-hook #'transmission-timer-check nil t)
   (add-hook 'before-revert-hook #'transmission-tabulated-list-format nil t))
@@ -2334,7 +2333,7 @@ Transmission."
           (condition-case e
               (progn
                 (transmission-mode)
-                (transmission-draw)
+                (revert-buffer)
                 (goto-char (point-min)))
             (error
              (kill-buffer buffer)
