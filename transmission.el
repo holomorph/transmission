@@ -335,6 +335,9 @@ Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
 (defvar transmission-network-process-pool nil
   "List of network processes connected to Transmission.")
 
+(defvar transmission-files-table (make-hash-table :test 'equal)
+  "Table for storing torrent file attributes.")
+
 
 ;; JSON RPC
 
@@ -585,14 +588,15 @@ If the array is empty or not found, return nil."
   "Return the percentage of HAVE by TOTAL."
   (if (zerop total) 0 (/ (* 100.0 have) total)))
 
-(defun transmission-files-directory-base (filename)
-  "Return the top-most parent directory in string FILENAME."
-  (let ((index (and (stringp filename) (string-match "/" filename))))
-    (when index (substring filename 0 (match-end 0)))))
-
-(defun transmission-every-prefix-p (prefix list)
-  "Return t if PREFIX is a prefix to every string in LIST, otherwise nil."
-  (cl-loop for string in list always (string-prefix-p prefix string)))
+(defun transmission-files-prefix (files)
+  "Return a string that is a prefix for every file in FILES, otherwise nil."
+  (let* ((filename (cdr (assq 'name (aref files 0))))
+         (index (and (stringp filename) (string-match "/" filename)))
+         (dir (and index (substring filename 0 (match-end 0)))))
+    (when (and dir
+               (cl-loop for file across files
+                        always (string-prefix-p dir (cdr (assq 'name file)))))
+      dir)))
 
 (defun transmission-slice (str k)
   "Slice STRING into K strings of somewhat equal size.
@@ -856,7 +860,9 @@ NOW is a time, defaulting to `current-time'."
 If the file named \"foo\" does not exist, try \"foo.part\" before returning."
   (let* ((torrent (elt transmission-torrent-vector 0))
          (dir (cdr (assq 'downloadDir torrent)))
-         (file (and dir (aref (cdr (assq 'files torrent)) (tabulated-list-get-id))))
+         (file (and dir (aref (gethash transmission-torrent-id
+                                       transmission-files-table)
+                              (tabulated-list-get-id))))
          (base (or (and file (cdr (assq 'name file)))
                    (user-error "No file at point")))
          (filename (and base (expand-file-name base dir))))
@@ -865,16 +871,6 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
           (and (file-exists-p part) (setq filename part))))
     (if filename (abbreviate-file-name filename)
       (user-error "File does not exist"))))
-
-(defun transmission-files-index (torrent)
-  "Return an array of file data from TORRENT."
-  (let* ((alist (elt torrent 0))
-         (files (cdr (assq 'files alist)))
-         (stats (cdr (assq 'fileStats alist))))
-    (dotimes (i (length stats))
-      (push (assq 'length (aref files i)) (aref stats i))
-      (push (assq 'name (aref files i)) (aref stats i)))
-    stats))
 
 (defun transmission-geoiplookup (ip)
   "Return country name associated with IP using geoiplookup(1)."
@@ -1863,20 +1859,40 @@ Each form in BODY is a column descriptor."
   (tabulated-list-print))
 
 (defun transmission-draw-files (id)
-  (let* ((arguments `(:ids ,id :fields ,transmission-draw-files-keys))
-         (response (transmission-request "torrent-get" arguments)))
-    (setq transmission-torrent-vector (transmission-torrents response)))
-  (let* ((files (transmission-files-index transmission-torrent-vector))
-         (names (transmission-refs files 'name))
-         (dir (transmission-files-directory-base (car names)))
-         (truncate (and dir (transmission-every-prefix-p dir names))))
-    (transmission-do-entries files
-      (format "%d%%" (transmission-percent .bytesCompleted .length))
-      (symbol-name (car (rassq .priority transmission-priority-alist)))
-      (if (eq .wanted :json-false) "no" "yes")
-      (transmission-size .length)
-      (propertize (if truncate (string-remove-prefix dir .name) .name)
-                  'transmission-name t))))
+  (let ((files (gethash id transmission-files-table))
+        torrent)
+    (let* ((fields (if files ["name" "fileStats" "downloadDir"]
+                     transmission-draw-files-keys))
+           (arguments `(:ids ,id :fields ,fields))
+           (response (transmission-request "torrent-get" arguments)))
+      (setq torrent (transmission-torrents response)))
+    (setq transmission-torrent-vector torrent)
+    (when (null files)
+      (puthash id (setq files (cdr (assq 'files (aref torrent 0))))
+               transmission-files-table))
+    (let ((stats (cdr (assq 'fileStats (aref torrent 0))))
+          (prefix (transmission-files-prefix files))
+           res)
+      (dotimes (i (length stats))
+        (let* ((f (aref files i))
+               (s (aref stats i))
+               (bytes (cdr (assq 'bytesCompleted s)))
+               (length (cdr (assq 'length f)))
+               (priority (cdr (assq 'priority s)))
+               (wanted (cdr (assq 'wanted s)))
+               (name (cdr (assq 'name f))))
+          (push
+           (list i
+                 (vector
+                  (format "%d%%" (transmission-percent bytes length))
+                  (symbol-name (car (rassq priority transmission-priority-alist)))
+                  (if (eq wanted :json-false) "no" "yes")
+                  (transmission-size length)
+                  (propertize (if prefix (string-remove-prefix prefix name) name)
+                              'transmission-name t)))
+           res)))
+      (setq tabulated-list-entries (nreverse res))))
+  (tabulated-list-print))
 
 (defmacro transmission-insert-each-when (&rest body)
   "Insert each non-nil form in BODY sequentially on its own line."
