@@ -337,7 +337,7 @@ caching built in or is otherwise slow."
 (defun transmission--move-to-content ()
   "Move the point to beginning of content after the headers."
   (setf (point) (point-min))
-  (re-search-forward "\r?\n\r?\n" nil t))
+  (re-search-forward "^\r?\n" nil t))
 
 (defun transmission--content-finished-p ()
   "Return non-nil if all of the content has arrived."
