@@ -355,8 +355,8 @@ A 409 response from a Transmission session includes the
 update `transmission-session-id' and signal the error."
   (save-excursion
     (goto-char (point-min))
-    (skip-chars-forward "HTTP/")
-    (skip-chars-forward "[0-9].")
+    (forward-char 5) ; skip "HTTP/"
+    (skip-chars-forward "0-9.")
     (let* ((buffer (current-buffer))
            (status (read buffer)))
       (pcase status
