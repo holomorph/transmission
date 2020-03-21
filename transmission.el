@@ -777,7 +777,7 @@ NOW is a time, defaulting to `current-time'."
 (defun transmission-tracker-url-p (str)
   "Return non-nil if STR is not just a number."
   (let ((match (string-match "[^[:blank:]]" str)))
-    (when match (null (< ?0 (aref str match) ?9)))))
+    (when match (null (<= ?0 (aref str match) ?9)))))
 
 (defun transmission-tracker-stats (id)
   "Return the \"trackerStats\" array for torrent id ID."
