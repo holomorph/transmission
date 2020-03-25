@@ -400,7 +400,7 @@ and port default to `transmission-host' and
     (let ((auth (transmission--auth-string)))
       (when auth (push (cons "Authorization" auth) headers)))
     (with-temp-buffer
-      (insert (format "POST %s HTTP/1.1\r\n" transmission-rpc-path))
+      (insert (concat "POST " transmission-rpc-path " HTTP/1.1\r\n"))
       (dolist (elt headers)
         (insert (format "%s: %s\r\n" (car elt) (cdr elt))))
       (insert "\r\n" content)
@@ -1779,11 +1779,9 @@ CONNECTED, SENDING, RECEIVING are numbers."
     (let* ((label (format "Tracker %d" .id))
            (col (length label))
            (fill (propertize (make-string col ?\s) 'display `(space :align-to ,col)))
-           (result (pcase .lastAnnounceResult
-                     ((or "Success" (pred string-empty-p)) nil)
-                     (_ (concat "\n" fill ": "
-                                (propertize .lastAnnounceResult
-                                            'font-lock-face 'warning))))))
+           (result (unless (member .lastAnnounceResult '("Success" ""))
+                     (concat "\n" fill ": "
+                             (propertize .lastAnnounceResult 'font-lock-face 'warning)))))
       (format
        (concat label ": %s (Tier %d)\n"
                fill ": %s %s. Announcing %s\n"
