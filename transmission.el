@@ -1667,7 +1667,8 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
   "Initiate `transmission-turtle-poll-callback' timer function."
   (transmission-request-async
    transmission-turtle-poll-callback "session-get"
-   '(:fields ["alt-speed-enabled" "alt-speed-down" "alt-speed-up"])))
+   '(:fields ["alt-speed-enabled" "alt-speed-down" "alt-speed-up"
+              "alt-speed-time-begin" "alt-speed-time-end"])))
 
 (defvar transmission-turtle-mode-lighter nil
   "Lighter for `transmission-turtle-mode'.")
