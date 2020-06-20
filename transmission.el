@@ -268,7 +268,7 @@ caching built in or is otherwise slow."
   "Alist of possible Transmission torrent statuses.")
 
 (defconst transmission-draw-torrents-keys
-  ["id" "name" "status" "eta" "error"
+  ["id" "name" "status" "eta" "error" "labels"
    "rateDownload" "rateUpload"
    "percentDone" "sizeWhenDone"
    "uploadRatio"])
@@ -277,7 +277,7 @@ caching built in or is otherwise slow."
   ["name" "files" "fileStats" "downloadDir"])
 
 (defconst transmission-draw-info-keys
-  ["name" "hashString" "magnetLink" "activityDate" "addedDate"
+  ["name" "hashString" "magnetLink" "labels" "activityDate" "addedDate"
    "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
    "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs" "peersFrom"
    "peersSendingToUs" "sizeWhenDone" "error" "errorString" "uploadRatio"
@@ -990,6 +990,15 @@ Registers the change in `transmission-marked-ids'."
          (change (next-single-property-change (point-at-bol) 'transmission-name nil eol)))
     (when (and change (< change eol))
       (goto-char change))))
+
+(defun transmission-file-name-matcher (limit)
+  (let ((beg (next-single-property-change (point) 'transmission-name nil limit)))
+    (when (and beg (< beg limit))
+      (goto-char beg)
+      (let ((end (next-single-property-change (point) 'transmission-name nil limit)))
+        (when (and end (<= end limit))
+          (set-match-data (list beg end))
+          (goto-char end))))))
 
 (defmacro transmission-interactive (&rest spec)
   "Specify interactive use of a function.
@@ -1856,7 +1865,11 @@ Each form in BODY is a column descriptor."
     (format "%.1f" (if (> .uploadRatio 0) .uploadRatio 0))
     (if (not (zerop .error)) (propertize "error" 'font-lock-face 'error)
       (transmission-format-status .status .rateUpload .rateDownload))
-    (propertize .name 'transmission-name t))
+    (concat
+     (propertize .name 'transmission-name t)
+     (mapconcat (lambda (l)
+                  (concat " " (propertize l 'font-lock-face 'font-lock-constant-face)))
+                .labels "")))
   (tabulated-list-print))
 
 (defun transmission-draw-files (id)
@@ -1894,7 +1907,9 @@ Each form in BODY is a column descriptor."
       (format "ID: %d" id)
       (concat "Name: " .name)
       (concat "Hash: " .hashString)
-      (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
+      (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link))
+      (if (zerop (length .labels)) ""
+        (concat "Labels: " (mapconcat #'identity .labels ", ") "\n"))
       (concat "Location: " (abbreviate-file-name .downloadDir))
       (let* ((percent (* 100 .percentDone))
              (fmt (if (zerop (mod percent 1)) "%d" "%.2f")))
@@ -2217,7 +2232,7 @@ for explanation of the peer flags."
   (transmission-context transmission-files-mode))
 
 (defvar transmission-font-lock-keywords
-  '(("^[>]" (".+" (transmission-move-to-file-name) nil (0 'warning))))
+  '(("^[>]" (transmission-file-name-matcher nil nil (0 'warning))))
   "Default expressions to highlight in `transmission-mode'.")
 
 (defvar transmission-mode-map
