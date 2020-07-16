@@ -270,7 +270,7 @@ caching built in or is otherwise slow."
 (defconst transmission-draw-torrents-keys
   ["id" "name" "status" "eta" "error" "labels"
    "rateDownload" "rateUpload"
-   "percentDone" "sizeWhenDone"
+   "percentDone" "sizeWhenDone" "metadataPercentComplete"
    "uploadRatio"])
 
 (defconst transmission-draw-files-keys
@@ -1859,7 +1859,8 @@ Each form in BODY is a column descriptor."
   (transmission-do-entries transmission-torrent-vector
     (transmission-eta .eta .percentDone)
     (transmission-size .sizeWhenDone)
-    (format "%d%%" (* 100 .percentDone))
+    (format "%d%%" (* 100 (if (= 1 .metadataPercentComplete)
+                              .percentDone .metadataPercentComplete)))
     (format "%d" (transmission-rate .rateDownload))
     (format "%d" (transmission-rate .rateUpload))
     (format "%.1f" (if (> .uploadRatio 0) .uploadRatio 0))
