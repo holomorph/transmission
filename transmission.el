@@ -2038,11 +2038,16 @@ is constructed from TEST, BODY and the `tabulated-list-id' tagged as `<>'."
 (define-transmission-predicate size-when-done>? > (cdr (assq 'sizeWhenDone <>)))
 (define-transmission-predicate percent-done>? > (cdr (assq 'percentDone <>)))
 (define-transmission-predicate ratio>? > (cdr (assq 'uploadRatio <>)))
+(define-transmission-predicate progress>? > (cdr (assq 'progress <>)))
 
 (define-transmission-predicate eta>=? >=
   (let-alist <>
     (if (>= .eta 0) .eta
       (- 1.0 .percentDone))))
+
+(define-transmission-predicate file-have>? >
+  (let-alist <>
+    (/ (* 1.0 .bytesCompleted) .length)))
 
 (defvar transmission-peers-mode-map
   (let ((map (make-sparse-keymap)))
@@ -2069,7 +2074,7 @@ for explanation of the peer flags."
   (setq tabulated-list-format
         [("Address" 15 nil)
          ("Flags" 6 t)
-         ("Has" 4 nil :right-align t)
+         ("Has" 4 transmission-progress>? :right-align t)
          ("Down" 4 transmission-download>? :right-align t)
          ("Up" 3 transmission-upload>? :right-align t :pad-right 2)
          ("Client" 20 t)
@@ -2212,7 +2217,7 @@ for explanation of the peer flags."
   :group 'transmission
   (setq-local line-move-visual nil)
   (setq tabulated-list-format
-        [("Have" 4 nil :right-align t)
+        [("Have" 4 transmission-file-have>? :right-align t)
          ("Priority" 8 t)
          ("Want" 4 t :right-align t)
          ("Size" 9 transmission-size>? :right-align t :transmission-size t)
