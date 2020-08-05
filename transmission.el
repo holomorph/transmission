@@ -585,15 +585,6 @@ If the array is empty or not found, return nil."
   "Return the percentage of HAVE by TOTAL."
   (if (zerop total) 0 (/ (* 100.0 have) total)))
 
-(defun transmission-files-directory-base (filename)
-  "Return the top-most parent directory in string FILENAME."
-  (let ((index (and (stringp filename) (string-match "/" filename))))
-    (when index (substring filename 0 (match-end 0)))))
-
-(defun transmission-every-prefix-p (prefix list)
-  "Return t if PREFIX is a prefix to every string in LIST, otherwise nil."
-  (cl-loop for string in list always (string-prefix-p prefix string)))
-
 (defun transmission-slice (str k)
   "Slice STRING into K strings of somewhat equal size.
 The result can have no more elements than STRING.
@@ -872,11 +863,23 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
 The two are spliced together with indices for each file, sorted by file name."
   (let* ((alist (elt torrent 0))
          (files (cdr (assq 'files alist)))
-         (stats (cdr (assq 'fileStats alist))))
-    (cl-loop for f across files
-             for s across stats
-             for i below (length files)
-             collect (append f s (list (cons 'index i))))))
+         (stats (cdr (assq 'fileStats alist)))
+         (n (length files))
+         (res (make-vector n 0)))
+    (dotimes (i n)
+      (aset res i (append (aref files i) (aref stats i) (list (cons 'index i)))))
+    res))
+
+(defun transmission-files-prefix (files)
+  "Return a string that is a prefix of every filename in FILES, otherwise nil."
+  (when (< 0 (length files))
+    (let* ((filename (cdr (assq 'name (aref files 0))))
+           (index (and (stringp filename) (string-match "/" filename)))
+           (dir (and index (substring filename 0 (match-end 0)))))
+      (when (and dir
+                 (cl-loop for file across files
+                          always (string-prefix-p dir (cdr (assq 'name file)))))
+        dir))))
 
 (defun transmission-geoiplookup (ip)
   "Return country name associated with IP using geoiplookup(1)."
@@ -1878,15 +1881,13 @@ Each form in BODY is a column descriptor."
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
   (let* ((files (transmission-files-index transmission-torrent-vector))
-         (names (transmission-refs files 'name))
-         (dir (transmission-files-directory-base (car names)))
-         (truncate (and dir (transmission-every-prefix-p dir names))))
+         (prefix (transmission-files-prefix files)))
     (transmission-do-entries files
       (format "%d%%" (transmission-percent .bytesCompleted .length))
       (symbol-name (car (rassq .priority transmission-priority-alist)))
       (if (eq .wanted :json-false) "no" "yes")
       (transmission-size .length)
-      (propertize (if truncate (string-remove-prefix dir .name) .name)
+      (propertize (if prefix (string-remove-prefix prefix .name) .name)
                   'transmission-name t)))
   (tabulated-list-print))
 
