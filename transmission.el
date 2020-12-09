@@ -685,22 +685,25 @@ Direction D should be a symbol, either \"up\" or \"down\"."
   "Make a prompt to set transfer speed limit.
 If UPLOAD is non-nil, make a prompt for upload rate, otherwise
 for download rate."
-  (let-alist (transmission-request "session-get")
-    (let ((limit (if upload .speed-limit-up .speed-limit-down))
-          (enabled (eq t (if upload .speed-limit-up-enabled
-                           .speed-limit-down-enabled))))
-      (list (read-number (concat "Set global " (if upload "up" "down") "load limit ("
-                                 (if enabled (format "%d kB/s" limit) "disabled")
-                                 "): "))))))
+  (let ((args '(:fields ["speed-limit-up" "speed-limit-down"
+                         "speed-limit-up-enabled" "speed-limit-down-enabled"])))
+    (let-alist (transmission-request "session-get" args)
+      (let ((limit (if upload .speed-limit-up .speed-limit-down))
+            (enabled (eq t (if upload .speed-limit-up-enabled
+                             .speed-limit-down-enabled))))
+        (list (read-number (concat "Set global " (if upload "up" "down") "load limit ("
+                                   (if enabled (format "%d kB/s" limit) "disabled")
+                                   "): ")))))))
 
 (defun transmission-prompt-ratio-limit ()
   "Make a prompt to set global seed ratio limit."
-  (let-alist (transmission-request "session-get")
-    (let ((limit .seedRatioLimit)
-          (enabled (eq t .seedRatioLimited)))
-      (list (read-number (concat "Set global seed ratio limit ("
-                                 (if enabled (format "%.1f" limit) "disabled")
-                                 "): "))))))
+  (let ((arguments '(:fields ["seedRatioLimit" "seedRatioLimited"])))
+    (let-alist (transmission-request "session-get" arguments)
+      (let ((limit .seedRatioLimit)
+            (enabled (eq t .seedRatioLimited)))
+        (list (read-number (concat "Set global seed ratio limit ("
+                                   (if enabled (format "%.1f" limit) "disabled")
+                                   "): ")))))))
 
 (defun transmission-read-strings (prompt &optional collection history filter)
   "Read strings until an input is blank, with optional completion.
@@ -1372,17 +1375,18 @@ DAYS is a bitfield, the associations of which are in `transmission-schedules'.
 Empty input or non-positive DAYS makes no change to the schedule.
 With a prefix argument, disable turtle mode schedule."
   (interactive
-   (let-alist (transmission-request "session-get")
-     (let* ((alist transmission-schedules)
-            (prompt
-             (format "Days %s%s: "
-                     (or (transmission-n->days .alt-speed-time-day) "(none)")
-                     (if (eq t .alt-speed-time-enabled) "" " [disabled]")))
-            (names (transmission-read-strings prompt alist))
-            (bits 0))
-       (dolist (name names)
-         (cl-callf logior bits (cdr (assq (intern name) alist))))
-       (list bits current-prefix-arg))))
+   (let ((arguments '(:fields ["alt-speed-time-day" "alt-speed-time-enabled"])))
+     (let-alist (transmission-request "session-get" arguments)
+       (let* ((alist transmission-schedules)
+              (prompt
+               (format "Days %s%s: "
+                       (or (transmission-n->days .alt-speed-time-day) "(none)")
+                       (if (eq t .alt-speed-time-enabled) "" " [disabled]")))
+              (names (transmission-read-strings prompt alist))
+              (bits 0))
+         (dolist (name names)
+           (cl-callf logior bits (cdr (assq (intern name) alist))))
+         (list bits current-prefix-arg)))))
   (let ((arguments
          (append `(:alt-speed-time-enabled ,(if disable json-false t))
                  (when (> days 0) `(:alt-speed-time-day ,days)))))
@@ -1392,19 +1396,20 @@ With a prefix argument, disable turtle mode schedule."
   "Set BEGIN and END times for turtle mode.
 See `transmission-read-time' for details on time input."
   (interactive
-   (let-alist (transmission-request "session-get")
-     (let* ((begs (transmission-format-minutes .alt-speed-time-begin))
-            (ends (transmission-format-minutes .alt-speed-time-end))
-            (start (or (transmission-read-time (format "Begin (%s): " begs))
-                       .alt-speed-time-begin))
-            (stop (or (transmission-read-time (format "End (%s): " ends))
-                      .alt-speed-time-end)))
-       (when (and (= start .alt-speed-time-begin) (= stop .alt-speed-time-end))
-         (user-error "No change in schedule"))
-       (if (y-or-n-p (format "Set active time from %s to %s? "
-                             (transmission-format-minutes start)
-                             (transmission-format-minutes stop)))
-           (list start stop) '(nil nil)))))
+   (let ((arguments '(:fields ["alt-speed-time-begin" "alt-speed-time-end"])))
+     (let-alist (transmission-request "session-get" arguments)
+       (let* ((begs (transmission-format-minutes .alt-speed-time-begin))
+              (ends (transmission-format-minutes .alt-speed-time-end))
+              (start (or (transmission-read-time (format "Begin (%s): " begs))
+                         .alt-speed-time-begin))
+              (stop (or (transmission-read-time (format "End (%s): " ends))
+                        .alt-speed-time-end)))
+         (when (and (= start .alt-speed-time-begin) (= stop .alt-speed-time-end))
+           (user-error "No change in schedule"))
+         (if (y-or-n-p (format "Set active time from %s to %s? "
+                               (transmission-format-minutes start)
+                               (transmission-format-minutes stop)))
+             (list start stop) '(nil nil))))))
   (when (or begin end)
     (let ((arguments
            (append (when begin (list :alt-speed-time-begin begin))
@@ -1414,7 +1419,7 @@ See `transmission-read-time' for details on time input."
 (defun transmission-turtle-set-speeds (up down)
   "Set UP and DOWN speed limits (kB/s) for turtle mode."
   (interactive
-   (let-alist (transmission-request "session-get")
+   (let-alist (transmission-request "session-get" '(:fields ["alt-speed-up" "alt-speed-down"]))
      (let ((p1 (format "Set turtle upload limit (%d kB/s): " .alt-speed-up))
            (p2 (format "Set turtle download limit (%d kB/s): " .alt-speed-down)))
        (list (read-number p1) (read-number p2)))))
@@ -1437,7 +1442,9 @@ See `transmission-read-time' for details on time input."
         (transmission-format-minutes .alt-speed-time-end)
         (let ((bits (transmission-n->days .alt-speed-time-day)))
           (if (null bits) "never" (mapconcat #'symbol-name bits " "))))))
-   "session-get"))
+   "session-get"
+   '(:fields ["alt-speed-enabled" "alt-speed-down" "alt-speed-up" "alt-speed-time-day"
+              "alt-speed-time-enabled" "alt-speed-time-begin" "alt-speed-time-end"])))
 
 (defun transmission-verify (ids)
   "Verify torrent at point, in region, or marked."
