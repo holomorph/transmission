@@ -451,7 +451,6 @@ custom variables `transmission-host' and `transmission-service'."
                    :service (or socket transmission-service)
                    :family (when socket 'local) :noquery t
                    :coding 'binary :filter-multibyte nil))
-          (set-process-sentinel process #'transmission-process-sentinel)
           (setq buffer nil process nil))
       (when (process-live-p process) (kill-process process))
       (when (buffer-live-p buffer) (kill-buffer buffer)))))
@@ -481,6 +480,7 @@ Details regarding the Transmission RPC can be found here:
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
     (set-process-plist process nil)
     (set-process-filter process nil)
+    (set-process-sentinel process nil)
     (unwind-protect
         (condition-case err
             (transmission-send process content)
@@ -530,6 +530,7 @@ METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
   (let ((process (transmission-get-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
     (set-process-filter process #'transmission-process-filter)
+    (set-process-sentinel process #'transmission-process-sentinel)
     (process-put process :request content)
     (process-put process :callback callback)
     (transmission-http-post process content)
