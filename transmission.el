@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014-2020  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
-;; Version: 0.12.1
+;; Version: 0.12.2
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
