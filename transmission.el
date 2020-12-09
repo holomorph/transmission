@@ -318,7 +318,7 @@ Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
 (define-error 'transmission-wrong-rpc-path
   "Bad RPC path.  Check `transmission-rpc-path'")
 
-(define-error 'transmission-failure "")
+(define-error 'transmission-failure "RPC Failure")
 
 (define-error 'transmission-misdirected
   "Unrecognized hostname.  Check \"rpc-host-whitelist\"")
@@ -371,6 +371,7 @@ update `transmission-session-id' and signal the error."
                    (signal 'transmission-failure (list result))))))
         ((or 301 404 405) (signal 'transmission-wrong-rpc-path (list status)))
         (401 (signal 'transmission-unauthorized (list status)))
+        (403 (signal 'transmission-failure (list status)))
         (409 (when (search-forward "X-Transmission-Session-Id: ")
                (setq transmission-session-id (read buffer))
                (signal 'transmission-conflict (list status))))
@@ -991,7 +992,7 @@ Registers the change in `transmission-marked-ids'."
 (defun transmission-move-to-file-name ()
   "Move to the beginning of the filename on the current line."
   (let* ((eol (line-end-position))
-         (change (next-single-property-change (point-at-bol) 'transmission-name nil eol)))
+         (change (next-single-property-change (point) 'transmission-name nil eol)))
     (when (and change (< change eol))
       (goto-char change))))
 
@@ -1840,10 +1841,11 @@ indicates that the speed limit is enabled."
   "Initialize tabulated-list header or update `tabulated-list-format'."
   (let ((idx (cl-loop for format across tabulated-list-format
                       if (plist-get (nthcdr 3 format) :transmission-size)
-                      return format)))
-    (if (eq (cadr idx) (if (eq 'iec transmission-units) 9 7))
+                      return format))
+        (col (if (eq 'iec transmission-units) 9 7)))
+    (if (= (cadr idx) col)
         (or header-line-format (tabulated-list-init-header))
-      (setf (cadr idx) (if (eq 'iec transmission-units) 9 7))
+      (setf (cadr idx) col)
       (tabulated-list-init-header))))
 
 (defmacro transmission-do-entries (seq &rest body)
