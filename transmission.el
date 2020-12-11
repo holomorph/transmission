@@ -1292,6 +1292,13 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
          (when method (transmission-request-async nil method (list :ids ids)))))
      "torrent-get" (list :ids ids :fields ["status"]))))
 
+(defun transmission-label (ids labels)
+  "Set labels for selected torrent(s)."
+  (transmission-interactive
+   (list ids (transmission-read-strings "Labels: ")))
+  (transmission-request-async
+   nil "torrent-set" (list :ids ids :labels (vconcat labels))))
+
 (defun transmission-trackers-add (ids urls)
   "Add announce URLs to selected torrent or torrents."
   (transmission-interactive
@@ -2119,6 +2126,7 @@ for explanation of the peer flags."
     (define-key map "c" 'transmission-copy-magnet)
     (define-key map "d" 'transmission-set-torrent-download)
     (define-key map "e" 'transmission-peers)
+    (define-key map "L" 'transmission-label)
     (define-key map "l" 'transmission-set-torrent-ratio)
     (define-key map "r" 'transmission-trackers-remove)
     (define-key map "u" 'transmission-set-torrent-upload)
@@ -2148,6 +2156,7 @@ for explanation of the peer flags."
      ["Move To Bottom" transmission-queue-move-bottom]
      ["Move Up" transmission-queue-move-up]
      ["Move Down" transmission-queue-move-down])
+    ["Set Torrent Labels" transmission-label]
     ["Verify Torrent" transmission-verify]
     "--"
     ["View Torrent Files" transmission-files]
@@ -2262,6 +2271,7 @@ for explanation of the peer flags."
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
     (define-key map "k" 'transmission-trackers-add)
+    (define-key map "L" 'transmission-label)
     (define-key map "l" 'transmission-set-ratio)
     (define-key map "m" 'transmission-toggle-mark)
     (define-key map "r" 'transmission-remove)
@@ -2304,6 +2314,7 @@ for explanation of the peer flags."
      ["Move To Bottom" transmission-queue-move-bottom]
      ["Move Up" transmission-queue-move-up]
      ["Move Down" transmission-queue-move-down])
+    ["Set Torrent Labels" transmission-label]
     ["Verify Torrent" transmission-verify]
     "--"
     ["Toggle Mark" transmission-toggle-mark]
