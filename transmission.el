@@ -1931,8 +1931,9 @@ Each form in BODY is a column descriptor."
                .downloadLimit .uploadLimit .downloadLimited .uploadLimited))
       (format "Ratio: %.3f / %s" (if (= .uploadRatio -1) 0 .uploadRatio)
               (transmission-torrent-seed-ratio .seedRatioMode .seedRatioLimit))
-      (unless (zerop .error)
-        (concat "Error: " (propertize .errorString 'font-lock-face 'error)))
+      (pcase .error
+        ((or 2 3) (concat "Error: " (propertize .errorString 'font-lock-face 'error)))
+        (1 (concat "Warning: " (propertize .errorString 'font-lock-face 'warning))))
       (transmission-format-peers .peers .peersFrom .peersConnected
                                  .peersGettingFromUs .peersSendingToUs)
       (concat "Date created:    " (transmission-time .dateCreated))
