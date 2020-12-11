@@ -791,7 +791,7 @@ NOW is a time, defaulting to `current-time'."
     res))
 
 (defun transmission-btih-p (string)
-  "Return non-nil if STRING is a BitTorrent info hash, otherwise nil."
+  "Return STRING if it is a BitTorrent info hash, otherwise nil."
   (and string (string-match (rx bos (= 40 xdigit) eos) string) string))
 
 (defun transmission-directory-name-p (name)
@@ -860,7 +860,7 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
       (user-error "File does not exist"))))
 
 (defun transmission-files-index (torrent)
-  "Return a list derived from the \"files\" and \"fileStats\" arrays in TORRENT.
+  "Return an array composing the \"files\" and \"fileStats\" arrays in TORRENT.
 The two are spliced together with indices for each file, sorted by file name."
   (let* ((alist (elt torrent 0))
          (files (cdr (assq 'files alist)))
