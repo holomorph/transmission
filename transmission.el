@@ -416,8 +416,8 @@ Return JSON object parsed from content."
       (accept-process-output process 1))
     (transmission--status)
     (transmission--move-to-content)
-    (search-forward "\"arguments\":" nil t)
-    (json-read)))
+    (when (search-forward "\"arguments\":" nil t)
+      (json-read))))
 
 (defun transmission-send (process content)
   "Send PROCESS string CONTENT and wait for response synchronously."
@@ -498,8 +498,8 @@ Details regarding the Transmission RPC can be found here:
   (let ((callback (process-get process :callback)))
     (when callback
       (transmission--move-to-content)
-      (search-forward "\"arguments\":" nil t)
-      (run-at-time 0 nil callback (json-read)))))
+      (when (search-forward "\"arguments\":" nil t)
+        (run-at-time 0 nil callback (json-read))))))
 
 (defun transmission-process-filter (process text)
   "Handle PROCESS's output TEXT and trigger handlers."
