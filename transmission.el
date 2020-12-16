@@ -544,6 +544,14 @@ If the array is empty or not found, return nil."
   (let ((obj (cdr (assq 'torrents response))))
     (and (vectorp obj) (< 0 (length obj)) obj)))
 
+(defun transmission-unique-labels (torrents)
+  "Return a list of unique labels from TORRENTS."
+  (let (labels res)
+    (dotimes (i (length torrents))
+      (dotimes (j (length (setq labels (cdr (assq 'labels (aref torrents i))))))
+        (cl-pushnew (aref labels j) res :test #'equal)))
+    res))
+
 
 ;; Timer management
 
@@ -1295,7 +1303,9 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-label (ids labels)
   "Set labels for selected torrent(s)."
   (transmission-interactive
-   (list ids (transmission-read-strings "Labels: ")))
+   (let* ((response (transmission-request "torrent-get" '(:fields ["labels"])))
+          (torrents (transmission-torrents response)))
+     (list ids (transmission-read-strings "Labels: " (transmission-unique-labels torrents)))))
   (transmission-request-async
    nil "torrent-set" (list :ids ids :labels (vconcat labels))))
 
