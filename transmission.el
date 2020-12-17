@@ -2251,7 +2251,7 @@ for explanation of the peer flags."
          ("Name" 0 t)])
   (setq tabulated-list-padding 1)
   (transmission-tabulated-list-format)
-  (setq-local file-name-at-point-functions #'transmission-files-file-at-point)
+  (setq-local file-name-at-point-functions '(transmission-files-file-at-point))
   (setq tabulated-list-printer #'transmission-print-torrent)
   (setq-local revert-buffer-function #'transmission-refresh-files)
   (setq-local font-lock-defaults '(transmission-files-font-lock-keywords t))
