@@ -362,7 +362,8 @@ update `transmission-session-id' and signal the error."
       (pcase status
         (200 (save-excursion
                (let (result)
-                 (when (and (search-forward "\"result\":")
+                 (when (and (transmission--move-to-content)
+                            (search-forward "\"result\":" nil t)
                             (not (equal "success" (setq result (json-read)))))
                    (signal 'transmission-failure (list result))))))
         ((or 301 404 405) (signal 'transmission-wrong-rpc-path (list status)))
