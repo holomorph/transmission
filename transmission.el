@@ -869,9 +869,8 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
 (defun transmission-files-index (torrent)
   "Return an array composing the \"files\" and \"fileStats\" arrays in TORRENT.
 The two are spliced together with indices for each file, sorted by file name."
-  (let* ((alist (elt torrent 0))
-         (files (cdr (assq 'files alist)))
-         (stats (cdr (assq 'fileStats alist)))
+  (let* ((files (cdr (assq 'files torrent)))
+         (stats (cdr (assq 'fileStats torrent)))
          (n (length files))
          (res (make-vector n 0)))
     (dotimes (i n)
@@ -1902,7 +1901,7 @@ Each form in BODY is a column descriptor."
   (let* ((arguments `(:ids ,id :fields ,transmission-draw-files-keys))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
-  (let* ((files (transmission-files-index transmission-torrent-vector))
+  (let* ((files (transmission-files-index (elt transmission-torrent-vector 0)))
          (prefix (transmission-files-prefix files)))
     (transmission-do-entries files
       (format "%d%%" (transmission-percent .bytesCompleted .length))
