@@ -353,26 +353,24 @@ caching built in or is otherwise slow."
 A 409 response from a Transmission session includes the
 \"X-Transmission-Session-Id\" header.  If a 409 is received,
 update `transmission-session-id' and signal the error."
-  (save-excursion
-    (goto-char (point-min))
-    (forward-char 5) ; skip "HTTP/"
-    (skip-chars-forward "0-9.")
-    (let* ((buffer (current-buffer))
-           (status (read buffer)))
-      (pcase status
-        (200 (save-excursion
-               (let (result)
-                 (when (and (transmission--move-to-content)
-                            (search-forward "\"result\":" nil t)
-                            (not (equal "success" (setq result (json-read)))))
-                   (signal 'transmission-failure (list result))))))
-        ((or 301 404 405) (signal 'transmission-wrong-rpc-path (list status)))
-        (401 (signal 'transmission-unauthorized (list status)))
-        (403 (signal 'transmission-failure (list status)))
-        (409 (when (search-forward "X-Transmission-Session-Id: ")
-               (setq transmission-session-id (read buffer))
-               (signal 'transmission-conflict (list status))))
-        (421 (signal 'transmission-misdirected (list transmission-host)))))))
+  (goto-char (point-min))
+  (forward-char 5) ; skip "HTTP/"
+  (skip-chars-forward "0-9.")
+  (let* ((buffer (current-buffer))
+         (status (read buffer)))
+    (pcase status
+      (200 (let (result)
+             (when (and (transmission--move-to-content)
+                        (search-forward "\"result\":" nil t)
+                        (not (equal "success" (setq result (json-read)))))
+               (signal 'transmission-failure (list result)))))
+      ((or 301 404 405) (signal 'transmission-wrong-rpc-path (list status)))
+      (401 (signal 'transmission-unauthorized (list status)))
+      (403 (signal 'transmission-failure (list status)))
+      (409 (when (search-forward "X-Transmission-Session-Id: ")
+             (setq transmission-session-id (read buffer))
+             (signal 'transmission-conflict (list status))))
+      (421 (signal 'transmission-misdirected (list transmission-host))))))
 
 (defun transmission--auth-source-secret (user)
   "Return the secret for USER at found in `auth-sources'.
