@@ -1194,7 +1194,7 @@ When called with a prefix, prompt for DIRECTORY."
 When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-interactive
    (if (yes-or-no-p (concat "Remove " (and current-prefix-arg "and unlink ")
-                            "torrent" (and (< 1 (length ids)) "s") "? "))
+                            "torrent" (and (cdr ids) "s") "? "))
        (progn (setq deactivate-mark t transmission-marked-ids nil)
               (list ids current-prefix-arg))
      '(nil nil)))
@@ -1205,7 +1205,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-delete (ids)
   "Prompt to delete (unlink) torrent at point or torrents marked or in region."
   (transmission-interactive
-   (let* ((prompt (concat "Delete torrent" (and (< 1 (length ids)) "s") "? ")))
+   (let* ((prompt (concat "Delete torrent" (and (cdr ids) "s") "? ")))
      (list
       (and (yes-or-no-p prompt)
            (setq transmission-marked-ids nil deactivate-mark t)
