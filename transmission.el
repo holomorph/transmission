@@ -716,18 +716,16 @@ FILTER is a predicate that prevents adding failing input to HISTORY.
 Returns a list of non-blank inputs."
   (let ((history-add-new-input (null history))
         res entry)
-    (catch :finished
-      (while t
-        (setq entry (if (not collection) (read-string prompt nil history)
-                      (completing-read prompt collection nil nil nil history)))
-        (if (and (not (string-empty-p entry))
-                 (not (string-blank-p entry)))
-            (progn (when (and history (or (null filter) (funcall filter entry)))
-                     (add-to-history history entry))
-                   (push entry res)
-                   (when (consp collection)
-                     (setq collection (delete entry collection))))
-          (throw :finished (nreverse res)))))))
+    (while (and (setq entry (if (not collection) (read-string prompt nil history)
+                              (completing-read prompt collection nil nil nil history)))
+                (not (string-empty-p entry))
+                (not (string-blank-p entry)))
+      (when (and history (or (null filter) (funcall filter entry)))
+        (add-to-history history entry))
+      (push entry res)
+      (when (consp collection)
+        (setq collection (delete entry collection))))
+    (nreverse res)))
 
 (defun transmission-read-time (prompt)
   "Read an expression for time, prompting with string PROMPT.
@@ -1634,15 +1632,14 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
         (save-restriction
           (widen)
           (goto-char (point-min))
-          (catch :eobp
-            (while (> n 0)
-              (when (= (following-char) ?>)
-                (save-excursion
-                  (forward-char)
-                  (insert-and-inherit ?\s))
-                (delete-region (point) (1+ (point)))
-                (cl-decf n))
-             (when (not (zerop (forward-line))) (throw :eobp nil))))))
+          (while (and (> n 0) (not (eobp)))
+            (when (= (following-char) ?>)
+              (save-excursion
+                (forward-char)
+                (insert-and-inherit ?\s))
+              (delete-region (point) (1+ (point)))
+              (cl-decf n))
+            (forward-line))))
       (setq transmission-marked-ids nil)
       (set-buffer-modified-p nil)
       (message "%s removed" (transmission-plural len "mark")))))
@@ -1658,16 +1655,15 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
         (save-restriction
           (widen)
           (goto-char (point-min))
-          (catch :eobp
-            (while t
-              (when (setq tag (car (memq (following-char) '(?> ?\s))))
-                (save-excursion
-                  (forward-char)
-                  (insert-and-inherit (if (= tag ?>) ?\s ?>)))
-                (delete-region (point) (1+ (point)))
-                (when (= tag ?\s)
-                  (push (cdr (assq key (tabulated-list-get-id))) ids)))
-              (when (not (zerop (forward-line))) (throw :eobp nil))))))
+          (while (not (eobp))
+            (when (setq tag (car (memq (following-char) '(?> ?\s))))
+              (save-excursion
+                (forward-char)
+                (insert-and-inherit (if (= tag ?>) ?\s ?>)))
+              (delete-region (point) (1+ (point)))
+              (when (= tag ?\s)
+                (push (cdr (assq key (tabulated-list-get-id))) ids)))
+            (forward-line))))
       (setq transmission-marked-ids ids)
       (set-buffer-modified-p nil))))
 
