@@ -71,6 +71,8 @@
   (require 'let-alist)
   (require 'subr-x))
 
+(declare-function dired-goto-file "dired" (file))
+
 (defgroup transmission nil
   "Interface to a Transmission session."
   :link '(url-link "https://github.com/transmission/transmission")
@@ -1581,6 +1583,17 @@ FILE, NEWNAME, and OK-IF-ALREADY-EXISTS are the same as in `copy-file'."
   (interactive)
   (browse-url-of-file (expand-file-name (transmission-files-file-at-point))))
 
+(defun transmission-dired-file ()
+  "Show file at point in DirEd."
+  (interactive)
+  (let* ((f (transmission-files-file-at-point))
+         (dir (file-name-directory f)))
+    (if (file-directory-p dir)
+        (with-current-buffer (dired dir)
+          (dired-goto-file (expand-file-name f)))
+      (message "Directory '%s' does not exist."
+               (file-name-base (substring dir 0 -1))))))
+
 (defun transmission-copy-filename-as-kill (&optional arg)
   "Copy name of file at point into the kill ring.
 With a prefix argument, use the absolute file name."
@@ -2193,6 +2206,7 @@ for explanation of the peer flags."
     (define-key map "X" 'transmission-files-command)
     (define-key map "W" 'transmission-browse-url-of-file)
     (define-key map "C" 'transmission-copy-file)
+    (define-key map "d" 'transmission-dired-file)
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
     (define-key map "m" 'transmission-toggle-mark)
@@ -2216,6 +2230,7 @@ for explanation of the peer flags."
      "Display a read-only buffer visiting file at point"]
     ["Visit File In View Mode" transmission-view-file]
     ["Open File In WWW Browser" transmission-browse-url-of-file]
+    ["Show File In DirEd" transmission-dired-file]
     ["Copy File Name" transmission-copy-filename-as-kill]
     "--"
     ["Unwant Files" transmission-files-unwant
