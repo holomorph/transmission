@@ -217,9 +217,9 @@ caching built in or is otherwise slow."
 
 (defcustom transmission-turtle-lighter " turtle"
   "Lighter for `transmission-turtle-mode'."
-  :type `(choice (const :tag "Default" " turtle")
+  :type '(choice (const :tag "Default" " turtle")
                  (const :tag "ASCII" " ,=,e")
-                 (const :tag "Emoji" ,(string ?\s #x1f422))
+                 (const :tag "Emoji" " \U0001f422")
                  (string :tag "Some string"))
   :set (lambda (symbol value)
          (set-default symbol value)
@@ -622,7 +622,7 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
   (if (<= seconds 0)
       (cond
        ((= percent 1) "Done")
-       ((char-displayable-p ?∞) (eval-when-compile (char-to-string ?∞)))
+       ((char-displayable-p #x221e) "\u221e")
        (t "Inf"))
     (let* ((minute 60.0)
            (hour 3600.0)
@@ -932,13 +932,12 @@ If `transmission-geoip-function' has changed, reset `transmission-geoip-table'."
 
 (defun transmission-ratio->glyph (ratio)
   "Return a single-char string representing RATIO."
-  (char-to-string
-   (cond
-    ((= 0 ratio) #x20)
-    ((< ratio 0.333) #x2591)
-    ((< ratio 0.667) #x2592)
-    ((< ratio 1) #x2593)
-    ((= 1 ratio) #x2588))))
+  (cond
+   ((= 0 ratio) " ")
+   ((< ratio 0.333) "\u2591")
+   ((< ratio 0.667) "\u2592")
+   ((< ratio 1) "\u2593")
+   ((= 1 ratio) "\u2588")))
 
 (defun transmission-ratio->256 (ratio)
   "Return a grey font-locked single-space string according to RATIO.
