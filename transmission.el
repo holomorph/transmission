@@ -1087,7 +1087,7 @@ WINDOW with `window-start' and the line/column coordinates of `point'."
   (pcase-let ((`(,window ,start ,line ,column) state))
     (transmission-with-window-maybe window
       (goto-char (point-min))
-      (goto-char (point-at-bol line))
+      (forward-line (1- line))
       (move-to-column column)
       (setf (window-start) start))))
 
