@@ -951,14 +951,6 @@ Uses color names for the 256 color palette."
     (propertize " " 'font-lock-face `(:background ,(color-rgb-to-hex l l l))
                 'help-echo (format "%.2f" ratio))))
 
-(defun transmission-torrent-seed-ratio (mode tlimit)
-  "String showing a torrent's seed ratio limit.
-MODE is which seed ratio to use; TLIMIT is the torrent-level limit."
-  (pcase mode
-    (0 "session limit")
-    (1 (format "%.2f (torrent-specific limit)" tlimit))
-    (2 "unlimited")))
-
 (defun transmission-group-digits (n)
   "Group digits of positive number N with `transmission-digit-delimiter'."
   (if (< n 10000) (number-to-string n)
@@ -1790,6 +1782,18 @@ SIZE is the file size in bytes of a single piece."
        (let ((str (funcall transmission-pieces-function pieces count)))
          (concat "\nPieces:\n\n" str))))))
 
+(defun transmission-format-ratio (ratio mode limit)
+  "String showing a torrent's seed ratio limit.
+MODE is which seed ratio to use; LIMIT is the torrent-level limit."
+  (concat "Ratio: " (pcase ratio
+                      (-2 (if (char-displayable-p #x221e) "\u221e" "Inf"))
+                      (-1 "n/a")
+                      (_ (format "%.3f" ratio)))
+          " / " (pcase mode
+                  (0 "session limit")
+                  (1 (format "%.2f (torrent-specific limit)" limit))
+                  (2 "unlimited"))))
+
 (defun transmission-format-peers (peers origins connected sending receiving)
   "Format peer information into a string.
 PEERS is an array of peer-specific data.
@@ -1948,8 +1952,7 @@ Each form in BODY is a column descriptor."
               (transmission-format-limits
                .honorsSessionLimits .rateDownload .rateUpload
                .downloadLimit .uploadLimit .downloadLimited .uploadLimited))
-      (format "Ratio: %.3f / %s" (if (= .uploadRatio -1) 0 .uploadRatio)
-              (transmission-torrent-seed-ratio .seedRatioMode .seedRatioLimit))
+      (transmission-format-ratio .uploadRatio .seedRatioMode .seedRatioLimit)
       (pcase .error
         ((or 2 3) (concat "Error: " (propertize .errorString 'font-lock-face 'error)))
         (1 (concat "Warning: " (propertize .errorString 'font-lock-face 'warning))))
