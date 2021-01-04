@@ -230,7 +230,7 @@ caching built in or is otherwise slow."
   (eval-when-compile
     (pcase-let*
         ((`(,sun ,mon ,tues ,wed ,thurs ,fri ,sat)
-          (mapcar (lambda (x) (lsh 1 x)) (number-sequence 0 6)))
+          (cl-loop for x below 7 collect (lsh 1 x)))
          (weekday (logior mon tues wed thurs fri))
          (weekend (logior sat sun))
          (all (logior weekday weekend)))
@@ -534,7 +534,7 @@ METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
     process))
 
 
-;; Response parsing
+;; Response destructuring
 
 (defun transmission-torrents (response)
   "Return the \"torrents\" array in RESPONSE, otherwise nil."
@@ -683,8 +683,7 @@ Direction D should be a symbol, either \"up\" or \"down\"."
 
 (defun transmission-torrent-honors-speed-limits-p ()
   "Return non-nil if torrent honors session speed limits, otherwise nil."
-  (let ((torrent (elt transmission-torrent-vector 0)))
-    (eq t (cdr (assq 'honorsSessionLimits torrent)))))
+  (eq t (cdr (assq 'honorsSessionLimits (elt transmission-torrent-vector 0)))))
 
 (defun transmission-prompt-speed-limit (upload)
   "Make a prompt to set transfer speed limit.
@@ -875,14 +874,13 @@ The two are spliced together with indices for each file, sorted by file name."
 
 (defun transmission-files-prefix (files)
   "Return a string that is a prefix of every filename in FILES, otherwise nil."
-  (when (< 0 (length files))
-    (let* ((filename (cdr (assq 'name (aref files 0))))
-           (index (and (stringp filename) (string-match "/" filename)))
-           (dir (and index (substring filename 0 (match-end 0)))))
-      (when (and dir
-                 (cl-loop for file across files
-                          always (string-prefix-p dir (cdr (assq 'name file)))))
-        dir))))
+  (let* ((filename (cdr (assq 'name (elt files 0))))
+         (index (and (stringp filename) (string-match "/" filename)))
+         (dir (and index (substring filename 0 (match-end 0)))))
+    (when (and dir
+               (cl-loop for file across files
+                        always (string-prefix-p dir (cdr (assq 'name file)))))
+      dir)))
 
 (defun transmission-geoiplookup (ip)
   "Return country name associated with IP using geoiplookup(1)."
@@ -1016,7 +1014,7 @@ point or in region, otherwise a `user-error' is signalled."
                      (transmission-text-property-all
                       (region-beginning) (region-end) 'tabulated-list-id)
                      collect (cdr (assq 'id x))))
-            (let ((value (get-text-property (point) 'tabulated-list-id)))
+            (let ((value (tabulated-list-get-id (point))))
               (when value (setq ids (list (cdr (assq 'id value))))))))
         (if (null ids) (user-error "No torrent selected")
           ,@(cl-labels
@@ -1490,13 +1488,12 @@ See `transmission-read-time' for details on time input."
 (defun transmission-quit ()
   "Quit and bury the buffer."
   (interactive)
-  (let ((cur (current-buffer)))
-    (if (cl-loop for list in (window-prev-buffers)
-                 never (eq cur (car list)))
-        (quit-window)
-      (if (one-window-p)
-          (bury-buffer)
-        (delete-window)))))
+  (if (let ((cur (current-buffer)))
+        (cl-loop for list in (window-prev-buffers) never (eq cur (car list))))
+      (quit-window)
+    (if (one-window-p)
+        (bury-buffer)
+      (delete-window))))
 
 (defun transmission-files-unwant ()
   "Mark file(s)--at point, in region, or marked--as unwanted."
@@ -1801,7 +1798,7 @@ ORIGINS is an alist giving counts of peers from different swarms.
 CONNECTED, SENDING, RECEIVING are numbers."
   (cl-macrolet ((accumulate (array key)
                   `(cl-loop for alist across ,array
-                            if (eq t (cdr (assq ,key alist))) sum 1)))
+                            count (eq t (cdr (assq ,key alist))))))
     (if (zerop connected) "Peers: none connected\n"
       (concat
        (format "Peers: %d connected, uploading to %d, downloading from %d"
@@ -1914,7 +1911,7 @@ Each form in BODY is a column descriptor."
     (transmission-do-entries files
       (format "%d%%" (transmission-percent .bytesCompleted .length))
       (symbol-name (car (rassq .priority transmission-priority-alist)))
-      (if (eq .wanted :json-false) "no" "yes")
+      (if (eq .wanted t) "yes" "no")
       (transmission-size .length)
       (propertize (if prefix (string-remove-prefix prefix .name) .name)
                   'transmission-name t)))
