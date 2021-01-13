@@ -854,13 +854,14 @@ The two are spliced together with indices for each file, sorted by file name."
 
 (defun transmission-files-prefix (files)
   "Return a string that is a prefix of every filename in FILES, otherwise nil."
-  (let* ((filename (cdr (assq 'name (elt files 0))))
-         (index (and (stringp filename) (string-match "/" filename)))
-         (dir (and index (substring filename 0 (match-end 0)))))
-    (when (and dir
-               (cl-loop for file across files
-                        always (string-prefix-p dir (cdr (assq 'name file)))))
-      dir)))
+  (when (< 0 (length files))
+    (let* ((filename (cdr (assq 'name (aref files 0))))
+           (index (and (stringp filename) (string-match "/" filename)))
+           (dir (and index (substring filename 0 (match-end 0)))))
+      (when (and dir
+                 (cl-loop for file across files
+                          always (string-prefix-p dir (cdr (assq 'name file)))))
+        dir))))
 
 (defun transmission-geoiplookup (ip)
   "Return country name associated with IP using geoiplookup(1)."
