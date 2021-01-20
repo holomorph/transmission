@@ -853,15 +853,19 @@ The two are spliced together with indices for each file, sorted by file name."
     res))
 
 (defun transmission-files-prefix (files)
-  "Return a string that is a prefix of every filename in FILES, otherwise nil."
-  (when (< 0 (length files))
-    (let* ((filename (cdr (assq 'name (aref files 0))))
-           (index (and (stringp filename) (string-match "/" filename)))
-           (dir (and index (substring filename 0 (match-end 0)))))
-      (when (and dir
-                 (cl-loop for file across files
-                          always (string-prefix-p dir (cdr (assq 'name file)))))
-        dir))))
+  "Return a directory name that is a prefix of every path in FILES, otherwise nil."
+  (when (> (length files) 0)
+    (let ((ref (cdr (assq 'name (aref files 0))))
+          (start 0)
+          end)
+      (setq files (substring files 1))
+      (while (and (prog1 (string-match "/" ref start)
+                    (setq end (match-end 0)))
+                  (cl-loop for file across files
+                           always (eq t (compare-strings
+                                         ref start end (cdr (assq 'name file)) start end))))
+        (setq start end))
+      (substring ref 0 start))))
 
 (defun transmission-geoiplookup (ip)
   "Return country name associated with IP using geoiplookup(1)."
