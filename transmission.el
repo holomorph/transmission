@@ -620,10 +620,8 @@ If none are found, return nil."
   "Return a string showing SECONDS in human-readable form;
 otherwise some other estimate indicated by SECONDS and PERCENT."
   (if (<= seconds 0)
-      (cond
-       ((= percent 1) "Done")
-       ((char-displayable-p #x221e) "\u221e")
-       (t "Inf"))
+      (if (= percent 1) "Done"
+        (if (char-displayable-p #x221e) "\u221e" "Inf"))
     (let* ((minute 60.0)
            (hour 3600.0)
            (day 86400.0)
@@ -1178,11 +1176,10 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-delete (ids)
   "Prompt to delete (unlink) torrent at point or torrents marked or in region."
   (transmission-interactive
-   (let* ((prompt (concat "Delete torrent" (and (cdr ids) "s") "? ")))
-     (list
-      (and (yes-or-no-p prompt)
-           (setq transmission-marked-ids nil deactivate-mark t)
-           ids))))
+   (list
+    (and (yes-or-no-p (concat "Delete torrent" (and (cdr ids) "s") "? "))
+         (setq transmission-marked-ids nil deactivate-mark t)
+         ids)))
   (when ids
     (transmission-request-async nil "torrent-remove" `(:ids ,ids :delete-local-data t))))
 
@@ -1191,7 +1188,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-interactive
    (let* ((prompt "Set bandwidth priority: ")
           (priority (completing-read prompt transmission-priority-alist nil t))
-          (number (cdr (assq (intern priority) transmission-priority-alist))))
+          (number (cdr (assoc-string priority transmission-priority-alist))))
      (list (when number ids) number)))
   (when ids
     (let ((arguments `(:ids ,ids :bandwidthPriority ,priority)))
@@ -1251,12 +1248,11 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-interactive
    (let* ((prompt (concat "Set torrent" (if (cdr ids) "s'" "'s") " ratio mode: "))
           (mode (completing-read prompt transmission-mode-alist nil t))
-          (n (cdr (assq (intern mode) transmission-mode-alist))))
+          (n (cdr (assoc-string mode transmission-mode-alist))))
      (list ids n (when (= n 1) (read-number "Set torrent ratio limit: ")))))
   (when ids
-    (let ((arguments `(:ids ,ids :seedRatioMode ,mode)))
-      (when limit
-        (setq arguments (append arguments `(:seedRatioLimit ,limit))))
+    (let ((arguments `(:ids ,ids :seedRatioMode ,mode
+                       ,@(when limit `(:seedRatioLimit ,limit)))))
       (transmission-request-async nil "torrent-set" arguments))))
 
 (defun transmission-toggle-limits (ids)
@@ -1279,8 +1275,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
     (transmission-request-async
      (lambda (response)
        (let* ((torrents (transmission-torrents response))
-              (status (and (< 0 (length torrents))
-                           (cdr (assq 'status (elt torrents 0)))))
+              (status (and torrents (cdr (assq 'status (elt torrents 0)))))
               (method (and status
                            (if (zerop status) "torrent-start" "torrent-stop"))))
          (when method (transmission-request-async nil method (list :ids ids)))))
@@ -1336,11 +1331,10 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
          (tids (cl-loop for alist across array
                         if (or (member (cdr (assq 'announce alist)) urls)
                                (member (number-to-string (cdr (assq 'id alist))) urls))
-                        collect (cdr (assq 'id alist))))
-         (arguments (list :ids id :trackerRemove tids)))
+                        collect (cdr (assq 'id alist)))))
     (transmission-request-async
      (lambda (_) (message "Removed %s" (mapconcat #'identity urls ", ")))
-     "torrent-set" arguments)))
+     "torrent-set" (list :ids id :trackerRemove tids))))
 
 (defun transmission-trackers-replace ()
   "Replace tracker by ID or announce URL."
@@ -1366,11 +1360,10 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                            (append transmission-trackers
                                    (transmission-unique-announce-urls))
                            nil nil nil
-                           transmission-tracker-history-variable))
-         (arguments (list :ids id :trackerReplace (vector tid replacement))))
+                           transmission-tracker-history-variable)))
     (transmission-request-async
      (lambda (_) (message "Replaced #%d with %s" tid replacement))
-     "torrent-set" arguments)))
+     "torrent-set" (list :ids id :trackerReplace (vector tid replacement)))))
 
 (defun transmission-turtle-set-days (days &optional disable)
   "Set DAYS on which turtle mode will be active.
