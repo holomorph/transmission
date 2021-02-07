@@ -275,7 +275,7 @@ caching built in or is otherwise slow."
    "uploadRatio"])
 
 (defconst transmission-draw-files-keys
-  ["name" "files" "fileStats" "downloadDir"])
+  ["name" "files" "downloadDir" "wanted" "priorities"])
 
 (defconst transmission-draw-info-keys
   ["name" "hashString" "magnetLink" "labels" "activityDate" "addedDate"
@@ -840,15 +840,16 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
       (user-error "File does not exist"))))
 
 (defun transmission-files-index (torrent)
-  "Return an array composing the \"files\" and \"fileStats\" arrays in TORRENT.
-The two are spliced together with indices for each file, sorted by file name."
-  (let* ((files (cdr (assq 'files torrent)))
-         (stats (cdr (assq 'fileStats torrent)))
-         (n (length files))
-         (res (make-vector n 0)))
-    (dotimes (i n)
-      (aset res i (append (aref files i) (aref stats i) (list (cons 'index i)))))
-    res))
+  "Return an array containing file data from TORRENT."
+  (let-alist torrent
+    (let* ((n (length .files))
+           (res (make-vector n 0)))
+      (dotimes (i n)
+        (aset res i (append (aref .files i)
+                            (list (cons 'wanted (aref .wanted i))
+                                  (cons 'priority (aref .priorities i))
+                                  (cons 'index i)))))
+      res)))
 
 (defun transmission-files-prefix (files)
   "Return a directory name that is a prefix of every path in FILES, otherwise nil."
@@ -1907,7 +1908,7 @@ Each form in BODY is a column descriptor."
     (transmission-do-entries files
       (format "%d%%" (transmission-percent .bytesCompleted .length))
       (symbol-name (car (rassq .priority transmission-priority-alist)))
-      (if (eq .wanted t) "yes" "no")
+      (if (zerop .wanted) "no" "yes")
       (transmission-size .length)
       (propertize (if prefix (string-remove-prefix prefix .name) .name)
                   'transmission-name t)))
