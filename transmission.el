@@ -269,7 +269,7 @@ caching built in or is otherwise slow."
   "Alist of possible Transmission torrent statuses.")
 
 (defconst transmission-draw-torrents-keys
-  ["id" "name" "status" "eta" "error" "labels"
+  ["hashString" "name" "status" "eta" "error" "labels"
    "rateDownload" "rateUpload"
    "percentDone" "sizeWhenDone" "metadataPercentComplete"
    "uploadRatio"])
@@ -278,7 +278,7 @@ caching built in or is otherwise slow."
   ["name" "files" "downloadDir" "wanted" "priorities"])
 
 (defconst transmission-draw-info-keys
-  ["name" "hashString" "magnetLink" "labels" "activityDate" "addedDate"
+  ["id" "name" "hashString" "magnetLink" "labels" "activityDate" "addedDate"
    "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
    "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs" "peersFrom"
    "peersSendingToUs" "sizeWhenDone" "error" "errorString" "uploadRatio"
@@ -304,7 +304,7 @@ caching built in or is otherwise slow."
   "Vector of Transmission torrent data.")
 
 (defvar-local transmission-torrent-id nil
-  "The Transmission torrent ID integer.")
+  "The SHA-1 torrent info hash.")
 
 (define-error 'transmission-conflict
   "Wrong or missing header \"X-Transmission-Session-Id\"")
@@ -327,7 +327,7 @@ caching built in or is otherwise slow."
   "Table for storing associations between IP addresses and location names.")
 
 (defvar-local transmission-marked-ids nil
-  "List of indices of the currently marked items.")
+  "List of identifiers of the currently marked items.")
 
 (defvar transmission-network-process-pool nil
   "List of network processes connected to Transmission.")
@@ -954,8 +954,8 @@ Done in the spirit of `dired-plural-s'."
   "Toggle mark of item at point.
 Registers the change in `transmission-marked-ids'."
   (let* ((eid (tabulated-list-get-id))
-         (id (cdr (or (assq 'id eid) (assq 'index eid)))))
-    (if (memq id transmission-marked-ids)
+         (id (cdr (or (assq 'hashString eid) (assq 'index eid)))))
+    (if (member id transmission-marked-ids)
         (progn
           (setq transmission-marked-ids (delete id transmission-marked-ids))
           (tabulated-list-put-tag " "))
@@ -997,9 +997,9 @@ point or in region, otherwise a `user-error' is signalled."
                     (cl-loop for x in
                      (transmission-text-property-all
                       (region-beginning) (region-end) 'tabulated-list-id)
-                     collect (cdr (assq 'id x))))
+                     collect (cdr (assq 'hashString x))))
             (let ((value (tabulated-list-get-id (point))))
-              (when value (setq ids (list (cdr (assq 'id value))))))))
+              (when value (setq ids (list (cdr (assq 'hashString value))))))))
         (if (null ids) (user-error "No torrent selected")
           ,@(cl-labels
                 ((expand (form x)
@@ -1646,7 +1646,7 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
   (interactive)
   (let ((inhibit-read-only t) ids tag key)
     (when (setq key (cl-ecase major-mode
-                      (transmission-mode 'id)
+                      (transmission-mode 'hashString)
                       (transmission-files-mode 'index)))
       (save-excursion
         (save-restriction
@@ -1929,9 +1929,9 @@ Each form in BODY is a column descriptor."
   (erase-buffer)
   (let-alist (elt transmission-torrent-vector 0)
     (transmission-insert-each-when
-      (format "ID: %d" id)
+      (format "ID: %d" .id)
       (concat "Name: " .name)
-      (concat "Hash: " .hashString)
+      (concat "Hash: " id)
       (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link))
       (if (zerop (length .labels)) ""
         (concat "Labels: " (mapconcat #'identity .labels ", ") "\n"))
@@ -2006,7 +2006,7 @@ object `transmission-timer' is run."
   (cl-assert (string-suffix-p "-mode" (symbol-name mode)))
   (let ((name (make-symbol "name")))
     `(let ((id (or transmission-torrent-id
-                   (cdr (assq 'id (tabulated-list-get-id)))))
+                   (cdr (assq 'hashString (tabulated-list-get-id)))))
            (,name ,(format "*%s*" (string-remove-suffix "-mode" (symbol-name mode)))))
        (if (not id) (user-error "No torrent selected")
          (let ((buffer (or (get-buffer ,name)
@@ -2014,7 +2014,7 @@ object `transmission-timer' is run."
            (transmission-turtle-poll)
            (with-current-buffer buffer
              (let ((old-id (or transmission-torrent-id
-                               (cdr (assq 'id (tabulated-list-get-id))))))
+                               (cdr (assq 'hashString (tabulated-list-get-id))))))
                (unless (eq major-mode ',mode)
                  (funcall #',mode))
                (if (and old-id (eq old-id id))
@@ -2033,7 +2033,7 @@ ID is a Lisp object identifying the entry to print, and COLS is a vector
 of column descriptors."
   (tabulated-list-print-entry id cols)
   (let* ((key (cl-ecase major-mode
-                (transmission-mode 'id)
+                (transmission-mode 'hashString)
                 (transmission-files-mode 'index)))
          (item-id (cdr (assq key id))))
     (when (memq item-id transmission-marked-ids)
