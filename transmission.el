@@ -2273,6 +2273,12 @@ for explanation of the peer flags."
   '(("^[>]" (transmission-file-name-matcher nil nil (0 'warning))))
   "Default expressions to highlight in `transmission-mode'.")
 
+(defvar transmission-mode-syntax-table
+  (let ((table (make-syntax-table)))
+    (modify-syntax-entry #x221e "w" table)
+    table)
+  "Syntax table used in `transmission-mode' buffers.")
+
 (defvar transmission-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "!" 'transmission-files)
