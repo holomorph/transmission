@@ -258,15 +258,15 @@ caching built in or is otherwise slow."
     (high . 1))
   "Alist of names to priority values.")
 
-(defconst transmission-status-alist
-  '((stopped . 0)
-    (verifywait . 1)
-    (verifying . 2)
-    (downwait . 3)
-    (downloading . 4)
-    (seedwait . 5)
-    (seeding . 6))
-  "Alist of possible Transmission torrent statuses.")
+(defconst transmission-status-names
+  ["stopped"
+   "verifywait"
+   "verifying"
+   "downwait"
+   "downloading"
+   "seedwait"
+   "seeding"]
+  "Array of possible Transmission torrent statuses.")
 
 (defconst transmission-draw-torrents-keys
   ["hashString" "name" "status" "eta" "error" "labels"
@@ -1717,9 +1717,9 @@ Indicates on the mode-line the down/up speed limits in kB/s."
 
 (defun transmission-format-status (status up down)
   "Return a propertized string describing torrent status.
-STATUS is a value in `transmission-status-alist'.  UP and DOWN are
+STATUS is the index of `transmission-status-names'.  UP and DOWN are
 transmission rates."
-  (let ((state (symbol-name (car (rassq status transmission-status-alist))))
+  (let ((state (aref transmission-status-names status))
         (idle (propertize "idle" 'font-lock-face 'shadow))
         (uploading
          (propertize "uploading" 'font-lock-face 'font-lock-constant-face)))
