@@ -2036,7 +2036,7 @@ of column descriptors."
                 (transmission-mode 'hashString)
                 (transmission-files-mode 'index)))
          (item-id (cdr (assq key id))))
-    (when (memq item-id transmission-marked-ids)
+    (when (member item-id transmission-marked-ids)
       (save-excursion
         (forward-line -1)
         (tabulated-list-put-tag ">")))))
