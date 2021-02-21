@@ -1623,23 +1623,23 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
 (defun transmission-unmark-all ()
   "Remove mark from all items."
   (interactive)
-  (let ((inhibit-read-only t) len n)
-    (when (> (setq n (setq len (length transmission-marked-ids))) 0)
+  (let ((inhibit-read-only t) (n 0))
+    (when transmission-marked-ids
       (save-excursion
         (save-restriction
           (widen)
           (goto-char (point-min))
-          (while (and (> n 0) (not (eobp)))
+          (while (not (eobp))
             (when (= (following-char) ?>)
               (save-excursion
                 (forward-char)
                 (insert-and-inherit ?\s))
               (delete-region (point) (1+ (point)))
-              (cl-decf n))
+              (cl-incf n))
             (forward-line))))
       (setq transmission-marked-ids nil)
       (set-buffer-modified-p nil)
-      (message "%s removed" (transmission-plural len "mark")))))
+      (message "%s removed" (transmission-plural n "mark")))))
 
 (defun transmission-invert-marks ()
   "Toggle mark on all items."
