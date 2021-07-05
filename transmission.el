@@ -279,7 +279,7 @@ caching built in or is otherwise slow."
 
 (defconst transmission-draw-info-keys
   ["id" "name" "hashString" "magnetLink" "labels" "activityDate" "addedDate"
-   "dateCreated" "doneDate" "startDate" "peers" "pieces" "pieceCount"
+   "dateCreated" "doneDate" "peers" "pieces" "pieceCount"
    "pieceSize" "trackerStats" "peersConnected" "peersGettingFromUs" "peersFrom"
    "peersSendingToUs" "sizeWhenDone" "error" "errorString" "uploadRatio"
    "downloadedEver" "corruptEver" "haveValid" "totalSize" "percentDone"
