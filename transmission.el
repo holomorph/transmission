@@ -2070,6 +2070,7 @@ is constructed from TEST, BODY and the `tabulated-list-id' tagged as `<>'."
 (define-transmission-predicate percent-done>? > (cdr (assq 'percentDone <>)))
 (define-transmission-predicate ratio>? > (cdr (assq 'uploadRatio <>)))
 (define-transmission-predicate progress>? > (cdr (assq 'progress <>)))
+(define-transmission-predicate file-want? > (cdr (assq 'wanted <>)))
 
 (define-transmission-predicate eta>=? >=
   (let-alist <>
@@ -2252,7 +2253,7 @@ for explanation of the peer flags."
   (setq tabulated-list-format
         [("Have" 4 transmission-file-have>? :right-align t)
          ("Priority" 8 t)
-         ("Want" 4 t :right-align t)
+         ("Want" 4 transmission-file-want? :right-align t)
          ("Size" 9 transmission-size>? :right-align t :transmission-size t)
          ("Name" 0 t)])
   (setq tabulated-list-padding 1)
