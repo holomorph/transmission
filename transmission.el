@@ -230,7 +230,7 @@ caching built in or is otherwise slow."
   (eval-when-compile
     (pcase-let*
         ((`(,sun ,mon ,tues ,wed ,thurs ,fri ,sat)
-          (cl-loop for x below 7 collect (lsh 1 x)))
+          (cl-loop for x below 7 collect (ash 1 x)))
          (weekday (logior mon tues wed thurs fri))
          (weekend (logior sat sun))
          (all (logior weekday weekend)))
@@ -337,12 +337,12 @@ caching built in or is otherwise slow."
 
 (defun transmission--move-to-content ()
   "Move the point to beginning of content after the headers."
-  (setf (point) (point-min))
+  (goto-char (point-min))
   (re-search-forward "^\r?\n" nil t))
 
 (defun transmission--content-finished-p ()
   "Return non-nil if all of the content has arrived."
-  (setf (point) (point-min))
+  (goto-char (point-min))
   (when (search-forward "Content-Length: " nil t)
     (let ((length (read (current-buffer))))
       (and (transmission--move-to-content)
@@ -898,9 +898,9 @@ If `transmission-geoip-function' has changed, reset `transmission-geoip-table'."
 
 (defun transmission-hamming-weight (byte)
   "Calculate the Hamming weight of BYTE."
-  (setq byte (- byte (logand (lsh byte -1) #x55555555)))
-  (setq byte (+ (logand byte #x33333333) (logand (lsh byte -2) #x33333333)))
-  (lsh (* (logand (+ byte (lsh byte -4)) #x0f0f0f0f) #x01010101) -24))
+  (setq byte (- byte (logand (ash byte -1) #x55555555)))
+  (setq byte (+ (logand byte #x33333333) (logand (ash byte -2) #x33333333)))
+  (ash (* (logand (+ byte (ash byte -4)) #x0f0f0f0f) #x01010101) -24))
 
 (defun transmission-count-bits (bytearray)
   "Calculate sum of Hamming weight of each byte in BYTEARRAY."
