@@ -2099,7 +2099,7 @@ is constructed from TEST, BODY and the `tabulated-list-id' tagged as `<>'."
 (define-derived-mode transmission-peers-mode tabulated-list-mode "Transmission-Peers"
   "Major mode for viewing peer information.
 See the \"--peer-info\" option in transmission-remote(1) or
-https://github.com/transmission/transmission/wiki/Peer-Status-Text
+https://github.com/transmission/transmission/blob/main/docs/Peer-Status-Text.md
 for explanation of the peer flags."
   :group 'transmission
   (setq-local line-move-visual nil)
