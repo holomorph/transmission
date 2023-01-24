@@ -1083,20 +1083,37 @@ WINDOW with `window-start' and the line/column coordinates of `point'."
        (and ,old-mark (set-mark ,old-mark))
        (unless ,old-mark-active (deactivate-mark)))))
 
+(defun looks-like-a-magnet-link-p (string)
+  (and (stringp string)
+       (let ((magnet-link-string-indicator "magnet:?xt="))
+	 (string-equal magnet-link-string-indicator
+		       (substring string 0
+				  (min (length string)
+				       (length magnet-link-string-indicator)))))))
+
 
 ;; Interactive
 
 ;;;###autoload
 (defun transmission-add (torrent &optional directory)
   "Add TORRENT by filename, URL, magnet link, or info hash.
-When called with a prefix, prompt for DIRECTORY."
+When called with a prefix, prompt for DIRECTORY. When used
+interactively, will try to fetch magnet link
+from `transmission-torrent-functions'."
   (interactive
    (let* ((f (transmission-collect-hook 'transmission-torrent-functions))
           (def (mapcar #'file-relative-name f))
-          (prompt (concat "Add torrent" (if def (format " [%s]" (car def))) ": "))
+	  (car-def (car def))
+	  (magnet-link-is-recognised (looks-like-a-magnet-link-p car-def))
+          (prompt (concat "Add torrent"
+			  (if (and def (not magnet-link-is-recognised))
+					    (format " [%s]" car-def))
+			  ": "))
           (history-add-new-input nil)
           (file-name-history (symbol-value transmission-add-history-variable))
-          (input (read-file-name prompt nil def)))
+          (input (if magnet-link-is-recognised
+		     car-def
+		   (read-file-name prompt nil def))))
      (add-to-history transmission-add-history-variable input)
      (list input
            (if current-prefix-arg
