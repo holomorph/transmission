@@ -6,6 +6,7 @@
 ;; Version: 0.12.2
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
+;; Homepage: https://github.com/holomorph/transmission
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
