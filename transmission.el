@@ -2399,7 +2399,7 @@ Transmission."
             (error
              (kill-buffer buffer)
              (signal (car e) (cdr e))))))
-      (switch-to-buffer-other-window buffer))))
+      (pop-to-buffer buffer))))
 
 (provide 'transmission)
 
