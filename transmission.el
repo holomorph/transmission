@@ -446,8 +446,7 @@ custom variables `transmission-host' and `transmission-service'."
                    :name "transmission" :buffer buffer
                    :host (when (null socket) transmission-host)
                    :service (or socket transmission-service)
-                   :family (when socket 'local) :noquery t
-                   :coding 'binary :filter-multibyte nil))
+                   :family (when socket 'local) :noquery t :coding 'utf-8))
           (setq buffer nil process nil))
       (when (process-live-p process) (kill-process process))
       (when (buffer-live-p buffer) (kill-buffer buffer)))))
